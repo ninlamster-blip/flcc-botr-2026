@@ -1808,7 +1808,7 @@ function apiGet(params) {
   });
 }
 
-// Load live data — Apps Script JSONP first (always fresh), gviz as fallback
+// Load live data — reads LIVE_DATA tab via gviz (always fresh, rewritten on every action)
 async function loadLiveData() {
   const backup = {
     members:      [...LIVE.members],
@@ -1818,68 +1818,7 @@ async function loadLiveData() {
     totalDisc:    LIVE.totalDisc,
     totalLeaders: LIVE.totalLeaders,
   };
-
-  let data = null;
-
-  // METHOD 1 — Apps Script JSONP direct (always fresh, no caching)
-  // Apps Script now calls SpreadsheetApp.flush() so data is always live
-  try {
-    data = await fetchFromAppsScript();
-  } catch(e) {
-    console.warn('Apps Script JSONP failed:', e.message);
-  }
-
-  // METHOD 2 — gviz fallback (may be slightly cached but always works)
-  if (!data) {
-    await loadViaGviz(backup);
-    return;
-  }
-
-  // Rebuild LIVE store
-  CHURCHES.forEach(c => {
-    LIVE.churches[c.id] = { gospel:0, disciples:0, leaders:0, members:0, monthly:new Array(8).fill(0) };
-  });
-  SECTORS.forEach(s => { LIVE.sectors[s.id] = { gospel:0, disciples:0, leaders:0 }; });
-
-  if (data.churchAgg) {
-    Object.entries(data.churchAgg).forEach(([cn, agg]) => {
-      const cDef = CHURCHES.find(c => c.name === cn);
-      if (!cDef) return;
-      LIVE.churches[cDef.id] = {
-        gospel:agg.gospel||0, disciples:agg.disciples||0,
-        leaders:agg.leaders||0, members:agg.members||0,
-        monthly:agg.monthly||new Array(8).fill(0),
-      };
-    });
-  }
-  if (data.sectorAgg) {
-    Object.entries(data.sectorAgg).forEach(([sId, agg]) => {
-      if (LIVE.sectors[sId]) LIVE.sectors[sId] = {
-        gospel:agg.gospel||0, disciples:agg.disciples||0, leaders:agg.leaders||0
-      };
-    });
-  }
-
-  LIVE.members = (data.members||[]).map(m => ({
-    userId:m.userId||'', name:m.name||'', role:m.role||'Member',
-    church:m.church||'', churchId:m.churchId||getChurchId(m.church||''),
-    sector:m.sector||getChurchSector(m.church||''),
-    stage:m.stage||'Evangelism', points:m.points||0, actionsCount:m.actionsCount||0,
-    gospel:m.gospel||0, disciples:m.disciples||0, leaders:m.leaders||0,
-    monthlyActions:m.monthlyActions||new Array(8).fill(0),
-    actions:(m.actions||[]).map(a=>({...a, date:a.date||parseDateLabel(a.dateIso)})),
-  }));
-
-  LIVE.totalGospel  = data.totalGospel  || 0;
-  LIVE.totalDisc    = data.totalDisc    || 0;
-  LIVE.totalLeaders = data.totalLeaders || 0;
-
-  const connEl = document.getElementById('conn-status');
-  if (connEl) {
-    connEl.innerHTML = '✅ Google Sheets connected — live data loaded';
-    connEl.style.color = '#1C7A35';
-  }
-  hydrateActionLogsFromLocal();
+  await loadViaGviz(backup);
 }
 
 // Apps Script JSONP — calls getLiveSummary (lightweight, no full action logs)
@@ -1971,11 +1910,6 @@ async function loadViaGviz(backup) {
   LIVE.totalGospel  = Number(kv.totalGospel)  || 0;
   LIVE.totalDisc    = Number(kv.totalDisc)     || 0;
   LIVE.totalLeaders = Number(kv.totalLeaders)  || 0;
-
-  // DEBUG — show parsed numbers as toast so we can verify
-  setTimeout(() => {
-    showToast('G:' + LIVE.totalGospel + ' D:' + LIVE.totalDisc + ' M:' + LIVE.members.length);
-  }, 1000);
 
   // Parse member rows — each value is pipe-separated fields
   memberLines.forEach(m => {
