@@ -1837,6 +1837,7 @@ function apiGet(params) {
 }
 
 // Load live data — reads LIVE_DATA tab via gviz (always fresh, rewritten on every action)
+// Load live data — Apps Script JSONP only (no gviz, no publishing needed)
 async function loadLiveData() {
   const backup = {
     members:      [...LIVE.members],
@@ -1846,168 +1847,89 @@ async function loadLiveData() {
     totalDisc:    LIVE.totalDisc,
     totalLeaders: LIVE.totalLeaders,
   };
-  await loadViaGviz(backup);
-}
 
-// Apps Script JSONP — calls getLiveSummary (lightweight, no full action logs)
-// Always returns fresh data directly from your Google Sheet — no caching
-function fetchFromAppsScript() {
-  return new Promise((resolve, reject) => {
-    const cb    = 'asCb_' + Date.now() + '_' + Math.floor(Math.random()*99999);
-    const el    = document.createElement('script');
-    const timer = setTimeout(() => { cleanup(); reject(new Error('timeout')); }, 12000);
-    function cleanup() {
-      clearTimeout(timer); delete window[cb];
-      try { document.head.removeChild(el); } catch(e) {}
-    }
-    window[cb] = function(d) {
-      cleanup();
-      if (d && (d.members || d.totalGospel !== undefined)) resolve(d);
-      else reject(new Error('empty response'));
-    };
-    el.onerror = () => { cleanup(); reject(new Error('script error')); };
-    // Use getLiveSummary — much smaller payload than getLiveData, faster on mobile
-    el.src = SCRIPT_URL
-      + '?action=getLiveSummary'
-      + '&callback=' + cb
-      + '&_=' + Date.now();
-    document.head.appendChild(el);
-  });
-}
-
-// Read directly from USERS tab — always fresh, no intermediate caching
-// Read directly from USERS tab (primary) or LIVE_DATA tab (fallback)
-const LIVE_GID   = '1934526200'; // LIVE_DATA tab
-const USERS_GID  = '262680713';  // USERS tab
-
-async function loadViaGviz(backup) {
-  // Try USERS first (needs entire doc published), fall back to LIVE_DATA
-  let rows = await gvizFetch(USERS_GID);
-  const isUsersTab = rows.length > 0 && rows[0] && rows[0][0] !== 'KEY';
-
-  if (isUsersTab) {
-    parseUsersRows(rows);
-  } else {
-    // Try LIVE_DATA fallback
-    const liveRows = await gvizFetch(LIVE_GID);
-    if (liveRows.length) {
-      parseLiveDataRows(liveRows);
-    } else {
-      Object.assign(LIVE, backup);
-      hydrateFromLocalStorage();
-      const el = document.getElementById('conn-status');
-      if (el) { el.innerHTML='⚠️ Publish sheet: File → Share → Publish to web → Entire Document'; el.style.color='var(--orange)'; }
-      return;
-    }
-  }
-}
-
-function gvizFetch(gid) {
   return new Promise(resolve => {
-    const cb = 'gv_' + Date.now() + '_' + Math.floor(Math.random()*99999);
-    const el = document.createElement('script');
-    const timer = setTimeout(() => { cleanup(); resolve([]); }, 10000);
+    const cb    = 'flcc_' + Date.now();
+    const el    = document.createElement('script');
+    const timer = setTimeout(() => {
+      cleanup(); Object.assign(LIVE, backup); hydrateActionLogsFromLocal(); resolve();
+    }, 15000);
+
     function cleanup() {
       clearTimeout(timer); delete window[cb];
       try { document.head.removeChild(el); } catch(e) {}
     }
-    window[cb] = function(res) {
+
+    window[cb] = function(data) {
       cleanup();
       try {
-        resolve((res.table.rows||[]).map(r=>(r.c||[]).map(c=>(c&&c.v!=null)?String(c.v):'')));
-      } catch(e) { resolve([]); }
+        if (!data || data.error || !data.members) {
+          Object.assign(LIVE, backup); hydrateActionLogsFromLocal(); resolve(); return;
+        }
+
+        // Reset LIVE store
+        CHURCHES.forEach(c => {
+          LIVE.churches[c.id] = { gospel:0, disciples:0, leaders:0, members:0, monthly:new Array(8).fill(0) };
+        });
+        SECTORS.forEach(s => { LIVE.sectors[s.id] = { gospel:0, disciples:0, leaders:0 }; });
+
+        // Apply church aggregates
+        if (data.churchAgg) {
+          Object.entries(data.churchAgg).forEach(([cn, agg]) => {
+            const cDef = CHURCHES.find(c => c.name === cn);
+            if (!cDef) return;
+            LIVE.churches[cDef.id] = {
+              gospel:agg.gospel||0, disciples:agg.disciples||0,
+              leaders:agg.leaders||0, members:agg.members||0,
+              monthly:agg.monthly||new Array(8).fill(0),
+            };
+          });
+        }
+
+        // Apply sector aggregates
+        if (data.sectorAgg) {
+          Object.entries(data.sectorAgg).forEach(([sId, agg]) => {
+            if (LIVE.sectors[sId]) {
+              LIVE.sectors[sId].gospel    = agg.gospel    || 0;
+              LIVE.sectors[sId].disciples = agg.disciples || 0;
+              LIVE.sectors[sId].leaders   = agg.leaders   || 0;
+            }
+          });
+        }
+
+        // Build member list
+        LIVE.members = (data.members||[]).map(m => ({
+          userId:m.userId||'', name:m.name||'', role:m.role||'Member',
+          church:m.church||'', churchId:m.churchId||getChurchId(m.church||''),
+          sector:m.sector||getChurchSector(m.church||''),
+          stage:m.stage||'Evangelism',
+          points:Number(m.points)||0, actionsCount:Number(m.actionsCount)||0,
+          gospel:Number(m.gospel)||0, disciples:Number(m.disciples)||0,
+          leaders:Number(m.leaders)||0,
+          monthlyActions:new Array(8).fill(0), actions:[],
+        }));
+
+        LIVE.totalGospel  = Number(data.totalGospel)  || 0;
+        LIVE.totalDisc    = Number(data.totalDisc)     || 0;
+        LIVE.totalLeaders = Number(data.totalLeaders)  || 0;
+
+        const connEl = document.getElementById('conn-status');
+        if (connEl) {
+          connEl.innerHTML = '✅ Live — ' + LIVE.members.length + ' members · Gospel: ' + LIVE.totalGospel;
+          connEl.style.color = '#1C7A35';
+        }
+        hydrateActionLogsFromLocal();
+      } catch(err) {
+        Object.assign(LIVE, backup); hydrateActionLogsFromLocal();
+      }
+      resolve();
     };
-    el.onerror = () => { cleanup(); resolve([]); };
-    el.src = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID +
-      '/gviz/tq?gid=' + gid + '&tqx=out:json&callback=' + cb + '&t=' + Date.now();
+
+    el.onerror = () => { cleanup(); Object.assign(LIVE, backup); hydrateActionLogsFromLocal(); resolve(); };
+    // Apps Script JSONP — fresh data every call, no publishing needed
+    el.src = SCRIPT_URL + '?action=getLiveSummary&callback=' + cb + '&_=' + Date.now();
     document.head.appendChild(el);
   });
-}
-
-function parseUsersRows(rows) {
-  CHURCHES.forEach(c => { LIVE.churches[c.id]={gospel:0,disciples:0,leaders:0,members:0,monthly:new Array(8).fill(0)}; });
-  SECTORS.forEach(s => { LIVE.sectors[s.id]={gospel:0,disciples:0,leaders:0}; });
-  LIVE.members=[];
-  LIVE.totalGospel=0; LIVE.totalDisc=0; LIVE.totalLeaders=0;
-
-  rows.forEach(r => {
-    // Skip header row and empty rows
-    if (!r[0] || r[0]==='User ID') return;
-    const name=r[1]||'', church=r[3]||'', sector=r[4]||getChurchSector(church);
-    const churchId=getChurchId(church);
-    const gospel=Number(r[8])||0, disciples=Number(r[9])||0, leaders=Number(r[10])||0;
-    if(LIVE.churches[churchId]){
-      LIVE.churches[churchId].members++;
-      LIVE.churches[churchId].gospel+=gospel;
-      LIVE.churches[churchId].disciples+=disciples;
-      LIVE.churches[churchId].leaders+=leaders;
-    }
-    if(LIVE.sectors[sector]){
-      LIVE.sectors[sector].gospel+=gospel;
-      LIVE.sectors[sector].disciples+=disciples;
-      LIVE.sectors[sector].leaders+=leaders;
-    }
-    LIVE.totalGospel+=gospel; LIVE.totalDisc+=disciples; LIVE.totalLeaders+=leaders;
-    LIVE.members.push({name, role:r[2]||'Member', church, churchId, sector,
-      stage:r[5]||'Evangelism', points:Number(r[6])||0, actionsCount:Number(r[7])||0,
-      gospel, disciples, leaders, monthlyActions:new Array(8).fill(0), actions:[]});
-  });
-
-  const el = document.getElementById('conn-status');
-  if (el) { el.innerHTML='✅ Live — '+LIVE.members.length+' members · Gospel: '+LIVE.totalGospel; el.style.color='#1C7A35'; }
-  hydrateActionLogsFromLocal();
-}
-
-function parseLiveDataRows(rows) {
-  const kv={}, memberLines=[];
-  let inMembers=false;
-  rows.forEach(r=>{
-    const key=(r[0]||'').trim(), val=(r[1]||'').trim();
-    if(!key) return;
-    if(key==='---MEMBERS---'){inMembers=true;return;}
-    if(inMembers){memberLines.push({name:key,data:val});return;}
-    kv[key]=val;
-  });
-  CHURCHES.forEach(c=>{LIVE.churches[c.id]={gospel:0,disciples:0,leaders:0,members:0,monthly:new Array(8).fill(0)};});
-  SECTORS.forEach(s=>{LIVE.sectors[s.id]={gospel:0,disciples:0,leaders:0};});
-  LIVE.members=[];
-  ['hope','faith','love'].forEach(sid=>{
-    if(!LIVE.sectors[sid])return;
-    LIVE.sectors[sid].gospel=Number(kv[sid+'_gospel'])||0;
-    LIVE.sectors[sid].disciples=Number(kv[sid+'_disciples'])||0;
-    LIVE.sectors[sid].leaders=Number(kv[sid+'_leaders'])||0;
-  });
-  LIVE.totalGospel=Number(kv.totalGospel)||0;
-  LIVE.totalDisc=Number(kv.totalDisc)||0;
-  LIVE.totalLeaders=Number(kv.totalLeaders)||0;
-  memberLines.forEach(m=>{
-    const p=m.data.split('|'),ch=p[1]||'',cId=p[2]||getChurchId(ch),sec=p[3]||getChurchSector(ch),g=Number(p[7])||0;
-    LIVE.members.push({name:m.name,role:p[0]||'Member',church:ch,churchId:cId,sector:sec,
-      stage:p[4]||'Evangelism',points:Number(p[5])||0,actionsCount:Number(p[6])||0,
-      gospel:g,disciples:Number(p[8])||0,leaders:Number(p[9])||0,
-      monthlyActions:new Array(8).fill(0),actions:[]});
-    if(LIVE.churches[cId]){LIVE.churches[cId].members++;LIVE.churches[cId].gospel+=g;}
-  });
-  const el=document.getElementById('conn-status');
-  if(el){el.innerHTML='✅ Live — '+LIVE.members.length+' members · Gospel: '+LIVE.totalGospel;el.style.color='#1C7A35';}
-  hydrateActionLogsFromLocal();
-}
-
-function buildLiveFromUserRows(userRows) {
-  CHURCHES.forEach(c => { LIVE.churches[c.id]={gospel:0,disciples:0,leaders:0,members:0,monthly:new Array(8).fill(0)}; });
-  SECTORS.forEach(s => { LIVE.sectors[s.id]={gospel:0,disciples:0,leaders:0}; });
-  LIVE.members = userRows.filter(r=>r[0]).map(r => {
-    const church=r[3]||'', sector=r[4]||getChurchSector(church), cId=getChurchId(church);
-    const gospel=Number(r[8])||0;
-    if(LIVE.churches[cId]){ LIVE.churches[cId].members++; LIVE.churches[cId].gospel+=gospel; }
-    if(LIVE.sectors[sector]) LIVE.sectors[sector].gospel+=gospel;
-    return { name:r[1]||'', role:r[2]||'Member', church, churchId:cId, sector,
-      stage:r[5]||'Evangelism', points:Number(r[6])||0, actionsCount:Number(r[7])||0,
-      gospel, disciples:0, leaders:0, monthlyActions:new Array(8).fill(0), actions:[] };
-  });
-  LIVE.totalGospel  = SECTORS.reduce((t,s)=>t+LIVE.sectors[s.id].gospel,0);
-  LIVE.totalDisc    = 0; LIVE.totalLeaders = 0;
-  hydrateActionLogsFromLocal();
 }
 
 function hydrateFromLocalStorage() {
