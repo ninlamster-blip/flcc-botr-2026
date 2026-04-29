@@ -1847,108 +1847,105 @@ function fetchFromAppsScript() {
   });
 }
 
-// Read from LIVE_DATA tab — rewritten by Apps Script on every action
+// Read LIVE_DATA tab as CSV — published Google Sheet CSV is always fresh
+// No CORS issues, no caching, works on every device including mobile
+const LIVE_DATA_CSV = 'https://docs.google.com/spreadsheets/d/1Z-nY7P4GWuXKwEQNLwvry42bzYgXrsCFpaZ2PE-uE1c/pub?gid=1934526200&single=true&output=csv&_=';
+
 async function loadViaGviz(backup) {
-  const liveRows = await readSheet('LIVE_DATA');
+  try {
+    // Fetch CSV directly — Google published sheets have no CORS restrictions
+    const res = await fetch(LIVE_DATA_CSV + Date.now(), { cache: 'no-store' });
+    if (!res.ok) throw new Error('CSV fetch failed: ' + res.status);
 
-  // DEBUG — show exactly what was read on this device
-  const debugEl = document.getElementById('conn-status');
-  if (debugEl) {
-    if (!liveRows.length) {
-      debugEl.innerHTML = '❌ LIVE_DATA tab empty or not found';
-      debugEl.style.color = 'var(--red)';
-    } else {
-      const keys = liveRows.slice(0,6).map(r => String(r[0]||'')).join(', ');
-      debugEl.innerHTML = '📋 Read ' + liveRows.length + ' rows: ' + keys;
-      debugEl.style.color = '#555';
+    const csv  = await res.text();
+    const rows = csv.trim().split('\n').map(line =>
+      line.split(',').map(cell => cell.trim().replace(/^"|"$/g, ''))
+    );
+
+    if (!rows.length || rows[0][0] !== 'KEY') {
+      throw new Error('Invalid CSV format');
     }
-  }
 
-  if (!liveRows.length) {
+    // Parse KEY | VALUE rows
+    const kv = {};
+    const memberLines = [];
+    let inMembers = false;
+
+    rows.slice(1).forEach(r => {
+      const key = String(r[0] || '').trim();
+      const val = String(r[1] || '').trim();
+      if (!key) return;
+      if (key === '---MEMBERS---') { inMembers = true; return; }
+      if (inMembers) { memberLines.push({ name: key, data: val }); return; }
+      kv[key] = val;
+    });
+
+    // Reset LIVE store
+    CHURCHES.forEach(c => {
+      LIVE.churches[c.id] = { gospel:0, disciples:0, leaders:0, members:0, monthly:new Array(8).fill(0) };
+    });
+    SECTORS.forEach(s => { LIVE.sectors[s.id] = { gospel:0, disciples:0, leaders:0 }; });
+    LIVE.members = [];
+
+    // Apply sector totals
+    ['hope','faith','love'].forEach(sid => {
+      if (!LIVE.sectors[sid]) return;
+      LIVE.sectors[sid].gospel    = Number(kv[sid + '_gospel'])    || 0;
+      LIVE.sectors[sid].disciples = Number(kv[sid + '_disciples']) || 0;
+      LIVE.sectors[sid].leaders   = Number(kv[sid + '_leaders'])   || 0;
+    });
+
+    LIVE.totalGospel  = Number(kv.totalGospel)  || 0;
+    LIVE.totalDisc    = Number(kv.totalDisc)     || 0;
+    LIVE.totalLeaders = Number(kv.totalLeaders)  || 0;
+
+    // Parse member rows
+    memberLines.forEach(m => {
+      const parts    = m.data.split('|');
+      const church   = parts[1] || '';
+      const churchId = parts[2] || getChurchId(church);
+      const sector   = parts[3] || getChurchSector(church);
+      const gospel   = Number(parts[7]) || 0;
+
+      LIVE.members.push({
+        name:         m.name,
+        role:         parts[0] || 'Member',
+        church, churchId, sector,
+        stage:        parts[4] || 'Evangelism',
+        points:       Number(parts[5]) || 0,
+        actionsCount: Number(parts[6]) || 0,
+        gospel,
+        disciples:    Number(parts[8]) || 0,
+        leaders:      Number(parts[9]) || 0,
+        monthlyActions: new Array(8).fill(0),
+        actions: [],
+      });
+
+      if (LIVE.churches[churchId]) {
+        LIVE.churches[churchId].members++;
+        LIVE.churches[churchId].gospel += gospel;
+      }
+    });
+
+    const el = document.getElementById('conn-status');
+    if (el) {
+      el.innerHTML = '✅ Live — ' + LIVE.members.length + ' members · Gospel: ' + LIVE.totalGospel;
+      el.style.color = '#1C7A35';
+    }
+    hydrateActionLogsFromLocal();
+
+  } catch(err) {
+    console.warn('CSV fetch error:', err.message);
+    // Restore backup so dashboard never shows zeros
     Object.assign(LIVE, backup);
     hydrateFromLocalStorage();
     const el = document.getElementById('conn-status');
     if (el) {
-      el.innerHTML = '⚠️ Run writeLiveSummaryTab in Apps Script first';
+      el.innerHTML = '⚠️ Could not load live data — showing cached data';
       el.style.color = 'var(--orange)';
     }
-    return;
   }
-
-  // Parse KEY | VALUE format written by writeLiveSummaryTab
-  const kv = {};
-  const memberLines = [];
-  let inMembers = false;
-
-  liveRows.forEach(r => {
-    const key = String(r[0] || '').trim();
-    const val = String(r[1] || '').trim();
-    if (key === '---MEMBERS---') { inMembers = true; return; }
-    if (inMembers && key) { memberLines.push({ name: key, data: val }); return; }
-    if (key) kv[key] = val;
-  });
-
-  // Reset LIVE store
-  CHURCHES.forEach(c => {
-    LIVE.churches[c.id] = { gospel:0, disciples:0, leaders:0, members:0, monthly:new Array(8).fill(0) };
-  });
-  SECTORS.forEach(s => { LIVE.sectors[s.id] = { gospel:0, disciples:0, leaders:0 }; });
-  LIVE.members = [];
-
-  // Apply sector totals from key-value pairs
-  LIVE.sectors.hope  = LIVE.sectors.hope  || { gospel:0, disciples:0, leaders:0 };
-  LIVE.sectors.faith = LIVE.sectors.faith || { gospel:0, disciples:0, leaders:0 };
-  LIVE.sectors.love  = LIVE.sectors.love  || { gospel:0, disciples:0, leaders:0 };
-
-  ['hope','faith','love'].forEach(sid => {
-    if (!LIVE.sectors[sid]) return;
-    LIVE.sectors[sid].gospel    = Number(kv[sid + '_gospel'])    || 0;
-    LIVE.sectors[sid].disciples = Number(kv[sid + '_disciples']) || 0;
-    LIVE.sectors[sid].leaders   = Number(kv[sid + '_leaders'])   || 0;
-  });
-
-  LIVE.totalGospel  = Number(kv.totalGospel)  || 0;
-  LIVE.totalDisc    = Number(kv.totalDisc)     || 0;
-  LIVE.totalLeaders = Number(kv.totalLeaders)  || 0;
-
-  // Parse member rows — each value is pipe-separated fields
-  memberLines.forEach(m => {
-    const parts  = m.data.split('|');
-    const church   = parts[1] || '';
-    const churchId = parts[2] || getChurchId(church);
-    const sector   = parts[3] || getChurchSector(church);
-    const gospel   = Number(parts[7]) || 0;
-
-    LIVE.members.push({
-      name:         m.name,
-      role:         parts[0] || 'Member',
-      church,
-      churchId,
-      sector,
-      stage:        parts[4] || 'Evangelism',
-      points:       Number(parts[5]) || 0,
-      actionsCount: Number(parts[6]) || 0,
-      gospel,
-      disciples:    Number(parts[8]) || 0,
-      leaders:      Number(parts[9]) || 0,
-      monthlyActions: new Array(8).fill(0),
-      actions: [],
-    });
-
-    if (LIVE.churches[churchId]) {
-      LIVE.churches[churchId].members++;
-      LIVE.churches[churchId].gospel += gospel;
-    }
-  });
-
-  const el = document.getElementById('conn-status');
-  if (el) {
-    el.innerHTML = '✅ Google Sheets connected — live data loaded';
-    el.style.color = '#1C7A35';
-  }
-  hydrateActionLogsFromLocal();
 }
-
 function buildLiveFromUserRows(userRows) {
   CHURCHES.forEach(c => { LIVE.churches[c.id]={gospel:0,disciples:0,leaders:0,members:0,monthly:new Array(8).fill(0)}; });
   SECTORS.forEach(s => { LIVE.sectors[s.id]={gospel:0,disciples:0,leaders:0}; });
