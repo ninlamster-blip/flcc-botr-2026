@@ -1926,8 +1926,8 @@ async function loadLiveData() {
     };
 
     el.onerror = () => { cleanup(); Object.assign(LIVE, backup); hydrateActionLogsFromLocal(); resolve(); };
-    // Apps Script JSONP — fresh data every call, no publishing needed
-    el.src = SCRIPT_URL + '?action=getLiveSummary&callback=' + cb + '&_=' + Date.now();
+    // Call getLiveData via JSONP — already deployed and working
+    el.src = SCRIPT_URL + '?action=getLiveData&callback=' + cb + '&_=' + Date.now();
     document.head.appendChild(el);
   });
 }
