@@ -1808,7 +1808,7 @@ function apiGet(params) {
   });
 }
 
-// Load live data — tries 3 methods in order, always gets freshest available data
+// Load live data — Apps Script JSONP first (always fresh), gviz as fallback
 async function loadLiveData() {
   const backup = {
     members:      [...LIVE.members],
@@ -1821,32 +1821,21 @@ async function loadLiveData() {
 
   let data = null;
 
-  // METHOD 1 — Netlify/Cloudflare proxy (works when _redirects deployed)
+  // METHOD 1 — Apps Script JSONP direct (always fresh, no caching)
+  // Apps Script now calls SpreadsheetApp.flush() so data is always live
   try {
-    const res = await Promise.race([
-      fetch('/api?action=getLiveData&_=' + Date.now(), { cache:'no-store' }),
-      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
-    ]);
-    if (res.ok) {
-      const json = await res.json();
-      if (json && json.members && !json.error) data = json;
-    }
-  } catch(e) {}
-
-  // METHOD 2 — Apps Script JSONP direct (fresh data, works on GitHub Pages too)
-  if (!data) {
-    try {
-      data = await fetchFromAppsScript();
-    } catch(e) {}
+    data = await fetchFromAppsScript();
+  } catch(e) {
+    console.warn('Apps Script JSONP failed:', e.message);
   }
 
-  // METHOD 3 — gviz fallback (slightly cached but always works)
+  // METHOD 2 — gviz fallback (may be slightly cached but always works)
   if (!data) {
     await loadViaGviz(backup);
     return;
   }
 
-  // Rebuild LIVE store from data
+  // Rebuild LIVE store
   CHURCHES.forEach(c => {
     LIVE.churches[c.id] = { gospel:0, disciples:0, leaders:0, members:0, monthly:new Array(8).fill(0) };
   });
@@ -1886,7 +1875,10 @@ async function loadLiveData() {
   LIVE.totalLeaders = data.totalLeaders || 0;
 
   const connEl = document.getElementById('conn-status');
-  if (connEl) { connEl.innerHTML='✅ Google Sheets connected — live data loaded'; connEl.style.color='#1C7A35'; }
+  if (connEl) {
+    connEl.innerHTML = '✅ Google Sheets connected — live data loaded';
+    connEl.style.color = '#1C7A35';
+  }
   hydrateActionLogsFromLocal();
 }
 
