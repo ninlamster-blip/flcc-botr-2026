@@ -1912,6 +1912,19 @@ function fetchFromAppsScript() {
 async function loadViaGviz(backup) {
   const liveRows = await readSheet('LIVE_DATA');
 
+  // DEBUG — show exactly what was read on this device
+  const debugEl = document.getElementById('conn-status');
+  if (debugEl) {
+    if (!liveRows.length) {
+      debugEl.innerHTML = '❌ LIVE_DATA tab empty or not found';
+      debugEl.style.color = 'var(--red)';
+    } else {
+      const keys = liveRows.slice(0,6).map(r => String(r[0]||'')).join(', ');
+      debugEl.innerHTML = '📋 Read ' + liveRows.length + ' rows: ' + keys;
+      debugEl.style.color = '#555';
+    }
+  }
+
   if (!liveRows.length) {
     Object.assign(LIVE, backup);
     hydrateFromLocalStorage();
