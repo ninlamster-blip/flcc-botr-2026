@@ -1847,8 +1847,9 @@ function fetchFromAppsScript() {
   });
 }
 
-// Read LIVE_DATA tab via gviz JSONP — no CORS, no caching issues
-const LIVE_GID = '1934526200';
+// Read directly from USERS tab — always fresh, no intermediate caching
+const LIVE_GID   = '1934526200'; // LIVE_DATA tab
+const USERS_GID  = '262680713';  // USERS tab
 
 async function loadViaGviz(backup) {
   return new Promise(resolve => {
@@ -1873,50 +1874,58 @@ async function loadViaGviz(backup) {
           (r.c || []).map(c => c && c.v !== null ? String(c.v) : '')
         );
 
-        const kv = {};
-        const memberLines = [];
-        let inMembers = false;
-
-        rows.forEach(r => {
-          const key = (r[0] || '').trim();
-          const val = (r[1] || '').trim();
-          if (!key) return;
-          if (key === '---MEMBERS---') { inMembers = true; return; }
-          if (inMembers) { memberLines.push({ name: key, data: val }); return; }
-          kv[key] = val;
-        });
-
-        // Reset
+        // Reset LIVE store
         CHURCHES.forEach(c => {
           LIVE.churches[c.id] = { gospel:0, disciples:0, leaders:0, members:0, monthly:new Array(8).fill(0) };
         });
         SECTORS.forEach(s => { LIVE.sectors[s.id] = { gospel:0, disciples:0, leaders:0 }; });
         LIVE.members = [];
+        LIVE.totalGospel  = 0;
+        LIVE.totalDisc    = 0;
+        LIVE.totalLeaders = 0;
 
-        // Sectors
-        ['hope','faith','love'].forEach(sid => {
-          if (!LIVE.sectors[sid]) return;
-          LIVE.sectors[sid].gospel    = Number(kv[sid+'_gospel'])    || 0;
-          LIVE.sectors[sid].disciples = Number(kv[sid+'_disciples']) || 0;
-          LIVE.sectors[sid].leaders   = Number(kv[sid+'_leaders'])   || 0;
-        });
+        // Parse USERS rows directly — col indexes:
+        // 0=UserID 1=Name 2=Role 3=Church 4=Sector 5=Stage
+        // 6=Points 7=Actions 8=Gospel 9=Disciples 10=Leaders
+        rows.forEach(r => {
+          if (!r[0] || r[0] === 'User ID') return; // skip empty + header
 
-        LIVE.totalGospel  = Number(kv.totalGospel)  || 0;
-        LIVE.totalDisc    = Number(kv.totalDisc)     || 0;
-        LIVE.totalLeaders = Number(kv.totalLeaders)  || 0;
+          const name    = r[1] || '';
+          const church  = r[3] || '';
+          const sector  = r[4] || getChurchSector(church);
+          const churchId= getChurchId(church);
+          const gospel    = Number(r[8])  || 0;
+          const disciples = Number(r[9])  || 0;
+          const leaders   = Number(r[10]) || 0;
 
-        // Members
-        memberLines.forEach(m => {
-          const p  = m.data.split('|');
-          const ch = p[1]||'', cId = p[2]||getChurchId(ch), sec = p[3]||getChurchSector(ch);
-          const g  = Number(p[7])||0;
+          // Aggregate into church
+          if (LIVE.churches[churchId]) {
+            LIVE.churches[churchId].members++;
+            LIVE.churches[churchId].gospel    += gospel;
+            LIVE.churches[churchId].disciples += disciples;
+            LIVE.churches[churchId].leaders   += leaders;
+          }
+
+          // Aggregate into sector
+          if (LIVE.sectors[sector]) {
+            LIVE.sectors[sector].gospel    += gospel;
+            LIVE.sectors[sector].disciples += disciples;
+            LIVE.sectors[sector].leaders   += leaders;
+          }
+
+          LIVE.totalGospel  += gospel;
+          LIVE.totalDisc    += disciples;
+          LIVE.totalLeaders += leaders;
+
           LIVE.members.push({
-            name:m.name, role:p[0]||'Member', church:ch, churchId:cId, sector:sec,
-            stage:p[4]||'Evangelism', points:Number(p[5])||0, actionsCount:Number(p[6])||0,
-            gospel:g, disciples:Number(p[8])||0, leaders:Number(p[9])||0,
-            monthlyActions:new Array(8).fill(0), actions:[],
+            name, role: r[2]||'Member', church, churchId, sector,
+            stage:        r[5]  || 'Evangelism',
+            points:       Number(r[6])  || 0,
+            actionsCount: Number(r[7])  || 0,
+            gospel, disciples, leaders,
+            monthlyActions: new Array(8).fill(0),
+            actions: [],
           });
-          if (LIVE.churches[cId]) { LIVE.churches[cId].members++; LIVE.churches[cId].gospel += g; }
         });
 
         const el2 = document.getElementById('conn-status');
@@ -1925,6 +1934,7 @@ async function loadViaGviz(backup) {
           el2.style.color = '#1C7A35';
         }
         hydrateActionLogsFromLocal();
+
       } catch(e) {
         Object.assign(LIVE, backup);
       }
@@ -1932,8 +1942,10 @@ async function loadViaGviz(backup) {
     };
 
     el.onerror = () => { cleanup(); Object.assign(LIVE, backup); resolve(); };
+
+    // Read USERS tab directly by GID — always fresh
     el.src = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID +
-      '/gviz/tq?gid=' + LIVE_GID +
+      '/gviz/tq?gid=' + USERS_GID +
       '&tqx=out:json&callback=' + cb +
       '&t=' + Date.now();
     document.head.appendChild(el);
