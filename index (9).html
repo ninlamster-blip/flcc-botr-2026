@@ -1,0 +1,3576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>FLCC BOTR Strategic Direction 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:#F2F2F7; --surface:#FFFFFF; --label:#000;
+  --sec:#8E8E93; --ter:#AEAEB2; --fill4:#E5E5EA;
+  --sep:rgba(60,60,67,0.29);
+  --blue:#007AFF; --blue-bg:#EBF5FF;
+  --green:#34C759; --green-bg:#E8F8ED;
+  --orange:#FF9500; --orange-bg:#FFF4E0;
+  --red:#FF3B30; --red-bg:#FFECEB;
+  --hope:#5AC8FA; --hope-bg:#EBF8FE; --hope-dk:#0071A4;
+  --faith:#34C759; --faith-bg:#E8F8ED; --faith-dk:#1C7A35;
+  --love:#FF2D55; --love-bg:#FFECF0; --love-dk:#C0002A;
+  --shadow:0 1px 0 rgba(0,0,0,.04),0 2px 8px rgba(0,0,0,.07);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:#1C1C1E}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',sans-serif;-webkit-font-smoothing:antialiased;display:flex;justify-content:center;min-height:100vh}
+#app{width:100%;max-width:430px;min-height:100vh;background:var(--bg);display:flex;flex-direction:column;position:relative;overflow:hidden}
+
+/* STATUS BAR */
+.sb{background:var(--surface);padding:12px 20px 0;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+.sb-time{font-size:15px;font-weight:700;letter-spacing:-.3px}
+.sb-icons{display:flex;align-items:center;gap:6px}
+.bat{width:24px;height:12px;border-radius:3px;border:1.5px solid var(--label);position:relative;display:flex;align-items:center;padding:2px}
+.bat::after{content:'';position:absolute;right:-4px;top:50%;transform:translateY(-50%);width:3px;height:6px;background:var(--label);border-radius:0 1px 1px 0}
+.bat-fill{width:70%;height:100%;background:var(--green);border-radius:1.5px}
+
+/* NAV */
+.nav{background:rgba(255,255,255,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:.5px solid var(--sep);padding:8px 16px 12px;flex-shrink:0}
+.nav-row{display:flex;justify-content:space-between;align-items:center}
+.nav-title{font-size:17px;font-weight:700;letter-spacing:-.3px}
+.nav-badge{font-size:11px;color:var(--sec)}
+.nav-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;background:var(--blue-bg);color:var(--blue);margin-top:6px}
+
+/* CONTENT */
+.content{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:0 16px 110px}
+.screen{display:none}
+.screen.active{display:block}
+
+/* CARDS */
+.card{background:var(--surface);border-radius:16px;box-shadow:var(--shadow);margin-bottom:12px;overflow:hidden}
+.cp{padding:16px}
+.slabel{font-size:13px;font-weight:600;color:var(--sec);text-transform:uppercase;letter-spacing:.04em;padding:20px 0 8px}
+
+/* STAT TILES */
+.stats-row{display:flex;gap:10px;margin-bottom:4px}
+.tile{flex:1;background:var(--surface);border-radius:14px;padding:12px 10px;box-shadow:var(--shadow)}
+.tlabel{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--sec);margin-bottom:3px}
+.tval{font-size:24px;font-weight:800;letter-spacing:-.6px;line-height:1}
+.tsub{font-size:10px;color:var(--ter);margin-top:2px}
+
+/* PROGRESS */
+.pb{background:var(--fill4);border-radius:4px;overflow:hidden}
+.pf{height:100%;border-radius:4px;transition:width 1.2s cubic-bezier(.16,1,.3,1)}
+
+/* PILLS */
+.pill{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:12px;font-weight:600}
+.p-green{background:var(--green-bg);color:#1C7A35}
+.p-orange{background:var(--orange-bg);color:#A05A00}
+.p-red{background:var(--red-bg);color:#B0001A}
+.p-blue{background:var(--blue-bg);color:#005AC0}
+.p-hope{background:var(--hope-bg);color:var(--hope-dk)}
+.p-faith{background:var(--faith-bg);color:var(--faith-dk)}
+.p-love{background:var(--love-bg);color:var(--love-dk)}
+.p-gray{background:var(--bg);color:var(--sec)}
+
+/* LIST */
+.lr{padding:12px 16px;display:flex;align-items:center;gap:12px}
+.ld{height:.5px;background:var(--fill4)}
+.ldi{height:.5px;background:var(--fill4);margin-left:62px}
+.ibox{width:38px;height:38px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px}
+.av{width:38px;height:38px;border-radius:19px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff}
+.rm{flex:1;min-width:0}
+.rt{font-size:14px;font-weight:500;color:var(--label)}
+.rs{font-size:12px;color:var(--sec);margin-top:2px}
+.rr{text-align:right;flex-shrink:0}
+.rv{font-size:17px;font-weight:800;color:var(--blue)}
+.rh{font-size:10px;color:var(--ter)}
+.rnum{width:30px;height:30px;border-radius:15px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800}
+
+/* ── LOGIN ── */
+.login-hero{
+  background:var(--surface);
+  border-radius:20px;padding:28px 24px;margin-bottom:20px;
+  text-align:center;position:relative;overflow:hidden;
+  border:1px solid var(--border-light, #E5E5EA);
+  box-shadow:0 2px 16px rgba(0,0,0,.06);
+}
+.login-hero::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,#007AFF 0%,#5AC8FA 50%,#34C759 100%);
+  border-radius:20px 20px 0 0;
+}
+.login-logo{font-size:10px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--ter);margin-bottom:14px}
+.login-title{font-size:26px;font-weight:800;color:var(--label);letter-spacing:-.6px;line-height:1.15;margin-bottom:8px}
+.login-title span{color:var(--blue)}
+.login-verse{font-size:12.5px;color:var(--sec);font-style:italic;line-height:1.6}
+
+/* KNOWN LEADERS DISPLAY (non-interactive) */
+.leader-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px}
+.ldr-card{
+  background:var(--surface);border-radius:14px;padding:14px 12px;
+  text-align:left;box-shadow:var(--shadow);position:relative;overflow:hidden;
+  /* deliberately NOT button — display only, no pointer, no hover */
+  pointer-events:none;user-select:none;
+}
+.ldr-icon{font-size:22px;margin-bottom:8px}
+.ldr-name{font-size:12.5px;font-weight:700;color:var(--label);line-height:1.25;margin-bottom:3px}
+.ldr-role{font-size:11px;color:var(--sec)}
+.ldr-badge{
+  position:absolute;top:10px;right:10px;font-size:9px;font-weight:700;
+  padding:2px 6px;border-radius:20px;
+  background:var(--blue-bg);color:var(--blue);letter-spacing:.04em;
+}
+
+.form-divider{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--ter);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em}
+.form-divider-line{flex:1;height:.5px;background:var(--fill4)}
+
+.flabel{font-size:13px;font-weight:600;color:var(--sec);text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px;display:block}
+.finput{width:100%;padding:13px 14px;background:var(--surface);border:.5px solid var(--fill4);border-radius:12px;font-size:15px;color:var(--label);font-family:inherit;outline:none;transition:border-color .2s;margin-bottom:14px}
+.finput:focus{border-color:var(--blue)}
+.fselect{width:100%;padding:13px 14px;background:var(--surface);border:.5px solid var(--fill4);border-radius:12px;font-size:15px;color:var(--label);font-family:inherit;outline:none;appearance:none;cursor:pointer;margin-bottom:14px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238E8E93' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
+.sec-prev{border-radius:10px;padding:10px 12px;margin:-8px 0 14px;display:none;align-items:center;gap:8px}
+.sec-dot{width:8px;height:8px;border-radius:4px;flex-shrink:0}
+
+.submit-btn{width:100%;padding:15px;background:var(--blue);color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;letter-spacing:-.3px;font-family:inherit;box-shadow:0 4px 16px rgba(0,122,255,.3);transition:transform .1s}
+.submit-btn:active{transform:scale(.98)}
+.submit-btn:disabled{background:var(--fill4);color:var(--sec);box-shadow:none;cursor:default;transform:none}
+
+/* ── MEMBER HERO ── */
+.mem-hero{background:linear-gradient(145deg,#1C1C1E 0%,#2C2C2E 100%);border-radius:20px;padding:20px;margin:16px 0 4px;position:relative;overflow:hidden}
+.mem-hero::before{content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:60px;background:rgba(255,45,85,.15)}
+.mh-row{display:flex;align-items:center;gap:14px}
+.mh-av{width:56px;height:56px;border-radius:28px;flex-shrink:0;background:linear-gradient(135deg,#FF2D55,#FF6B88);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:#fff}
+.mh-name{font-size:20px;font-weight:800;color:#fff;letter-spacing:-.4px}
+.mh-church{font-size:13px;color:rgba(255,255,255,.55);margin-top:2px}
+.mh-div{border-top:.5px solid rgba(255,255,255,.1);margin:14px 0 12px}
+.mh-slabel{font-size:11px;color:rgba(255,255,255,.4);font-weight:600;text-transform:uppercase;letter-spacing:.1em;margin-bottom:7px}
+.mh-chip{background:rgba(255,149,0,.15);border:1px solid rgba(255,149,0,.3);border-radius:8px;padding:4px 10px;font-size:13px;font-weight:700;color:var(--orange);display:inline-block}
+
+/* STAGE TRACKER */
+.stk{padding:16px;position:relative}
+.stk-bg{position:absolute;top:34px;left:calc(12.5% + 18px);right:calc(12.5% + 18px);height:2px;background:var(--fill4)}
+.stk-prog{position:absolute;top:34px;left:calc(12.5% + 18px);height:2px;background:var(--blue);transition:width 1s}
+.stk-steps{display:flex;position:relative;z-index:2}
+.stk-step{flex:1;text-align:center}
+.stk-dot{width:36px;height:36px;border-radius:18px;margin:0 auto 7px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;transition:all .3s}
+.stk-dot.done{background:var(--blue);color:#fff}
+.stk-dot.cur{background:var(--blue);color:#fff;box-shadow:0 0 0 4px var(--blue-bg)}
+.stk-dot.pend{background:var(--fill4);color:var(--sec)}
+.stk-name{font-size:9.5px;line-height:1.3;padding:0 2px}
+.stk-name.done{font-weight:600;color:var(--blue)}
+.stk-name.active{font-weight:700;color:var(--blue)}
+.stk-name.pend{color:var(--sec)}
+
+.log-btn{width:100%;padding:15px;background:var(--blue);color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;letter-spacing:-.3px;margin-bottom:4px;box-shadow:0 4px 16px rgba(0,122,255,.3);transition:transform .1s;font-family:inherit}
+.log-btn:active{transform:scale(.98)}
+
+/* EMPTY STATE */
+.empty-state{padding:32px 20px;text-align:center}
+.empty-icon{font-size:36px;margin-bottom:10px}
+.empty-title{font-size:15px;font-weight:700;color:var(--label);margin-bottom:4px}
+.empty-sub{font-size:13px;color:var(--ter);line-height:1.55}
+
+/* LOG SCREEN */
+.action-grid{border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
+.arow{background:var(--surface);padding:13px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:background .1s}
+.arow:hover,.arow.sel{background:var(--blue-bg)}
+.adiv{height:.5px;background:var(--fill4);margin-left:48px}
+.radio{width:20px;height:20px;border-radius:10px;flex-shrink:0;border:2px solid var(--fill4);display:flex;align-items:center;justify-content:center;transition:all .2s}
+.radio.on{background:var(--blue);border-color:var(--blue)}
+.radio-in{width:8px;height:8px;border-radius:4px;background:#fff}
+.aname{flex:1;font-size:14px;color:var(--label)}
+.apts{font-size:14px;font-weight:800;color:var(--orange);flex-shrink:0}
+.refl-area{width:100%;padding:12px 14px;border-radius:12px;border:.5px solid var(--fill4);font-size:14px;background:var(--bg);resize:none;color:var(--label);font-family:inherit;outline:none;margin-bottom:14px}
+
+/* SEG CONTROL */
+.seg{display:flex;background:var(--fill4);border-radius:11px;padding:2px;gap:2px;margin:16px 0 4px}
+.seg-btn{flex:1;padding:8px 4px;border-radius:9px;border:none;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;background:transparent;color:var(--sec);font-family:inherit}
+.seg-btn.active{background:var(--surface);color:var(--label);box-shadow:0 1px 4px rgba(0,0,0,.14)}
+
+/* CMD HERO */
+.cmd-hero{background:linear-gradient(145deg,#007AFF 0%,#5AC8FA 100%);border-radius:20px;padding:22px;margin:16px 0 4px;position:relative;overflow:hidden}
+.cmd-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:80px;background:rgba(255,255,255,.09)}
+.cmd-hero::after{content:'';position:absolute;bottom:-20px;left:-20px;width:100px;height:100px;border-radius:50px;background:rgba(255,255,255,.05)}
+.cmd-kpis{display:flex;border-top:.5px solid rgba(255,255,255,.15);padding-top:14px}
+.cmd-kpi{flex:1;text-align:center}
+.cmd-kpi+.cmd-kpi{border-left:.5px solid rgba(255,255,255,.15)}
+
+/* CHART */
+.chart-title{font-size:13px;font-weight:700;padding:14px 16px 0}
+.chart-legend{display:flex;gap:16px;padding:10px 16px 0;flex-wrap:wrap}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--sec)}
+.leg-dot{width:10px;height:3px;border-radius:2px}
+
+/* INSIGHT */
+.ins-card{padding:16px}
+.ins-tag{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px}
+.ins-text{font-size:14px;line-height:1.55}
+.ins-div{height:.5px;background:currentColor;opacity:.15;margin:12px 0}
+.ins-atag{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.ins-atext{font-size:13px;line-height:1.5;opacity:.85}
+
+/* PROFILE */
+.prof-hero{background:linear-gradient(160deg,#1C1C1E 0%,#3A3A3C 100%);border-radius:20px;padding:24px;margin:16px 0 4px;text-align:center;position:relative;overflow:hidden}
+.prof-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 70% 30%,rgba(255,45,85,.2) 0%,transparent 60%)}
+.prof-av{width:80px;height:80px;border-radius:40px;background:linear-gradient(135deg,#FF2D55,#FF6B88);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;color:#fff;margin:0 auto 12px;border:3px solid rgba(255,255,255,.2);position:relative}
+.prof-name{font-size:22px;font-weight:800;color:#fff;letter-spacing:-.4px;margin-bottom:3px}
+.prof-chip{display:inline-flex;align-items:center;padding:4px 12px;border-radius:20px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);font-size:12px;font-weight:600;color:rgba(255,255,255,.8);margin-bottom:6px}
+.prof-detail{font-size:13px;color:rgba(255,255,255,.5)}
+
+.srow{padding:13px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.sleft{display:flex;align-items:center;gap:12px}
+.sicon{width:32px;height:32px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px}
+.slabel2{font-size:15px;color:var(--label)}
+.sval{font-size:14px;color:var(--sec)}
+.toggle{width:50px;height:30px;border-radius:15px;position:relative;cursor:pointer;border:none;transition:background .2s}
+.tthumb{position:absolute;width:26px;height:26px;border-radius:13px;background:#fff;top:2px;transition:left .2s;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.toggle.on{background:var(--green)}.toggle.off{background:var(--fill4)}
+.toggle.on .tthumb{left:22px}.toggle.off .tthumb{left:2px}
+
+.yr{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.yl{font-size:13px;font-weight:700;width:36px;flex-shrink:0}
+.yb{flex:1;height:6px;background:var(--fill4);border-radius:3px;overflow:hidden}
+.yfill{height:100%;border-radius:3px}
+.ypct{font-size:12px;color:var(--sec);width:32px;text-align:right;flex-shrink:0}
+
+/* TAB BAR */
+.tabbar{background:rgba(249,249,249,.94);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:.5px solid var(--sep);display:flex;padding:6px 0 20px;flex-shrink:0;position:sticky;bottom:0;z-index:80}
+.tbbtn{flex:1;border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0;font-family:inherit}
+.tbbtn:active{opacity:.7}
+.tbicon{font-size:24px;line-height:1;transition:transform .2s}
+.tbbtn.active .tbicon{transform:scale(1.08)}
+.tbbtn:not(.active) .tbicon{filter:grayscale(1) opacity(.45)}
+.tblabel{font-size:10px;font-weight:500;color:var(--sec);transition:color .2s}
+.tbbtn.active .tblabel{color:var(--blue);font-weight:700}
+
+/* SYNC BADGE */
+.sync-ok{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:#1C7A35;background:var(--green-bg);padding:4px 10px;border-radius:20px}
+.sync-fail{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:#A05A00;background:var(--orange-bg);padding:4px 10px;border-radius:20px}
+
+/* LOADING */
+.loading-overlay{position:fixed;inset:0;background:rgba(242,242,247,.85);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:500;flex-direction:column;gap:14px}
+.loading-overlay.show{display:flex}
+.spinner{width:36px;height:36px;border:3px solid var(--fill4);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:14px;font-weight:600;color:var(--sec)}
+
+/* TOAST */
+.toast{position:fixed;top:80px;left:50%;transform:translateX(-50%);background:rgba(28,28,30,.92);color:#fff;padding:11px 22px;border-radius:22px;font-size:14px;font-weight:600;z-index:300;white-space:nowrap;backdrop-filter:blur(10px);box-shadow:0 4px 20px rgba(0,0,0,.25);opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+
+/* NOTICE BANNER */
+.notice{background:var(--blue-bg);border-radius:12px;padding:12px 14px;margin-bottom:12px;display:flex;gap:10px;align-items:flex-start}
+.notice-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+.notice-text{font-size:12.5px;color:var(--blue);line-height:1.5;font-weight:500}
+
+/* ── RECENT SESSIONS ── */
+.recent-sessions{display:flex;flex-direction:column;gap:8px;margin-bottom:4px}
+.session-card{
+  background:var(--surface);border-radius:14px;
+  box-shadow:var(--shadow);
+  display:flex;align-items:center;gap:12px;
+  padding:13px 14px;cursor:pointer;
+  transition:all .15s;position:relative;overflow:hidden;
+  border:1.5px solid transparent;
+}
+.session-card:active{transform:scale(.98)}
+.session-card:hover{border-color:var(--blue)}
+.session-av{
+  width:42px;height:42px;border-radius:21px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;font-weight:800;color:#fff;
+  background:linear-gradient(135deg,var(--blue),#5AC8FA);
+}
+.session-info{flex:1;min-width:0}
+.session-name{font-size:15px;font-weight:700;color:var(--label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.session-meta{font-size:12px;color:var(--sec);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.session-role-chip{
+  font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:20px;
+  background:var(--blue-bg);color:var(--blue);flex-shrink:0;
+}
+.session-del{
+  width:22px;height:22px;border-radius:11px;flex-shrink:0;
+  background:var(--bg);border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;color:var(--ter);transition:all .15s;
+}
+.session-del:hover{background:var(--red-bg);color:var(--red)}
+
+/* auto-suggest dropdown */
+.name-suggest{
+  position:absolute;left:0;right:0;
+  background:var(--surface);border-radius:0 0 12px 12px;
+  box-shadow:0 8px 24px rgba(0,0,0,.12);
+  z-index:50;overflow:hidden;border:.5px solid var(--fill4);border-top:none;
+}
+.name-suggest-row{
+  padding:11px 14px;font-size:14px;color:var(--label);
+  cursor:pointer;display:flex;align-items:center;gap:10px;
+  transition:background .1s;
+}
+.name-suggest-row:hover{background:var(--blue-bg)}
+.name-suggest-row .ns-av{width:28px;height:28px;border-radius:14px;background:linear-gradient(135deg,var(--blue),#5AC8FA);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.name-suggest-row .ns-info{flex:1}
+.name-suggest-row .ns-name{font-weight:600;font-size:13.5px}
+.name-suggest-row .ns-sub{font-size:11px;color:var(--sec)}
+.name-input-wrap{position:relative}
+
+/* ── FILE ATTACHMENT AREA ── */
+.attach-zone{
+  border:1.5px dashed var(--fill4);border-radius:12px;
+  padding:14px;margin-bottom:0;background:var(--bg);
+  transition:border-color .2s;
+}
+.attach-zone.has-files{border-color:var(--blue);border-style:solid;background:var(--blue-bg)}
+.attach-btn-row{display:flex;gap:8px;margin-bottom:0}
+.attach-btn{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  gap:6px;padding:10px 8px;border-radius:10px;
+  border:none;font-family:inherit;font-size:12.5px;font-weight:600;
+  cursor:pointer;transition:all .15s;background:var(--surface);
+  color:var(--sec);box-shadow:var(--shadow);
+}
+.attach-btn:active{transform:scale(.96)}
+.attach-btn.active{background:var(--blue-bg);color:var(--blue)}
+.attach-preview{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.attach-thumb{
+  position:relative;width:72px;height:72px;border-radius:10px;
+  overflow:hidden;background:var(--fill4);flex-shrink:0;
+}
+.attach-thumb img{width:100%;height:100%;object-fit:cover}
+.attach-thumb-del{
+  position:absolute;top:3px;right:3px;
+  width:18px;height:18px;border-radius:9px;
+  background:rgba(0,0,0,.55);color:#fff;
+  font-size:10px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-weight:700;line-height:1;
+}
+.attach-file-row{
+  display:flex;align-items:center;gap:8px;
+  background:var(--surface);border-radius:10px;
+  padding:9px 12px;box-shadow:var(--shadow);
+  margin-top:0;
+}
+.attach-file-icon{font-size:20px;flex-shrink:0}
+.attach-file-info{flex:1;min-width:0}
+.attach-file-name{font-size:12.5px;font-weight:600;color:var(--label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.attach-file-size{font-size:10.5px;color:var(--ter)}
+.attach-file-del{font-size:13px;color:var(--ter);cursor:pointer;padding:2px 4px;flex-shrink:0}
+.attach-count-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:11px;font-weight:700;color:var(--blue);
+  background:var(--blue-bg);padding:2px 8px;border-radius:20px;
+  margin-top:6px;
+}
+
+/* ── ACTION TYPE BREAKDOWN GRID (profile) ── */
+.act-type-tile{background:var(--surface);border-radius:14px;padding:13px 12px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.act-type-tile::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%}
+.att-evang::before{background:var(--hope)}
+.att-disc::before{background:var(--blue)}
+.att-lead::before{background:var(--orange)}
+.att-mult::before{background:var(--love)}
+.att-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--sec);margin-bottom:4px}
+.att-val{font-size:22px;font-weight:800;letter-spacing:-.5px;line-height:1}
+.att-sub{font-size:10px;color:var(--ter);margin-top:2px}
+
+/* ── ACTION LOG ROW IN PROFILE ── */
+.alr{padding:13px 16px;display:flex;align-items:flex-start;gap:12px}
+.al-dot{width:38px;height:38px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:17px}
+.al-body{flex:1;min-width:0}
+.al-title{font-size:14px;font-weight:600;color:var(--label);margin-bottom:2px}
+.al-meta{font-size:11.5px;color:var(--sec);margin-bottom:2px}
+.al-refl{font-size:12px;color:var(--ter);font-style:italic;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.al-pts{font-size:14px;font-weight:800;color:var(--orange);flex-shrink:0;margin-top:2px}
+
+/* ── PRIVACY / ACCESS BANNERS ── */
+.priv-banner{background:var(--fill4);border-radius:12px;padding:11px 14px;display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.priv-banner-text{font-size:12px;color:var(--sec);line-height:1.45}
+.access-banner{background:var(--green-bg);border-radius:12px;padding:11px 14px;display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.access-banner-text{font-size:12px;color:var(--faith-dk);font-weight:500;line-height:1.4}
+
+/* ── EXPANDABLE MEMBER LOG (sector leader / pastor) ── */
+.mlc{background:var(--surface);border-radius:14px;box-shadow:var(--shadow);margin-bottom:10px;overflow:hidden}
+.mlc-hdr{padding:13px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;user-select:none}
+.mlc-arrow{width:22px;height:22px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--sec);flex-shrink:0;transition:transform .2s}
+.mlc-arrow.open{transform:rotate(180deg)}
+.mlc-body{display:none;border-top:.5px solid var(--fill4)}
+.mlc-body.open{display:block}
+.mlc-empty{padding:14px 16px;font-size:13px;color:var(--ter);text-align:center;font-style:italic}
+
+/* ── ACTION LOG EDIT / DELETE CONTROLS ── */
+.al-actions{display:flex;gap:6px;margin-top:8px;padding-top:8px;border-top:.5px solid var(--fill4)}
+.al-edit-btn,.al-del-btn{
+  flex:1;padding:7px 0;border:none;border-radius:9px;
+  font-size:12px;font-weight:700;cursor:pointer;
+  font-family:inherit;transition:all .15s;
+}
+.al-edit-btn{background:var(--blue-bg);color:var(--blue)}
+.al-edit-btn:active{background:var(--blue);color:#fff}
+.al-del-btn{background:var(--red-bg);color:var(--red)}
+.al-del-btn:active{background:var(--red);color:#fff}
+
+/* Inline edit form inside action log */
+.al-edit-form{
+  padding:12px 14px;background:var(--bg);
+  border-top:.5px solid var(--fill4);
+}
+.al-edit-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--sec);margin-bottom:6px;display:block}
+.al-edit-ta{width:100%;padding:10px 12px;border-radius:10px;border:.5px solid var(--fill4);font-size:13.5px;background:var(--surface);resize:none;color:var(--label);font-family:inherit;outline:none;margin-bottom:10px;transition:border-color .2s}
+.al-edit-ta:focus{border-color:var(--blue)}
+.al-edit-inp{width:100%;padding:10px 12px;border-radius:10px;border:.5px solid var(--fill4);font-size:13.5px;background:var(--surface);color:var(--label);font-family:inherit;outline:none;margin-bottom:10px;transition:border-color .2s}
+.al-edit-inp:focus{border-color:var(--blue)}
+.al-edit-row{display:flex;gap:8px}
+.al-save-btn,.al-cancel-btn{flex:1;padding:10px;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
+.al-save-btn{background:var(--blue);color:#fff;box-shadow:0 2px 8px rgba(0,122,255,.25)}
+.al-save-btn:active{transform:scale(.97)}
+.al-cancel-btn{background:var(--fill4);color:var(--sec)}
+
+/* Confirm delete inline */
+.al-confirm{
+  padding:12px 14px;background:var(--red-bg);
+  border-top:.5px solid rgba(255,59,48,.2);
+  display:flex;align-items:center;gap:10px;
+}
+.al-confirm-text{flex:1;font-size:13px;font-weight:600;color:var(--red);line-height:1.4}
+.al-confirm-yes,.al-confirm-no{padding:8px 14px;border:none;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
+.al-confirm-yes{background:var(--red);color:#fff}
+.al-confirm-no{background:var(--fill4);color:var(--sec)}
+
+/* ── MULTIPLYING DISCIPLES / SUSTAINABLE LEADERS REPORT TABLES ── */
+.report-header-card{border-radius:14px;padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px}
+.rh-icon{font-size:24px;flex-shrink:0}
+.rh-body{flex:1;min-width:0}
+.rh-title{font-size:15px;font-weight:800;color:var(--label);margin-bottom:2px}
+.rh-sub{font-size:11.5px;color:var(--sec);line-height:1.45}
+.rh-progress{text-align:right;flex-shrink:0}
+.rh-pct{font-size:20px;font-weight:800;letter-spacing:-.5px;line-height:1}
+.rh-of{font-size:11px;color:var(--ter);margin-top:2px}
+.rep-wrap{overflow-x:auto;border-radius:0 0 16px 16px}
+.rep-table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:380px}
+.rep-table thead tr{background:var(--bg)}
+.rep-table th{padding:9px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--sec);border-bottom:1px solid var(--fill4);white-space:nowrap}
+.rep-table th.center{text-align:center}
+.rep-table td{padding:10px;border-bottom:.5px solid var(--fill4);vertical-align:middle;color:var(--label)}
+.rep-table tr:last-child td{border-bottom:none}
+.rep-table tr:hover td{background:var(--bg)}
+.rep-table td.center{text-align:center}
+.act-dot{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:11px;font-size:10px;font-weight:700}
+.act-dot.has{background:var(--green-bg);color:var(--faith-dk)}
+.act-dot.zero{background:var(--bg);color:var(--ter)}
+.qual-chip{display:inline-flex;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:700}
+.qual-yes{background:var(--green-bg);color:var(--faith-dk)}
+.qual-no{background:var(--bg);color:var(--ter)}
+.rep-empty{padding:24px;text-align:center;color:var(--ter);font-size:13px;font-style:italic}
+.rep-summary-row{padding:10px 14px;background:var(--bg);border-top:1px solid var(--fill4);display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--sec);border-radius:0 0 14px 14px}
+.rep-summary-count{font-weight:800;color:var(--label)}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- STATUS BAR -->
+  <div class="sb">
+    <div class="sb-time" id="sb-time">9:41</div>
+    <div class="sb-icons">
+      <svg width="17" height="12" viewBox="0 0 17 12"><rect x="0" y="3" width="3" height="9" rx="1" fill="currentColor"/><rect x="4.5" y="2" width="3" height="10" rx="1" fill="currentColor"/><rect x="9" y="1" width="3" height="11" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="12" rx="1" fill="currentColor"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 2C5 2 2.5 3.2.8 5.1L2.2 6.5C3.5 5 5.6 4 8 4s4.5 1 5.8 2.5L15.2 5.1C13.5 3.2 11 2 8 2z" fill="currentColor"/><path d="M8 6c-1.5 0-2.8.6-3.8 1.5L5.6 9c.6-.6 1.5-1 2.4-1s1.8.4 2.4 1l1.4-1.5C10.8 6.6 9.5 6 8 6z" fill="currentColor"/><circle cx="8" cy="11" r="1.5" fill="currentColor"/></svg>
+      <div class="bat"><div class="bat-fill"></div></div>
+    </div>
+  </div>
+
+  <!-- NAV HEADER -->
+  <div class="nav">
+    <div class="nav-row">
+      <div class="nav-title" id="nav-title">FLCC BOTR</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button id="refresh-btn" onclick="onRefreshTap()" style="display:none;background:var(--blue-bg);border:none;border-radius:20px;padding:4px 11px;font-size:12px;font-weight:700;color:var(--blue);cursor:pointer;font-family:inherit" title="Refresh live data">⟳ Refresh</button>
+        <div class="nav-badge">Strategic Direction 2026</div>
+      </div>
+    </div>
+    <div id="nav-role-row" style="display:none">
+      <div class="nav-chip" id="nav-chip"></div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content" id="content">
+
+    <!-- ══════════════════════════════════════
+         LOGIN
+    ══════════════════════════════════════ -->
+    <div class="screen active" id="screen-login">
+      <div style="padding:20px 0 40px">
+
+        <!-- Apple-minimal hero card -->
+        <div class="login-hero">
+          <div class="login-logo">FLCC BOTR Network · Kuwait</div>
+          <div class="login-title">Strategic<br><span>Direction 2026</span></div>
+          <div style="height:1px;background:var(--fill4);margin:16px 0"></div>
+          <div class="login-verse">"Go and make disciples of all nations,<br>baptizing them in the name of the Father,<br>Son, and Holy Spirit."<br>
+            <span style="font-size:11px;font-style:normal;font-weight:700;color:var(--ter);letter-spacing:.05em">— Matthew 28:19</span>
+          </div>
+          <div style="margin-top:16px;display:flex;justify-content:center">
+            <div style="flex:1;text-align:center;padding:0 4px">
+              <div style="font-size:17px;font-weight:800;color:var(--blue)">270K</div>
+              <div style="font-size:9.5px;color:var(--ter);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-top:2px">Gospel Target</div>
+            </div>
+            <div style="width:.5px;background:var(--fill4)"></div>
+            <div style="flex:1;text-align:center;padding:0 4px">
+              <div style="font-size:17px;font-weight:800;color:var(--blue)">12</div>
+              <div style="font-size:9.5px;color:var(--ter);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-top:2px">Churches</div>
+            </div>
+            <div style="width:.5px;background:var(--fill4)"></div>
+            <div style="flex:1;text-align:center;padding:0 4px">
+              <div style="font-size:17px;font-weight:800;color:var(--blue)">2030</div>
+              <div style="font-size:9.5px;color:var(--ter);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-top:2px">Vision Year</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Network Leadership — DISPLAY ONLY, not clickable -->
+        <div class="slabel" style="padding-top:4px">Network Leadership</div>
+        <p style="font-size:12px;color:var(--ter);margin-bottom:12px;line-height:1.55">
+          The FLCC BOTR network is led by the following pastors. Use the sign-in form below to access your dashboard.
+        </p>        <div class="leader-grid">
+
+          <div class="ldr-card">
+            <div class="ldr-badge">Lead Pastor</div>
+            <div class="ldr-icon">🎤</div>
+            <div class="ldr-name">Jopet Alim</div>
+            <div class="ldr-role">FLCC BOTR Network</div>
+          </div>
+
+          <button class="ldr-card" style="pointer-events:none">
+            <div class="ldr-icon">🌐</div>
+            <div class="ldr-name">Rodel Comayingking</div>
+            <div class="ldr-role">Sector Leader / Pastor · F&amp;T</div>
+          </button>
+
+          <button class="ldr-card" style="pointer-events:none">
+            <div class="ldr-icon">🌐</div>
+            <div class="ldr-name">Virgilio Monastrial</div>
+            <div class="ldr-role">Sector Leader / Pastor · BOTR</div>
+          </button>
+
+          <button class="ldr-card" style="pointer-events:none">
+            <div class="ldr-icon">🌐</div>
+            <div class="ldr-name">Oscar Tumambing</div>
+            <div class="ldr-role">Sector Leader / Pastor · MTCC</div>
+          </button>
+
+        </div>
+
+        <!-- Evangelism Ministry Team — display only -->
+        <div class="slabel" style="padding-top:16px">Evangelism Ministry Team</div>
+        <p style="font-size:12px;color:var(--ter);margin-bottom:12px;line-height:1.55">
+          Led by the Evangelism Ministry Head. Sub-leaders are auto-assigned to their respective churches.
+        </p>
+        <div class="leader-grid">
+
+          <div class="ldr-card" style="grid-column:1/-1;display:flex;gap:12px;align-items:center;padding:14px 16px">
+            <div style="font-size:22px">🌟</div>
+            <div>
+              <div class="ldr-name" style="font-size:14px">Lizel Ocenar</div>
+              <div class="ldr-role">Evangelism Ministry Head</div>
+            </div>
+            <div class="ldr-badge" style="position:static;margin-left:auto">Ministry Head</div>
+          </div>
+
+          <div class="ldr-card">
+            <div class="ldr-icon">🌱</div>
+            <div class="ldr-name">Fretzie Guerzon</div>
+            <div class="ldr-role">Abundance Church</div>
+          </div>
+
+          <div class="ldr-card">
+            <div class="ldr-icon">🌱</div>
+            <div class="ldr-name">Maricel De Grano</div>
+            <div class="ldr-role">GIL Church</div>
+          </div>
+
+          <div class="ldr-card">
+            <div class="ldr-icon">🌱</div>
+            <div class="ldr-name">Anne Sacueza</div>
+            <div class="ldr-role">BOTR Church</div>
+          </div>
+
+          <div class="ldr-card">
+            <div class="ldr-icon">🌱</div>
+            <div class="ldr-name">Elena Aboy</div>
+            <div class="ldr-role">Virtual Church</div>
+          </div>
+
+        </div>
+
+        <div class="form-divider">
+          <div class="form-divider-line"></div>
+          <span>Sign In</span>
+          <div class="form-divider-line"></div>
+        </div>
+
+        <!-- Recent Sessions — auto-populated from localStorage -->
+        <div id="recent-sessions-wrap" style="display:none">
+          <div class="slabel" style="padding-top:0">Continue as</div>
+          <div class="recent-sessions" id="recent-sessions-list"></div>
+          <div class="form-divider" style="margin-top:4px">
+            <div class="form-divider-line"></div>
+            <span>or sign in as someone else</span>
+            <div class="form-divider-line"></div>
+          </div>
+        </div>
+
+        <!-- Sign-in Form — for everyone including the leaders above -->
+        <div class="card cp">
+          <label class="flabel">Full Name</label>
+          <div class="name-input-wrap">
+            <input class="finput" id="l-name" type="text"
+              placeholder="Enter your full name"
+              oninput="onNameInput()"
+              onblur="setTimeout(hideSuggest,200)"
+              autocomplete="off"
+              style="margin-bottom:0;border-radius:12px 12px 12px 12px" />
+            <div class="name-suggest" id="name-suggest" style="display:none"></div>
+          </div>
+          <div style="height:14px"></div>
+
+          <label class="flabel">I am a</label>
+          <select class="fselect" id="l-role" onchange="validateLogin()">
+            <option value="">Select your role…</option>
+            <option value="Member">🙏 Member</option>
+            <option value="Church Leader">⛪ Church Leader</option>
+            <option value="Sector Leader">🌐 Sector Leader / Pastor</option>
+            <option value="Pastor">🎤 Pastor</option>
+          </select>
+
+          <label class="flabel">Satellite Church</label>
+          <select class="fselect" id="l-church" onchange="onChurchChange()">
+            <option value="">Select your church…</option>
+            <optgroup label="─ Hope Sector ─">
+              <option value="Abundance|hope">Abundance</option>
+              <option value="FB|hope">FB</option>
+              <option value="F&T|hope">F&amp;T</option>
+              <option value="Cornerstone|hope">Cornerstone</option>
+            </optgroup>
+            <optgroup label="─ Faith Sector ─">
+              <option value="GIL|faith">GIL</option>
+              <option value="Harvester|faith">Harvester</option>
+              <option value="MTCC|faith">MTCC</option>
+              <option value="Agape|faith">Agape</option>
+            </optgroup>
+            <optgroup label="─ Love Sector ─">
+              <option value="Shekinah|love">Shekinah</option>
+              <option value="Virtual Church|love">Virtual Church</option>
+              <option value="BOTR|love">BOTR</option>
+              <option value="JAOC|love">JAOC</option>
+            </optgroup>
+          </select>
+
+          <div class="sec-prev" id="sec-prev">
+            <div class="sec-dot" id="sec-prev-dot"></div>
+            <span id="sec-prev-name" style="font-size:13px;font-weight:600"></span>
+          </div>
+        </div>
+
+        <button class="submit-btn" id="l-submit" disabled onclick="doLogin()">Sign In →</button>
+        <div style="text-align:center;margin-top:12px;font-size:11px;color:var(--ter)">Data saved to Google Sheets · Started May 2026</div>
+        <div id="conn-status" style="text-align:center;margin-top:8px;font-size:11.5px;font-weight:600"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         MEMBER: HOME
+    ══════════════════════════════════════ -->
+    <div class="screen" id="screen-home">
+
+      <div class="mem-hero">
+        <div class="mh-row">
+          <div class="mh-av" id="mh-av">—</div>
+          <div>
+            <div class="mh-name" id="mh-name">—</div>
+            <div class="mh-church" id="mh-church">—</div>
+          </div>
+        </div>
+        <div class="mh-div"></div>
+        <div class="mh-slabel">Current Discipleship Stage</div>
+        <div>
+          <span class="mh-chip" id="mh-chip">—</span>
+          <span style="font-size:13px;color:rgba(255,255,255,.3);margin-left:8px" id="mh-stagenum">—</span>
+        </div>
+      </div>
+
+      <div class="slabel">My Journey</div>
+      <div class="card">
+        <div class="stk">
+          <div class="stk-bg"></div>
+          <div class="stk-prog" id="stk-prog"></div>
+          <div class="stk-steps" id="stk-steps"></div>
+        </div>
+      </div>
+
+      <div class="stats-row">
+        <div class="tile">
+          <div class="tlabel">Actions</div>
+          <div class="tval" style="color:var(--blue)" id="mem-count">0</div>
+          <div class="tsub">completed</div>
+        </div>
+        <div class="tile">
+          <div class="tlabel">Points</div>
+          <div class="tval" style="color:var(--orange)" id="mem-pts">0</div>
+          <div class="tsub">earned</div>
+        </div>
+        <div class="tile">
+          <div class="tlabel">Stage</div>
+          <div class="tval" style="color:var(--love)" id="mem-stagefrac">1/4</div>
+          <div class="tsub">journey</div>
+        </div>
+      </div>
+
+      <button class="log-btn" onclick="showTab('log')">✏️  Log an Action</button>
+
+      <div class="slabel">Network Gospel Progress</div>
+      <div class="card cp">
+        <div class="notice" style="margin-bottom:12px">
+          <span class="notice-icon">✝️</span>
+          <span class="notice-text">Our mission is to introduce <strong>270,000 people</strong> to Jesus Christ across the FLCC BOTR network by 2030. Every gospel conversation counts.</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+          <span style="font-size:14px;font-weight:600">Gospel Shared</span>
+          <span style="font-size:13px;color:var(--sec)" id="mem-gospel-label">0 / 270,000</span>
+        </div>
+        <div class="pb" style="height:8px;margin-bottom:6px">
+          <div class="pf" id="mem-gospel-bar" style="height:8px;background:var(--blue);width:0%"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:8px">
+          <span style="font-size:11px;color:var(--ter)">Started May 2026</span>
+          <span style="font-size:11px;color:var(--ter)" id="mem-gospel-pct">0.0% of 2030 target</span>
+        </div>
+      </div>
+
+      <div class="slabel">My Recent Actions</div>
+      <div class="card" id="mem-recent">
+        <div class="empty-state">
+          <div class="empty-icon">✏️</div>
+          <div class="empty-title">No actions yet</div>
+          <div class="empty-sub">Tap "Log an Action" above to record your first gospel activity and begin your discipleship journey.</div>
+        </div>
+      </div>
+
+    </div><!-- /screen-home -->
+
+    <!-- ══════════════════════════════════════
+         MEMBER: LOG ACTION
+    ══════════════════════════════════════ -->
+    <div class="screen" id="screen-log">
+      <div class="card cp" style="margin-top:16px">
+        <div style="font-size:22px;font-weight:800;letter-spacing:-.4px;margin-bottom:4px">Log an Action</div>
+        <div style="font-size:13px;color:var(--sec)">Open to all — every member, leader, and pastor can log gospel activity</div>
+      </div>
+      <div class="slabel">Select Action</div>
+      <div class="action-grid card" id="log-action-grid"></div>
+      <div class="slabel">Reflection</div>
+      <div class="card cp" style="padding-bottom:16px">
+        <textarea class="refl-area" id="log-refl" rows="3" placeholder="What did God do through this? What did you learn or experience?"></textarea>
+
+        <label class="flabel">Evidence / Notes (Optional)</label>
+        <input class="finput" id="log-evid" type="text" placeholder="e.g. Name of person, scripture studied…" style="margin-bottom:12px" />
+
+        <label class="flabel">Attachments (Optional)</label>
+
+        <!-- Hidden file inputs -->
+        <input type="file" id="attach-photo" accept="image/*" multiple style="display:none" onchange="handlePhotoAttach(event)" />
+        <input type="file" id="attach-file"  accept=".pdf,.doc,.docx,.txt,.xlsx,.pptx" multiple style="display:none" onchange="handleFileAttach(event)" />
+
+        <!-- Attach action buttons -->
+        <div class="attach-btn-row">
+          <button class="attach-btn" id="attach-photo-btn" onclick="document.getElementById('attach-photo').click()">
+            <span style="font-size:17px">📷</span> Photo
+          </button>
+          <button class="attach-btn" id="attach-file-btn" onclick="document.getElementById('attach-file').click()">
+            <span style="font-size:17px">📎</span> File
+          </button>
+          <button class="attach-btn" id="attach-note-btn" onclick="toggleNoteField()">
+            <span style="font-size:17px">📝</span> Note
+          </button>
+        </div>
+
+        <!-- Inline note field (shown/hidden) -->
+        <div id="attach-note-wrap" style="display:none;margin-top:10px">
+          <textarea class="refl-area" id="attach-note-text" rows="2"
+            style="margin-bottom:0;font-size:13.5px"
+            placeholder="Add a quick note or reference…"></textarea>
+        </div>
+
+        <!-- Photo preview thumbnails -->
+        <div class="attach-preview" id="attach-photo-preview"></div>
+
+        <!-- File list -->
+        <div id="attach-file-list" style="display:flex;flex-direction:column;gap:7px;margin-top:0"></div>
+
+        <!-- Attachment count badge -->
+        <div id="attach-count" style="display:none" class="attach-count-badge"></div>
+      </div>
+      <button class="log-btn" style="margin-top:8px" onclick="submitAction()">Submit Action</button>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         MEMBER: PROFILE
+    ══════════════════════════════════════ -->
+    <div class="screen" id="screen-mem-profile">
+      <div class="prof-hero">
+        <div class="prof-av" id="pp-av">—</div>
+        <div class="prof-name" id="pp-name">—</div>
+        <div style="margin:6px 0 4px"><span class="prof-chip" id="pp-role-chip">🙏 Member</span></div>
+        <div class="prof-detail" id="pp-detail">—</div>
+      </div>
+
+      <div class="slabel">My Information</div>
+      <div class="card">
+        <div class="lr">
+          <div class="ibox" style="background:#FFECF0">⛪</div>
+          <div class="rm"><div class="rt">Church</div></div>
+          <div class="sval" id="pp-church">—</div>
+        </div>
+        <div class="ld"></div>
+        <div class="lr">
+          <div class="ibox" style="background:#EBF8FE">🌐</div>
+          <div class="rm"><div class="rt">Sector</div></div>
+          <div class="sval" id="pp-sector">—</div>
+        </div>
+        <div class="ld"></div>
+        <div class="lr">
+          <div class="ibox" style="background:#FFF4E0">🏆</div>
+          <div class="rm"><div class="rt">Stage</div></div>
+          <div class="sval" id="pp-stage">—</div>
+        </div>
+        <div class="ld"></div>
+        <div class="lr">
+          <div class="ibox" style="background:#E8F8ED">⭐</div>
+          <div class="rm"><div class="rt">Total Points</div></div>
+          <div class="sval" id="pp-pts">0 pts</div>
+        </div>
+        <div class="ld"></div>
+        <div class="lr">
+          <div class="ibox" style="background:#F0F0F5">📋</div>
+          <div class="rm"><div class="rt">Total Actions</div></div>
+          <div class="sval" id="pp-action-count">0 logged</div>
+        </div>
+        <div class="ld"></div>
+        <div class="lr" style="flex-direction:column;align-items:flex-start;gap:6px">
+          <div style="font-size:12px;color:var(--sec);font-weight:600">Data Sync</div>
+          <div id="pp-sync" class="sync-fail">⚠ Connect Google Sheets to save data</div>
+        </div>
+      </div>
+
+      <!-- ACTION TYPE BREAKDOWN -->
+      <div class="slabel">My Activity Breakdown</div>
+      <div class="act-type-grid">
+        <div class="act-type-tile att-evang">
+          <div class="att-label">🌱 Evangelism</div>
+          <div class="att-val" id="pp-ct-evang" style="color:var(--hope-dk)">0</div>
+          <div class="att-sub">gospel actions</div>
+        </div>
+        <div class="act-type-tile att-disc">
+          <div class="att-label">📖 Discipleship</div>
+          <div class="att-val" id="pp-ct-disc" style="color:var(--blue)">0</div>
+          <div class="att-sub">growth actions</div>
+        </div>
+        <div class="act-type-tile att-lead">
+          <div class="att-label">🏆 Leadership</div>
+          <div class="att-val" id="pp-ct-lead" style="color:var(--orange)">0</div>
+          <div class="att-sub">service actions</div>
+        </div>
+        <div class="act-type-tile att-mult">
+          <div class="att-label">⛪ Multiplying</div>
+          <div class="att-val" id="pp-ct-mult" style="color:var(--love-dk)">0</div>
+          <div class="att-sub">church planting</div>
+        </div>
+      </div>
+
+      <!-- PRIVACY NOTICE -->
+      <div class="slabel">My Action Log</div>
+      <div class="priv-banner">
+        <span style="font-size:16px">🔒</span>
+        <div class="priv-banner-text"><strong>Private to you</strong> — Only you, Sector Leaders, and the Lead Pastor can view your personal action logs. Church Leaders see your totals only.</div>
+      </div>
+      <div class="card" id="pp-action-log">
+        <div class="empty-state">
+          <div class="empty-icon">📋</div>
+          <div class="empty-title">No actions logged yet</div>
+          <div class="empty-sub">Your full action history appears here each time you sign in. Tap "Log" to record your first gospel activity.</div>
+        </div>
+      </div>
+
+      <div class="slabel">Update Stage</div>
+      <div class="card cp">
+        <label class="flabel">Current Discipleship Stage</label>
+        <select class="fselect" id="edit-stage" onchange="updateStage()" style="margin-bottom:0">
+          <option value="Evangelism">🌱 Evangelism — Sharing the Gospel</option>
+          <option value="Discipleship">📖 Discipleship — Growing in Christ</option>
+          <option value="Leadership Dev">🏆 Leadership Development</option>
+          <option value="Multiplying">⛪ Multiplying Churches</option>
+        </select>
+      </div>
+
+      <div class="slabel">Notifications</div>
+      <div class="card">
+        <div class="srow">
+          <div class="sleft"><div class="sicon" style="background:#EBF5FF">🔔</div><div class="slabel2">Action Reminders</div></div>
+          <button class="toggle on" id="tog1" onclick="toggleSw('tog1')"><div class="tthumb"></div></button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="srow" style="cursor:pointer" onclick="signOut()">
+          <div class="sleft"><div class="sicon" style="background:#FFECEB">🚪</div><div class="slabel2" style="color:var(--red)">Sign Out</div></div>
+          <span style="font-size:18px;color:var(--ter)">›</span>
+        </div>
+      </div>
+      <div style="height:8px"></div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         LEADER: MY CHURCH
+    ══════════════════════════════════════ -->
+    <div class="screen" id="screen-church">
+      <div style="padding:16px 0 4px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="ibox" style="font-size:24px" id="ch-icon-box">⛪</div>
+          <div style="flex:1">
+            <div style="font-size:26px;font-weight:800;letter-spacing:-.5px" id="ch-name">—</div>
+            <div style="font-size:13px;color:var(--sec)" id="ch-sector-label">—</div>
+          </div>
+          <span class="pill p-gray" id="ch-status-pill">— —</span>
+        </div>
+      </div>
+
+      <div class="stats-row" style="margin-top:8px">
+        <div class="tile">
+          <div class="tlabel">Members</div>
+          <div class="tval" id="ch-members-count">0</div>
+          <div class="tsub">registered</div>
+        </div>
+        <div class="tile">
+          <div class="tlabel">Gospel Shared</div>
+          <div class="tval" style="color:var(--love)" id="ch-gospel">0</div>
+          <div class="tsub">since May 2026</div>
+        </div>
+        <div class="tile">
+          <div class="tlabel">Score</div>
+          <div class="tval" style="color:var(--orange)" id="ch-score">0</div>
+          <div class="tsub">/ 100</div>
+        </div>
+      </div>
+
+      <div class="slabel">2030 Target Progress</div>
+      <div class="card"><div class="cp" id="ch-prog"></div></div>
+
+      <div class="slabel">Monthly Gospel Outreach — May–Dec 2026</div>
+      <div class="card">
+        <div class="chart-title">People Introduced to Christ</div>
+        <div style="padding:12px 12px 16px"><div style="position:relative;height:150px">
+          <canvas id="churchChart" role="img" aria-label="Monthly gospel sharing chart">Monthly chart.</canvas>
+        </div></div>
+      </div>
+
+      <div class="slabel">Church Members</div>
+      <div class="card" id="ch-member-list">
+        <div class="empty-state">
+          <div class="empty-icon">🙏</div>
+          <div class="empty-title">No members yet</div>
+          <div class="empty-sub">Members will appear here once they sign in and log their first action. Share the app link to your congregation.</div>
+        </div>
+      </div>
+
+    </div><!-- /screen-church -->
+
+    <!-- ══════════════════════════════════════
+         LEADER: SECTOR
+    ══════════════════════════════════════ -->
+    <div class="screen" id="screen-sector">
+      <div class="seg" id="sec-seg"></div>
+      <div id="sec-hero"></div>
+      <div class="stats-row">
+        <div class="tile"><div class="tlabel">Disciples</div><div class="tval" style="color:var(--blue)" id="sec-disc">0</div><div class="tsub" id="sec-disc-sub">of 500</div></div>
+        <div class="tile"><div class="tlabel">Leaders</div><div class="tval" style="color:var(--orange)" id="sec-lead">0</div><div class="tsub" id="sec-lead-sub">of 583</div></div>
+        <div class="tile"><div class="tlabel">Churches</div><div class="tval">4</div><div class="tsub">active</div></div>
+      </div>
+      <div class="slabel">Progress vs 2030 Targets</div>
+      <div class="card"><div class="cp" id="sec-prog"></div></div>
+      <div class="slabel">Monthly Trend — May–Dec 2026</div>
+      <div class="card">
+        <div class="chart-title" id="sec-chart-title">Gospel Shared per Month</div>
+        <div class="chart-legend" id="sec-chart-leg"></div>
+        <div style="padding:12px 12px 16px"><div style="position:relative;height:160px">
+          <canvas id="secTrendChart" role="img" aria-label="Sector monthly trend">Sector trend chart.</canvas>
+        </div></div>
+      </div>
+      <div class="slabel">Strategic Insight</div>
+      <div class="card" id="sec-insight"></div>
+      <div class="slabel">Church Rankings</div>
+      <div class="card" id="sec-rankings">
+        <div class="empty-state">
+          <div class="empty-icon">📊</div>
+          <div class="empty-title">Rankings will appear here</div>
+          <div class="empty-sub">As members log actions, church rankings will update automatically.</div>
+        </div>
+      </div>
+
+      <!-- MEMBER LOGS — visible to Sector Leader + Pastor only -->
+      <div id="sec-member-logs-section" style="display:none">
+        <div class="slabel">Member Action Logs</div>
+        <div class="access-banner">
+          <span style="font-size:16px">🔓</span>
+          <div class="access-banner-text">As a <strong>Sector Leader / Pastor</strong>, you can view individual member action logs for accountability and spiritual guidance.</div>
+        </div>
+        <div id="sec-member-logs"></div>
+      </div>
+
+      <!-- MULTIPLYING DISCIPLES TABLE — Sector view -->
+      <div class="slabel">Multiplying Disciples Report</div>
+      <div class="report-header-card" style="background:var(--blue-bg);border:1px solid rgba(0,122,255,.18)">
+        <div class="rh-icon">📖</div>
+        <div class="rh-body">
+          <div class="rh-title">Multiplying Disciples</div>
+          <div class="rh-sub">Based on Evangelism · Discipleship · Leadership actions · Sector target: 500</div>
+        </div>
+        <div class="rh-progress" id="sec-disc-progress">
+          <div class="rh-pct" id="sec-disc-pct" style="color:var(--blue)">0%</div>
+          <div class="rh-of" id="sec-disc-of">0 / 500</div>
+        </div>
+      </div>
+      <div class="prog-wrap" style="height:6px;margin-bottom:12px">
+        <div class="pf" id="sec-disc-bar" style="height:6px;background:var(--blue);width:0%"></div>
+      </div>
+      <div class="card" id="sec-disc-table">
+        <div class="empty-state"><div class="empty-icon">📖</div><div class="empty-title">No data yet</div><div class="empty-sub">Members logged as Evangelism, Discipleship, or Leadership actions appear here.</div></div>
+      </div>
+
+      <!-- SUSTAINABLE LEADERS TABLE — Sector view -->
+      <div class="slabel">Sustainable Leaders Report</div>
+      <div class="report-header-card" style="background:var(--orange-bg);border:1px solid rgba(255,149,0,.2)">
+        <div class="rh-icon">🏆</div>
+        <div class="rh-body">
+          <div class="rh-title">Sustainable Leaders</div>
+          <div class="rh-sub">Based on Discipleship · Leadership · Multiplying actions · Sector target: 580</div>
+        </div>
+        <div class="rh-progress" id="sec-lead-progress">
+          <div class="rh-pct" id="sec-lead-pct" style="color:var(--orange)">0%</div>
+          <div class="rh-of" id="sec-lead-of">0 / 580</div>
+        </div>
+      </div>
+      <div class="prog-wrap" style="height:6px;margin-bottom:12px">
+        <div class="pf" id="sec-lead-bar" style="height:6px;background:var(--orange);width:0%"></div>
+      </div>
+      <div class="card" id="sec-lead-table">
+        <div class="empty-state"><div class="empty-icon">🏆</div><div class="empty-title">No data yet</div><div class="empty-sub">Members logged as Discipleship, Leadership, or Multiplying Churches actions appear here.</div></div>
+      </div>
+
+    </div>
+
+    <!-- ══════════════════════════════════════
+         LEADER: COMMAND CENTER
+    ══════════════════════════════════════ -->
+    <div class="screen" id="screen-command">
+      <div class="cmd-hero">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:rgba(255,255,255,.7);margin-bottom:4px">FLCC BOTR Lead Pastor</div>
+        <div style="font-size:22px;font-weight:900;color:#fff;letter-spacing:-.5px;line-height:1.15;margin-bottom:2px">Jopet Alim</div>
+        <div style="font-size:14px;font-weight:700;color:rgba(255,255,255,.75);margin-bottom:14px">Strategic Direction 2026</div>
+        <div style="font-size:12px;color:rgba(255,255,255,.55);font-style:italic;margin-bottom:16px">"Go and make disciples of all nations." — Matt. 28:19</div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+          <span style="font-size:13px;font-weight:600;color:rgba(255,255,255,.85)">Total Mission Progress</span>
+          <span style="font-size:14px;font-weight:800;color:#fff" id="cmd-pct">0.0%</span>
+        </div>
+        <div style="height:8px;background:rgba(255,255,255,.25);border-radius:4px;overflow:hidden;margin-bottom:14px">
+          <div style="height:100%;background:#fff;border-radius:4px;transition:width 1.2s cubic-bezier(.16,1,.3,1);width:0%" id="cmd-pct-bar"></div>
+        </div>
+        <div class="cmd-kpis">
+          <div class="cmd-kpi">
+            <div style="font-size:19px;font-weight:800;color:#fff" id="cmd-gospel">0</div>
+            <div style="font-size:11px;color:rgba(255,255,255,.6)">Gospel Shared</div>
+          </div>
+          <div class="cmd-kpi">
+            <div style="font-size:19px;font-weight:800;color:#fff" id="cmd-disc">0</div>
+            <div style="font-size:11px;color:rgba(255,255,255,.6)">Disciples</div>
+          </div>
+          <div class="cmd-kpi">
+            <div style="font-size:19px;font-weight:800;color:#fff" id="cmd-leads">0</div>
+            <div style="font-size:11px;color:rgba(255,255,255,.6)">Leaders</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slabel">Sector Performance</div>
+      <div id="cmd-sec-cards"></div>
+
+      <div class="slabel">Monthly Gospel Growth — All Sectors</div>
+      <div class="card">
+        <div class="chart-title">People Introduced to Christ (May–Dec 2026)</div>
+        <div class="chart-legend" id="cmd-trend-leg"></div>
+        <div style="padding:12px 12px 16px"><div style="position:relative;height:170px">
+          <canvas id="cmdTrendChart" role="img" aria-label="Multi-sector monthly growth">Trend chart.</canvas>
+        </div></div>
+      </div>
+
+      <div class="slabel">Sector Comparison vs 2030 Target</div>
+      <div class="card">
+        <div class="chart-title">Gospel Shared — Actual vs Target</div>
+        <div style="padding:12px 12px 16px"><div style="position:relative;height:160px">
+          <canvas id="cmdBarChart" role="img" aria-label="Sector comparison chart">Bar chart.</canvas>
+        </div></div>
+      </div>
+
+      <div class="slabel">5-Year Cumulative Milestones</div>
+      <div class="card">
+        <div class="chart-title">Annual Gospel Targets vs Progress</div>
+        <div style="padding:12px 12px 16px"><div style="position:relative;height:160px">
+          <canvas id="cmdYearChart" role="img" aria-label="5 year milestones chart">Year chart.</canvas>
+        </div></div>
+      </div>
+
+      <div class="slabel">Weekly Leadership Actions</div>
+      <div class="card" id="cmd-actions"></div>
+
+      <div class="slabel">Church Leaderboard — All 12</div>
+      <div class="card" id="cmd-board">
+        <div class="empty-state">
+          <div class="empty-icon">🏆</div>
+          <div class="empty-title">Leaderboard starts at zero</div>
+          <div class="empty-sub">Rankings update as members across all 12 churches log their gospel activities. Share the app link to get started.</div>
+        </div>
+      </div>
+
+      <!-- ALL MEMBER LOGS — Pastor only -->
+      <div class="slabel">All Member Action Logs</div>
+      <div class="access-banner">
+        <span style="font-size:16px">🔓</span>
+        <div class="access-banner-text">As <strong>Lead Pastor</strong>, you have full visibility into all member action logs across all 12 churches.</div>
+      </div>
+      <div id="cmd-member-logs">
+        <div class="empty-state" style="padding:24px;text-align:center">
+          <div style="font-size:32px;margin-bottom:8px">📋</div>
+          <div style="font-size:15px;font-weight:700;color:var(--label);margin-bottom:4px">No logs yet</div>
+          <div style="font-size:13px;color:var(--ter)">Member action logs appear here as the congregation engages.</div>
+        </div>
+      </div>
+
+      <!-- MULTIPLYING DISCIPLES TABLE — Command view (all sectors) -->
+      <div class="slabel">Multiplying Disciples — All Sectors</div>
+      <div class="report-header-card" style="background:var(--blue-bg);border:1px solid rgba(0,122,255,.18)">
+        <div class="rh-icon">📖</div>
+        <div class="rh-body">
+          <div class="rh-title">Multiplying Disciples</div>
+          <div class="rh-sub">Evangelism · Discipleship · Leadership · Network target: 1,500</div>
+        </div>
+        <div class="rh-progress">
+          <div class="rh-pct" id="cmd-disc-pct" style="color:var(--blue)">0%</div>
+          <div class="rh-of" id="cmd-disc-of">0 / 1,500</div>
+        </div>
+      </div>
+      <div class="prog-wrap" style="height:6px;margin-bottom:12px">
+        <div class="pf" id="cmd-disc-bar" style="height:6px;background:var(--blue);width:0%"></div>
+      </div>
+      <div class="card" id="cmd-disc-table">
+        <div class="rep-empty">No data yet — members appear here as they log actions.</div>
+      </div>
+
+      <!-- SUSTAINABLE LEADERS TABLE — Command view (all sectors) -->
+      <div class="slabel">Sustainable Leaders — All Sectors</div>
+      <div class="report-header-card" style="background:var(--orange-bg);border:1px solid rgba(255,149,0,.2)">
+        <div class="rh-icon">🏆</div>
+        <div class="rh-body">
+          <div class="rh-title">Sustainable Leaders</div>
+          <div class="rh-sub">Discipleship · Leadership · Multiplying · Network target: 1,750</div>
+        </div>
+        <div class="rh-progress">
+          <div class="rh-pct" id="cmd-lead-pct" style="color:var(--orange)">0%</div>
+          <div class="rh-of" id="cmd-lead-of">0 / 1,750</div>
+        </div>
+      </div>
+      <div class="prog-wrap" style="height:6px;margin-bottom:12px">
+        <div class="pf" id="cmd-lead-bar" style="height:6px;background:var(--orange);width:0%"></div>
+      </div>
+      <div class="card" id="cmd-lead-table">
+        <div class="rep-empty">No data yet — members appear here as they log actions.</div>
+      </div>
+
+    </div><!-- /screen-command -->
+
+    <!-- ══════════════════════════════════════
+         LEADER: PROFILE
+    ══════════════════════════════════════ -->
+    <div class="screen" id="screen-leader-profile">
+      <div class="prof-hero">
+        <div class="prof-av" id="lp-av">—</div>
+        <div class="prof-name" id="lp-name">—</div>
+        <div style="margin:6px 0 4px"><span class="prof-chip" id="lp-chip">—</span></div>
+        <div class="prof-detail" id="lp-detail">—</div>
+      </div>
+
+      <div class="slabel">Mission Progress 2026–2030</div>
+      <div class="card" style="padding:16px"><div id="lp-year-rows"></div></div>
+
+      <div class="slabel">My Personal Activity</div>
+      <div class="act-type-grid">
+        <div class="act-type-tile att-evang">
+          <div class="att-label">🌱 Evangelism</div>
+          <div class="att-val" id="lp-ct-evang" style="color:var(--hope-dk)">0</div>
+          <div class="att-sub">gospel actions</div>
+        </div>
+        <div class="act-type-tile att-disc">
+          <div class="att-label">📖 Discipleship</div>
+          <div class="att-val" id="lp-ct-disc" style="color:var(--blue)">0</div>
+          <div class="att-sub">growth actions</div>
+        </div>
+        <div class="act-type-tile att-lead">
+          <div class="att-label">🏆 Leadership</div>
+          <div class="att-val" id="lp-ct-lead" style="color:var(--orange)">0</div>
+          <div class="att-sub">service actions</div>
+        </div>
+        <div class="act-type-tile att-mult">
+          <div class="att-label">⛪ Multiplying</div>
+          <div class="att-val" id="lp-ct-mult" style="color:var(--love-dk)">0</div>
+          <div class="att-sub">church planting</div>
+        </div>
+      </div>
+
+      <div class="slabel">My Action Log</div>
+      <div class="priv-banner">
+        <span style="font-size:16px">🔒</span>
+        <div class="priv-banner-text"><strong>Your personal log</strong> — visible to you and the Lead Pastor only.</div>
+      </div>
+      <div class="card" id="lp-action-log">
+        <div class="mlc-empty">No actions logged yet. Tap Log to record your first action.</div>
+      </div>
+
+      <div class="slabel">Sector Health</div>
+      <div class="card" id="lp-sec-overview"></div>
+
+      <div class="slabel">Notifications</div>
+      <div class="card">
+        <div class="srow">
+          <div class="sleft"><div class="sicon" style="background:#EBF5FF">🔔</div><div class="slabel2">Action Reminders</div></div>
+          <button class="toggle on" id="ltog1" onclick="toggleSw('ltog1')"><div class="tthumb"></div></button>
+        </div>
+        <div class="ld"></div>
+        <div class="srow">
+          <div class="sleft"><div class="sicon" style="background:#E8F8ED">📊</div><div class="slabel2">Monthly Reports</div></div>
+          <button class="toggle on" id="ltog2" onclick="toggleSw('ltog2')"><div class="tthumb"></div></button>
+        </div>
+        <div class="ld"></div>
+        <div class="srow">
+          <div class="sleft"><div class="sicon" style="background:#FFF4E0">🎯</div><div class="slabel2">Target Alerts</div></div>
+          <button class="toggle off" id="ltog3" onclick="toggleSw('ltog3')"><div class="tthumb"></div></button>
+        </div>
+      </div>
+
+      <div class="slabel">About</div>
+      <div class="card">
+        <div class="srow">
+          <div class="sleft"><div class="sicon" style="background:#F0F0F5">📱</div><div class="slabel2">Version</div></div>
+          <div class="sval">2026.4.0</div>
+        </div>
+        <div class="ld"></div>
+        <div class="srow">
+          <div class="sleft"><div class="sicon" style="background:#FFF0F0">✝️</div><div class="slabel2">Mission Scripture</div></div>
+          <div class="sval">Matthew 28:18–20</div>
+        </div>
+        <div class="ld"></div>
+        <div class="srow">
+          <div class="sleft"><div class="sicon" style="background:#EBF5FF">🌍</div><div class="slabel2">Network</div></div>
+          <div class="sval">N.E.C.K. Kuwait</div>
+        </div>
+        <div class="ld"></div>
+        <div class="srow" style="cursor:pointer" onclick="signOut()">
+          <div class="sleft"><div class="sicon" style="background:#FFECEB">🚪</div><div class="slabel2" style="color:var(--red)">Sign Out</div></div>
+          <span style="font-size:18px;color:var(--ter)">›</span>
+        </div>
+      </div>
+      <div style="height:8px"></div>
+    </div>
+
+  </div><!-- /content -->
+
+  <!-- TAB BAR -->
+  <div class="tabbar" id="tabbar" style="display:none"></div>
+
+  <!-- LOADING -->
+  <div class="loading-overlay" id="loading">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loading-text">Connecting…</div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+</div><!-- /app -->
+
+<script>
+// 
+//  GOOGLE SHEETS CONFIGURATION
+// Replace with your deployed Google Apps Script Web App URL
+// 
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzDgI1BcrtabYZxRSVFI3brLHh1VWQExCvPYn4f4KP9wTnKAVzIJN5kp5n2eiReuYnC/exec';
+const SHEETS_ON  = SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE';
+
+// Google Sheets ID — used for direct data reads via Google's gviz API (no CORS)
+// Writes still go through Apps Script POST above
+const SHEET_ID = '1Z-nY7P4GWuXKwEQNLwvry42bzYgXrsCFpaZ2PE-uE1c';
+
+// ── KNOWN USERS — auto-assigned on name match ─────────────────
+// Keys must match exactly how users type their name (case-sensitive)
+const KNOWN_USERS = {
+  // Network Lead Pastor
+  'Jopet Alim':         { role:'Pastor',         church:'BOTR',          sector:'hope',  title:'FLCC BOTR Lead Pastor',         commandAccess:true  },
+  // Sector Leaders / Pastors
+  'Rodel Comayingking': { role:'Sector Leader',  church:'F&T',           sector:'hope',  title:'Sector Leader / Pastor',        commandAccess:false },
+  'Virgilio Monastrial':{ role:'Sector Leader',  church:'BOTR',          sector:'love',  title:'Sector Leader / Pastor',        commandAccess:false },
+  'Oscar Tumambing':    { role:'Sector Leader',  church:'MTCC',          sector:'faith', title:'Sector Leader / Pastor',        commandAccess:false },
+  // Evangelism Ministry Head
+  'Lizel Ocenar':       { role:'Ministry Head',  church:'Abundance',     sector:'hope',  title:'Evangelism Ministry Head',      commandAccess:true  },
+  // Evangelism Ministry Sub-leaders
+  'Fretzie Guerzon':    { role:'Ministry Leader',church:'Abundance',     sector:'hope',  title:'Evangelism Leader – Abundance', commandAccess:true  },
+  'Maricel De Grano':   { role:'Ministry Leader',church:'GIL',           sector:'faith', title:'Evangelism Leader – GIL',      commandAccess:true  },
+  'Anne Sacueza':       { role:'Ministry Leader',church:'BOTR',          sector:'love',  title:'Evangelism Leader – BOTR',     commandAccess:true  },
+  'Elena Aboy':         { role:'Ministry Leader',church:'Virtual Church',sector:'love',  title:'Evangelism Leader – Virtual',  commandAccess:true  },
+};
+
+// Returns KNOWN_USERS entry if name matches (case-insensitive trim)
+function findKnownUser(name) {
+  if (!name) return null;
+  const trimmed = name.trim();
+  return KNOWN_USERS[trimmed] ||
+    Object.entries(KNOWN_USERS).find(([k]) => k.toLowerCase() === trimmed.toLowerCase())?.[1] || null;
+}
+
+// Whether the current signed-in user has Command tab access
+function hasCommandAccess() {
+  const known = findKnownUser(APP.name);
+  return known ? known.commandAccess : false;
+}
+
+// 
+// STATIC REFERENCE DATA  targets only, no pre-filled actuals
+// 
+const SECTORS = [
+  { id:'hope',  name:'Hope',  color:'#5AC8FA', light:'#EBF8FE', dark:'#0071A4',
+    target:{ gospel:90000, disciples:500, leaders:583 } },
+  { id:'faith', name:'Faith', color:'#34C759', light:'#E8F8ED', dark:'#1C7A35',
+    target:{ gospel:90000, disciples:500, leaders:583 } },
+  { id:'love',  name:'Love',  color:'#FF2D55', light:'#FFECF0', dark:'#C0002A',
+    target:{ gospel:90000, disciples:500, leaders:584 } },
+];
+
+const CHURCHES = [
+  { id:'abundance',   name:'Abundance',     sector:'hope'  },
+  { id:'fb',          name:'FB',            sector:'hope'  },
+  { id:'ft',          name:'F&T',           sector:'hope'  },
+  { id:'cornerstone', name:'Cornerstone',   sector:'hope'  },
+  { id:'gil',         name:'GIL',           sector:'faith' },
+  { id:'harvester',   name:'Harvester',     sector:'faith' },
+  { id:'mtcc',        name:'MTCC',          sector:'faith' },
+  { id:'agape',       name:'Agape',         sector:'faith' },
+  { id:'shekinah',    name:'Shekinah',      sector:'love'  },
+  { id:'virtual',     name:'Virtual Church',sector:'love'  },
+  { id:'botr',        name:'BOTR',          sector:'love'  },
+  { id:'jaoc',        name:'JAOC',          sector:'love'  },
+];
+
+// May 2026 start  months May through Dec
+const MONTHS = ['May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+const YEAR_TARGETS = [
+  { year:2026, target:54000  },
+  { year:2027, target:108000 },
+  { year:2028, target:162000 },
+  { year:2029, target:216000 },
+  { year:2030, target:270000 },
+];
+
+const ACTIONS_LIB = [
+  { label:'Shared the Gospel Personally',      type:'Evangelism',   pts:10 },
+  { label:'Invited Someone to Church',         type:'Evangelism',   pts:10 },
+  { label:'Led Someone to Pray for Salvation', type:'Evangelism',   pts:10 },
+  { label:'Participated in Outreach Event',    type:'Evangelism',   pts:10 },
+  { label:'Completed a Bible Study Module',    type:'Discipleship', pts:20 },
+  { label:'Attended a Mentoring Session',      type:'Discipleship', pts:20 },
+  { label:'Completed Fasting & Prayer Week',   type:'Discipleship', pts:20 },
+  { label:'Led a Cell Group Session',          type:'Leadership',   pts:30 },
+  { label:'Mentored a New Believer',           type:'Leadership',   pts:30 },
+  { label:'Served in a Ministry Role',         type:'Leadership',   pts:30 },
+  { label:'Helped Establish a Satellite',      type:'Multiplying',  pts:50 },
+  { label:'Trained a Church Planting Team',    type:'Multiplying',  pts:50 },
+];
+
+const STAGES = ['Evangelism','Discipleship','Leadership Dev','Multiplying'];
+
+// 
+// LIVE DATA STORE  starts at all zeros, grows with actions
+// 
+const LIVE = {
+  // Per-church dynamic data  indexed by church id
+  churches: Object.fromEntries(
+    CHURCHES.map(c => [c.id, { gospel:0, disciples:0, leaders:0, members:0, monthly: new Array(8).fill(0) }])
+  ),
+  // Per-sector aggregates
+  sectors: Object.fromEntries(
+    SECTORS.map(s => [s.id, { gospel:0, disciples:0, leaders:0 }])
+  ),
+  // All registered members (pushed as users log in + act)
+  members: [],
+  // Network totals
+  totalGospel: 0,
+  totalDisc:   0,
+  totalLeaders:0,
+};
+
+// 
+// APPLICATION STATE
+// 
+const APP = {
+  loggedIn: false,
+  role:    null,
+  name:    '',
+  church:  '',
+  sector:  '',
+  stage:   'Evangelism',
+  points:  0,
+  actions: [],
+};
+
+let activeSector = 'love';
+let selAction    = 0;
+let charts       = {};
+let currentTab   = 'home';
+
+//  ROLES THAT CAN VIEW MEMBER LOGS 
+const CAN_VIEW_LOGS = ['Sector Leader', 'Pastor', 'Ministry Head', 'Ministry Leader'];
+const canViewLogs   = () => CAN_VIEW_LOGS.includes(APP.role);
+
+//  LOCALSTORAGE HELPERS  persist actions across sign-in 
+function lsKey(name, church) {
+  return `flcc_actions_${name.replace(/\s+/g,'_')}_${church.replace(/\s+/g,'_')}`;
+}
+
+// ── SESSION PROFILE STORE ─────────────────────────────────────
+// Stores all past sign-in profiles under one key for quick recall
+const SESSIONS_KEY = 'flcc_sessions_v1';
+
+function getSavedSessions() {
+  try {
+    const raw = localStorage.getItem(SESSIONS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}
+
+function saveSession(profile) {
+  try {
+    const sessions = getSavedSessions();
+    // Remove duplicate (same name + church)
+    const filtered = sessions.filter(s => !(s.name === profile.name && s.church === profile.church));
+    // Most recent first, keep up to 10
+    filtered.unshift(profile);
+    localStorage.setItem(SESSIONS_KEY, JSON.stringify(filtered.slice(0, 10)));
+  } catch(e) {}
+}
+
+function removeSession(name, church) {
+  try {
+    const sessions = getSavedSessions().filter(s => !(s.name === name && s.church === church));
+    localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
+    renderRecentSessions();
+  } catch(e) {}
+}
+
+// ── RENDER RECENT SESSIONS ────────────────────────────────────
+function renderRecentSessions() {
+  const sessions = getSavedSessions();
+  const wrap = document.getElementById('recent-sessions-wrap');
+  const list = document.getElementById('recent-sessions-list');
+  if (!wrap || !list) return;
+
+  if (!sessions.length) {
+    wrap.style.display = 'none';
+    return;
+  }
+
+  wrap.style.display = 'block';
+  const roleEmoji = { Member:'🙏', 'Church Leader':'⛪', 'Sector Leader':'🌐', Pastor:'🎤', 'Ministry Head':'🌟', 'Ministry Leader':'🌱' };
+
+  list.innerHTML = sessions.map(s => {
+    const sect   = SECTORS.find(x => x.id === s.sector);
+    const emoji  = roleEmoji[s.role] || '👤';
+    const scolor = sect ? sect.color : 'var(--blue)';
+    return `
+      <div class="session-card" onclick="fillFromSession(${JSON.stringify(s).replace(/"/g,'&quot;')})">
+        <div class="session-av" style="background:linear-gradient(135deg,${scolor},${scolor}99)">
+          ${s.name[0].toUpperCase()}
+        </div>
+        <div class="session-info">
+          <div class="session-name">${s.name}</div>
+          <div class="session-meta">${s.church} · ${sect ? sect.name : ''} Sector</div>
+        </div>
+        <span class="session-role-chip">${emoji} ${s.role}</span>
+        <button class="session-del"
+          onclick="event.stopPropagation(); removeSession('${s.name.replace(/'/g,"\\'")}','${s.church.replace(/'/g,"\\'")}')">
+          ✕
+        </button>
+      </div>`;
+  }).join('');
+}
+
+// ── FILL FORM FROM SAVED SESSION ─────────────────────────────
+function fillFromSession(s) {
+  document.getElementById('l-name').value   = s.name;
+  document.getElementById('l-role').value   = s.role;
+  document.getElementById('l-church').value = s.churchVal || `${s.church}|${s.sector}`;
+  hideSuggest();
+  // Trigger known-user detection
+  onNameInput();
+  onChurchChange();
+  validateLogin();
+  document.getElementById('l-submit').scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+// ── NAME INPUT AUTOSUGGEST ────────────────────────────────────
+function onNameInput() {
+  const val    = document.getElementById('l-name').value.trim();
+  const known  = findKnownUser(val);
+
+  if (known) {
+    // Auto-fill and lock fields for known users
+    const churchKey = `${known.church}|${known.sector}`;
+    document.getElementById('l-role').value   = known.role;
+    document.getElementById('l-church').value = churchKey;
+    document.getElementById('l-role').disabled   = true;
+    document.getElementById('l-church').disabled = true;
+    document.getElementById('l-role').style.opacity   = '.55';
+    document.getElementById('l-church').style.opacity = '.55';
+    onChurchChange();
+    // Show a recognized badge
+    showKnownBadge(known.title);
+  } else {
+    // Unlock fields for regular users
+    document.getElementById('l-role').disabled   = false;
+    document.getElementById('l-church').disabled = false;
+    document.getElementById('l-role').style.opacity   = '1';
+    document.getElementById('l-church').style.opacity = '1';
+    hideKnownBadge();
+  }
+
+  validateLogin();
+
+  // Autosuggest from sessions
+  if (!val || val.length < 1) { hideSuggest(); return; }
+  const sessions = getSavedSessions().filter(s =>
+    s.name.toLowerCase().includes(val.toLowerCase())
+  );
+  if (!sessions.length) { hideSuggest(); return; }
+
+  const roleEmoji = { Member:'🙏', 'Church Leader':'⛪', 'Sector Leader':'🌐', Pastor:'🎤', 'Ministry Head':'🌟', 'Ministry Leader':'🌱' };
+  const suggest = document.getElementById('name-suggest');
+  suggest.style.display = 'block';
+  document.getElementById('l-name').style.borderRadius = '12px 12px 0 0';
+
+  suggest.innerHTML = sessions.map(s => {
+    const sect  = SECTORS.find(x => x.id === s.sector);
+    const emoji = roleEmoji[s.role] || '👤';
+    const scolor = sect ? sect.color : 'var(--blue)';
+    return `
+      <div class="name-suggest-row"
+        onmousedown="fillFromSession(${JSON.stringify(s).replace(/"/g,'&quot;')})">
+        <div class="ns-av" style="background:linear-gradient(135deg,${scolor},${scolor}99)">
+          ${s.name[0].toUpperCase()}
+        </div>
+        <div class="ns-info">
+          <div class="ns-name">${s.name}</div>
+          <div class="ns-sub">${emoji} ${s.role} · ${s.church}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function showKnownBadge(title) {
+  let badge = document.getElementById('known-badge');
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.id = 'known-badge';
+    badge.style.cssText = 'display:flex;align-items:center;gap:6px;padding:7px 12px;background:var(--green-bg);border-radius:10px;margin-top:-8px;margin-bottom:10px;font-size:12px;font-weight:600;color:#1C7A35';
+    document.getElementById('l-name').closest('.card').insertBefore(badge, document.getElementById('l-role').previousElementSibling);
+  }
+  badge.innerHTML = `<span>✅</span> Recognized — <strong>${title}</strong>. Church & role auto-assigned.`;
+  badge.style.display = 'flex';
+}
+
+function hideKnownBadge() {
+  const badge = document.getElementById('known-badge');
+  if (badge) badge.style.display = 'none';
+}
+
+function hideSuggest() {
+  const suggest = document.getElementById('name-suggest');
+  if (suggest) suggest.style.display = 'none';
+  const input = document.getElementById('l-name');
+  if (input) input.style.borderRadius = '12px';
+}
+
+function saveActionsToLocal() {
+  try {
+    localStorage.setItem(lsKey(APP.name, APP.church), JSON.stringify({
+      actions: APP.actions,
+      points:  APP.points,
+      stage:   APP.stage,
+    }));
+  } catch(e) {}
+}
+function loadActionsFromLocal(name, church) {
+  try {
+    const raw = localStorage.getItem(lsKey(name, church));
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) { return null; }
+}
+
+// 
+// HELPERS
+// 
+const LEADER_ROLES = ['Church Leader','Sector Leader','Pastor','Ministry Head','Ministry Leader'];
+const isLeader = () => LEADER_ROLES.includes(APP.role);
+const stageNum  = s  => STAGES.indexOf(s) + 1 || 1;
+const avColor   = i  => ['#FF2D55','#007AFF','#34C759','#FF9500','#5AC8FA','#AF52DE'][i % 6];
+const stageColor= s  => ({ Evangelism:'#5AC8FA', Discipleship:'#007AFF', 'Leadership Dev':'#FF9500', Multiplying:'#FF2D55' }[s] || '#8E8E93');
+const typeStyle = t  => ({ Leadership:'background:#FFF4E0;color:#A05A00', Discipleship:'background:#E8F8ED;color:#1C7A35', Evangelism:'background:#EBF8FE;color:#0071A4', Multiplying:'background:#FFECF0;color:#C0002A' }[t] || '');
+const typeIcon  = t  => ({ Leadership:'🏆', Discipleship:'📖', Evangelism:'🌱', Multiplying:'⛪' }[t] || '✝️');
+
+// Dynamic score: 0 when no data
+const score = cId => {
+  const d = LIVE.churches[cId];
+  const tgt = { gospel:22500, disciples:125, leaders:146 };
+  const raw = (d.gospel/tgt.gospel)*0.4 + (d.disciples/tgt.disciples)*0.4 + (d.leaders/tgt.leaders)*0.2;
+  return Math.round(raw * 1000) / 10;
+};
+
+// Status based on % of target  returns 'Starting' if zero
+const statusFor = pct => {
+  if (pct === 0) return { label:'Starting', cls:'p-gray' };
+  if (pct >= 0.65) return { label:'On Track',      cls:'p-green'  };
+  if (pct >= 0.35) return { label:'Needs Focus',   cls:'p-orange' };
+  return                  { label:'Behind Target', cls:'p-red'    };
+};
+
+const insightText = (s, pct) => {
+  if (pct === 0) return `${s.name} sector is ready to begin — no gospel activities recorded yet. Encourage all church leaders to onboard their congregations.`;
+  if (pct >= 0.75) return `${s.name} is ahead of pace — momentum is strong. Consider accelerating church planting across all four churches.`;
+  if (pct >= 0.55) return `${s.name} is on track. Sustain outreach rhythm and maintain mentoring cadence for Discipleship-stage members.`;
+  if (pct >= 0.35) return `${s.name} needs focused attention — increase gospel-sharing activities and assign additional mentors.`;
+  return `${s.name} is behind target. Urgent mobilization required — convene sector leaders for a strategic review this month.`;
+};
+
+const weeklyAct = (s, pct) => {
+  if (pct === 0)   return `Launch ${s.name} sector — onboard all four church leaders and invite the full congregation to sign in and log their first action.`;
+  if (pct < 0.3)   return `Mobilize all ${s.name} pastors — deploy evangelism teams to all four churches this weekend.`;
+  if (pct < 0.55)  return `Intensify gospel outreach in ${s.name} — assign mentors to all Evangelism-stage members.`;
+  return `${s.name} is healthy — identify church planting candidates and scout new satellite locations.`;
+};
+
+const destroyChart = id => { if (charts[id]) { charts[id].destroy(); delete charts[id]; } };
+
+// 
+// GOOGLE SHEETS API
+// 
+function showLoading(msg = 'Connecting…') {
+  document.getElementById('loading-text').textContent = msg;
+  document.getElementById('loading').classList.add('show');
+}
+function hideLoading() { document.getElementById('loading').classList.remove('show'); }
+
+async function apiPost(data) {
+  if (!SHEETS_ON) return;
+  try {
+    // NOTE: Do NOT set Content-Type: application/json
+    // That triggers a CORS preflight which Apps Script cannot handle.
+    // Sending without Content-Type defaults to text/plain — a "simple request"
+    // that goes through without preflight. Apps Script reads e.postData.contents.
+    await fetch(SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: JSON.stringify(data),
+    });
+  } catch(e) { console.warn('Sheets POST error:', e); }
+}
+
+// ── GOOGLE SHEETS DIRECT READ via gviz API (no CORS, no Apps Script needed) ──
+// This uses Google's own Visualization API which bypasses all CORS restrictions.
+// Works for any sheet that has been published to the web (File → Share → Publish to web).
+
+// Reads a Google Sheet tab via gviz JSONP — works on all devices, no CORS
+// Retries once if first attempt returns empty (handles mobile caching)
+function readSheet(sheetName, attempt) {
+  attempt = attempt || 1;
+  return new Promise(resolve => {
+    // Use both timestamp AND random number — defeats aggressive mobile caches
+    const bust    = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    const cbName  = 'gviz_' + bust.replace('.','');
+    const script  = document.createElement('script');
+    const timer   = setTimeout(() => {
+      cleanup();
+      // Retry once on timeout (mobile networks are slow)
+      if (attempt < 2) {
+        readSheet(sheetName, 2).then(resolve);
+      } else {
+        resolve([]);
+      }
+    }, 15000);
+
+    function cleanup() {
+      clearTimeout(timer);
+      delete window[cbName];
+      try { document.head.removeChild(script); } catch(e) {}
+    }
+
+    window[cbName] = function(res) {
+      cleanup();
+      try {
+        if (!res || !res.table || !res.table.rows) {
+          // Empty response — retry once if first attempt
+          if (attempt < 2) {
+            setTimeout(() => readSheet(sheetName, 2).then(resolve), 1500);
+          } else {
+            resolve([]);
+          }
+          return;
+        }
+        const rows = res.table.rows.map(row =>
+          (row.c || []).map(cell => {
+            if (!cell || cell.v === null || cell.v === undefined) return '';
+            return cell.v;
+          })
+        );
+        resolve(rows);
+      } catch(e) { resolve([]); }
+    };
+
+    script.onerror = () => {
+      cleanup();
+      if (attempt < 2) {
+        setTimeout(() => readSheet(sheetName, 2).then(resolve), 1500);
+      } else {
+        resolve([]);
+      }
+    };
+
+    // Append script — mobile Safari needs unique URL every time
+    script.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq`
+      + `?sheet=${encodeURIComponent(sheetName)}`
+      + `&tqx=out:json`
+      + `&callback=${cbName}`
+      + `&nocache=${bust}`;
+    document.head.appendChild(script);
+  });
+}
+
+// Helper: church name → sector id
+function getChurchSector(churchName) {
+  const c = CHURCHES.find(x => x.name === churchName);
+  return c ? c.sector : 'love';
+}
+
+// Helper: church name → church id
+function getChurchId(churchName) {
+  const c = CHURCHES.find(x => x.name === churchName);
+  return c ? c.id : churchName.toLowerCase().replace(/\s+/g,'');
+}
+
+// Helper: ISO date string → "May 28" label
+function parseDateLabel(isoStr) {
+  if (!isoStr) return '';
+  try {
+    const d = new Date(isoStr);
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return months[d.getMonth()] + ' ' + d.getDate();
+  } catch(e) { return String(isoStr).substring(0,10); }
+}
+
+// JSONP-based GET for Apps Script (kept for POST-only write operations)
+function apiGet(params) {
+  return new Promise(resolve => {
+    if (!SHEETS_ON) { resolve(null); return; }
+    const cbName  = 'gsCallback_' + Date.now() + '_' + Math.floor(Math.random()*10000);
+    const script  = document.createElement('script');
+    const timeout = setTimeout(() => { cleanup(); resolve(null); }, 12000);
+    function cleanup() {
+      clearTimeout(timeout);
+      delete window[cbName];
+      try { document.head.removeChild(script); } catch(e) {}
+    }
+    window[cbName] = function(data) { cleanup(); resolve(data); };
+    script.onerror = function() { cleanup(); resolve(null); };
+    const p = Object.assign({}, params, { callback: cbName });
+    script.src = SCRIPT_URL + '?' + new URLSearchParams(p);
+    document.head.appendChild(script);
+  });
+}
+
+// Load live data — reads through Netlify proxy → Apps Script → Google Sheet (always fresh)
+// Falls back to gviz if proxy not available
+async function loadLiveData() {
+  const backup = {
+    members:      [...LIVE.members],
+    churches:     JSON.parse(JSON.stringify(LIVE.churches)),
+    sectors:      JSON.parse(JSON.stringify(LIVE.sectors)),
+    totalGospel:  LIVE.totalGospel,
+    totalDisc:    LIVE.totalDisc,
+    totalLeaders: LIVE.totalLeaders,
+  };
+
+  let data = null;
+  let useProxy = true;
+
+  try {
+    // Try Netlify proxy first — server-to-server, no CORS, no caching
+    const res = await fetch('/api?action=getLiveData&_=' + Date.now(), {
+      cache: 'no-store',
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    data = await res.json();
+    if (!data || data.error || !data.members) throw new Error('Bad proxy response');
+  } catch(proxyErr) {
+    useProxy = false;
+    console.warn('Proxy unavailable, trying gviz:', proxyErr.message);
+  }
+
+  if (!useProxy) {
+    // Fallback to gviz
+    await loadViaGviz(backup);
+    return;
+  }
+
+  // Good proxy data — rebuild LIVE from Apps Script response
+  CHURCHES.forEach(c => {
+    LIVE.churches[c.id] = { gospel:0, disciples:0, leaders:0, members:0, monthly: new Array(8).fill(0) };
+  });
+  SECTORS.forEach(s => { LIVE.sectors[s.id] = { gospel:0, disciples:0, leaders:0 }; });
+
+  if (data.churchAgg) {
+    Object.entries(data.churchAgg).forEach(([cn, agg]) => {
+      const cDef = CHURCHES.find(c => c.name === cn);
+      if (!cDef) return;
+      LIVE.churches[cDef.id] = {
+        gospel:agg.gospel||0, disciples:agg.disciples||0,
+        leaders:agg.leaders||0, members:agg.members||0,
+        monthly:agg.monthly||new Array(8).fill(0),
+      };
+    });
+  }
+  if (data.sectorAgg) {
+    Object.entries(data.sectorAgg).forEach(([sId, agg]) => {
+      if (LIVE.sectors[sId]) LIVE.sectors[sId] = {
+        gospel:agg.gospel||0, disciples:agg.disciples||0, leaders:agg.leaders||0
+      };
+    });
+  }
+
+  LIVE.members = (data.members||[]).map(m => ({
+    userId:m.userId||'', name:m.name||'', role:m.role||'Member',
+    church:m.church||'', churchId:m.churchId||getChurchId(m.church||''),
+    sector:m.sector||getChurchSector(m.church||''),
+    stage:m.stage||'Evangelism', points:m.points||0, actionsCount:m.actionsCount||0,
+    gospel:m.gospel||0, disciples:m.disciples||0, leaders:m.leaders||0,
+    monthlyActions:m.monthlyActions||new Array(8).fill(0),
+    actions:(m.actions||[]).map(a=>({...a, date:a.date||parseDateLabel(a.dateIso)})),
+  }));
+
+  LIVE.totalGospel  = data.totalGospel  || 0;
+  LIVE.totalDisc    = data.totalDisc    || 0;
+  LIVE.totalLeaders = data.totalLeaders || 0;
+
+  const connEl = document.getElementById('conn-status');
+  if (connEl) { connEl.innerHTML='✅ Google Sheets connected — live data loaded'; connEl.style.color='#1C7A35'; }
+
+  hydrateActionLogsFromLocal();
+}
+
+// Fallback: read via gviz (may be slightly cached but works without Netlify proxy)
+async function loadViaGviz(backup) {
+  const [userRows, actionRows] = await Promise.all([readSheet('USERS'), readSheet('ACTIONS')]);
+  if (!userRows.length && !actionRows.length) {
+    Object.assign(LIVE, backup);
+    hydrateFromLocalStorage();
+    const el = document.getElementById('conn-status');
+    if (el) { el.innerHTML='⚠️ Publish your Sheet — File → Share → Publish to web'; el.style.color='var(--orange)'; }
+    return;
+  }
+  CHURCHES.forEach(c => { LIVE.churches[c.id]={gospel:0,disciples:0,leaders:0,members:0,monthly:new Array(8).fill(0)}; });
+  SECTORS.forEach(s => { LIVE.sectors[s.id]={gospel:0,disciples:0,leaders:0}; });
+  const actByUser={};
+  actionRows.filter(r=>r[0]).forEach(r=>{
+    const uid=String(r[1]||''); if(!uid)return;
+    if(!actByUser[uid])actByUser[uid]=[];
+    actByUser[uid].push({label:r[7]||'',type:r[8]||'Evangelism',pts:Number(r[9])||0,
+      reflection:r[10]||'',evidence:r[11]||'',date:parseDateLabel(r[12]),
+      monthIndex:Math.max(0,Math.min(7,Number(r[13])||0)),photoCount:0,fileCount:0,hasNote:false});
+  });
+  LIVE.members=userRows.filter(r=>r[0]).map(r=>{
+    const uid=String(r[0]),church=r[3]||'',sector=r[4]||getChurchSector(church),actions=actByUser[uid]||[];
+    const gospel=Number(r[8])||0,disciples=Number(r[9])||0,leaders=Number(r[10])||0;
+    const monthly=new Array(8).fill(0);
+    actions.forEach(a=>{if(a.type==='Evangelism')monthly[a.monthIndex]++;});
+    const cId=getChurchId(church);
+    if(LIVE.churches[cId]){LIVE.churches[cId].members++;LIVE.churches[cId].gospel+=gospel;
+      LIVE.churches[cId].disciples+=disciples;LIVE.churches[cId].leaders+=leaders;
+      monthly.forEach((v,i)=>{LIVE.churches[cId].monthly[i]+=v;});}
+    if(LIVE.sectors[sector]){LIVE.sectors[sector].gospel+=gospel;LIVE.sectors[sector].disciples+=disciples;LIVE.sectors[sector].leaders+=leaders;}
+    return{userId:uid,name:r[1]||'',role:r[2]||'Member',church,churchId:cId,sector,
+      stage:r[5]||'Evangelism',points:Number(r[6])||0,actionsCount:Number(r[7])||0,
+      gospel,disciples,leaders,monthlyActions:monthly,actions};
+  });
+  LIVE.totalGospel=SECTORS.reduce((t,s)=>t+LIVE.sectors[s.id].gospel,0);
+  LIVE.totalDisc=SECTORS.reduce((t,s)=>t+LIVE.sectors[s.id].disciples,0);
+  LIVE.totalLeaders=SECTORS.reduce((t,s)=>t+LIVE.sectors[s.id].leaders,0);
+  hydrateActionLogsFromLocal();
+}
+
+
+// Scan all localStorage keys for flcc_actions_* and hydrate LIVE.members action logs
+function hydrateFromLocalStorage() {
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key || !key.startsWith('flcc_actions_')) continue;
+      const raw = localStorage.getItem(key);
+      if (!raw) continue;
+      const saved = JSON.parse(raw);
+      if (!saved?.actions?.length) continue;
+
+      // Extract name + church from key: flcc_actions_First_Last_ChurchName
+      const parts = key.replace('flcc_actions_', '').split('_');
+      // Reconstruct name & church (stored as underscored)
+      // We can't perfectly recover spaces but we match against LIVE.members
+      // Instead: use the actions array to identify the user and push to LIVE
+      const firstAction = saved.actions[0];
+      if (!firstAction) continue;
+
+      // Find or create member entry
+      let member = LIVE.members.find(m => lsKey(m.name, m.church) === key || lsKey(m.name, m.churchId) === key);
+      if (!member) {
+        // Try to match by church from key
+        const church = CHURCHES.find(c => key.includes(c.name.replace(/\s+/g,'_')));
+        if (!church) continue;
+        member = {
+          name:     key.replace('flcc_actions_', '').replace(/_/g,' ').replace(new RegExp(church.name.replace(/\s/g,'_'),'i'),'').trim().replace(/\s+/g,' '),
+          church:   church.name,
+          churchId: church.id,
+          sector:   church.sector,
+          stage:    saved.stage || 'Evangelism',
+          points:   saved.points || 0,
+          actions:  saved.actions,
+          gospel:   saved.actions.filter(a => a.type === 'Evangelism').length,
+          disciples:saved.actions.filter(a => a.type === 'Discipleship').length,
+          leaders:  saved.actions.filter(a => ['Leadership','Multiplying'].includes(a.type)).length,
+        };
+        LIVE.members.push(member);
+        // Update aggregates
+        const cData = LIVE.churches[church.id];
+        if (cData) {
+          cData.members++;
+          cData.gospel    += member.gospel;
+          cData.disciples += member.disciples;
+          cData.leaders   += member.leaders;
+        }
+        const sec = SECTORS.find(s => s.id === church.sector);
+        if (sec) {
+          LIVE.sectors[sec.id].gospel    += member.gospel;
+          LIVE.sectors[sec.id].disciples += member.disciples;
+          LIVE.sectors[sec.id].leaders   += member.leaders;
+        }
+        LIVE.totalGospel  += member.gospel;
+        LIVE.totalDisc    += member.disciples;
+        LIVE.totalLeaders += member.leaders;
+      } else {
+        // Merge action logs from local into existing member record
+        member.actions = saved.actions;
+        member.points  = saved.points || member.points;
+        member.stage   = saved.stage  || member.stage;
+      }
+    }
+  } catch(e) { console.warn('LocalStorage hydrate error:', e); }
+}
+
+// When Sheets is connected: patch action logs onto already-hydrated LIVE.members
+function hydrateActionLogsFromLocal() {
+  LIVE.members.forEach(m => {
+    const key = lsKey(m.name, m.church || m.churchId || '');
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      if (saved?.actions) {
+        m.actions = saved.actions;
+        m.points  = saved.points || m.points;
+        m.stage   = saved.stage  || m.stage;
+      }
+    } catch(e) {}
+  });
+}
+
+// Update LIVE data when an action is logged
+function applyActionToLive(actionType, churchId, sectorId, actionObj) {
+  const gospelTypes = ['Evangelism'];
+  const discTypes   = ['Discipleship'];
+  const leadTypes   = ['Leadership','Multiplying'];
+
+  const cData = LIVE.churches[churchId];
+  if (!cData) return;
+
+  if (gospelTypes.includes(actionType)) {
+    cData.gospel++;
+    LIVE.sectors[sectorId].gospel++;
+    LIVE.totalGospel++;
+    const mIdx = Math.max(0, Math.min(7, new Date().getMonth() - 4));
+    cData.monthly[mIdx]++;
+  }
+  if (discTypes.includes(actionType)) {
+    cData.disciples++;
+    LIVE.sectors[sectorId].disciples++;
+    LIVE.totalDisc++;
+  }
+  if (leadTypes.includes(actionType)) {
+    cData.leaders++;
+    LIVE.sectors[sectorId].leaders++;
+    LIVE.totalLeaders++;
+  }
+
+  // Add or update member record in LIVE store
+  let member = LIVE.members.find(m => m.name === APP.name && (m.churchId === APP.church || m.churchId === churchId));
+  if (!member) {
+    member = {
+      name:     APP.name,
+      church:   APP.church,
+      churchId: APP.church,
+      sector:   APP.sector,
+      stage:    APP.stage,
+      points:   0,
+      gospel:   0, disciples: 0, leaders: 0,
+      actions:  [],
+    };
+    LIVE.members.push(member);
+    cData.members++;
+  }
+
+  // Keep full action log on the member record (for leader/pastor viewing)
+  if (actionObj) {
+    member.actions = member.actions || [];
+    member.actions.push(actionObj);
+    member.points  = (member.points || 0) + (actionObj.pts || 0);
+  }
+  member.stage = APP.stage; // always sync latest stage
+}
+
+// 
+// LOGIN
+// 
+
+function onChurchChange() {
+  const v   = document.getElementById('l-church').value;
+  const prev = document.getElementById('sec-prev');
+  if (!v) { prev.style.display = 'none'; validateLogin(); return; }
+  const [, sid] = v.split('|');
+  const s = SECTORS.find(x => x.id === sid);
+  prev.style.display = 'flex';
+  prev.style.background = s.light;
+  document.getElementById('sec-prev-dot').style.background = s.color;
+  document.getElementById('sec-prev-name').textContent     = `${s.name} Sector`;
+  document.getElementById('sec-prev-name').style.color     = s.dark;
+  validateLogin();
+}
+
+function validateLogin() {
+  const name  = document.getElementById('l-name').value.trim();
+  const role  = document.getElementById('l-role').value;
+  const church= document.getElementById('l-church').value;
+  // Known users only need their name typed — role + church are auto-assigned
+  const known = findKnownUser(name);
+  const ok    = name.length >= 2 && (known || (role && church));
+  document.getElementById('l-submit').disabled = !ok;
+}
+
+async function doLogin() {
+  const name      = document.getElementById('l-name').value.trim();
+  const known     = findKnownUser(name);
+  // Known users get their pre-assigned role + church regardless of form values
+  const role      = known ? known.role      : document.getElementById('l-role').value;
+  const churchVal = known
+    ? `${known.church}|${known.sector}`
+    : document.getElementById('l-church').value;
+  const [church, sectorId] = churchVal.split('|');
+
+  showLoading('Signing you in…');
+
+  // Load local actions first (fast, works offline)
+  const local = loadActionsFromLocal(name, church);
+
+  // Load ALL live data from Google Sheets via gviz (populates LIVE.members)
+  await loadLiveData();
+
+  // Find user from the already-loaded LIVE.members (no extra API call needed)
+  const existing = LIVE.members.find(m =>
+    m.name.trim().toLowerCase() === name.trim().toLowerCase() &&
+    m.church === church
+  ) || null;
+
+  // Merge: Sheets has authoritative stage/points, localStorage has full action logs
+  const sheetsActions = existing?.actions || [];
+  const localActions  = local?.actions    || [];
+  // Use whichever has more actions (Sheets may have data from other devices)
+  const mergedActions = localActions.length >= sheetsActions.length ? localActions : sheetsActions;
+  const mergedPoints  = Math.max(local?.points || 0, existing?.points || 0);
+
+  Object.assign(APP, {
+    loggedIn: true, role, name, church,
+    sector:   sectorId,
+    stage:    existing?.stage || local?.stage || 'Evangelism',
+    points:   mergedPoints,
+    actions:  mergedActions,
+  });
+
+  // Save this profile for quick recall on next sign-in
+  saveSession({ name, role, church, sector: sectorId, churchVal });
+
+  // Register new user in Sheets if not found
+  if (!existing) {
+    await apiPost({ action:'register', name, role, church, sector:sectorId, stage:APP.stage, joinDate: new Date().toISOString() });
+  }
+
+  hideLoading();
+  startApp();
+}
+
+// 
+// START APP  role is locked after login
+// 
+function startApp() {
+  const known     = findKnownUser(APP.name);
+  const roleEmoji = {
+    Member:'🙏', 'Church Leader':'⛪', 'Sector Leader':'🌐',
+    Pastor:'🎤', 'Ministry Head':'🌟', 'Ministry Leader':'🌱'
+  }[APP.role] || '👤';
+  const chipLabel = known ? known.title : APP.role;
+  document.getElementById('nav-role-row').style.display = 'block';
+  document.getElementById('nav-chip').textContent = `${roleEmoji} ${chipLabel} · ${APP.church}`;
+  document.getElementById('refresh-btn').style.display = 'inline-flex';
+  document.getElementById('tabbar').style.display = 'flex';
+
+  // Update sync badge
+  const syncEl = document.getElementById('pp-sync');
+  if (syncEl) {
+    syncEl.className = SHEETS_ON ? 'sync-ok' : 'sync-fail';
+    syncEl.textContent = SHEETS_ON ? '✓ Synced to Google Sheets' : '⚠ Connect Google Sheets to save data';
+  }
+
+  if (!isLeader()) {
+    buildTabs([
+      { id:'home',        label:'Home',    icon:'🏠' },
+      { id:'log',         label:'Log',     icon:'✏️' },
+      { id:'mem-profile', label:'Profile', icon:'👤' },
+    ]);
+    renderMemberHome();
+    renderLogScreen();
+    showTab('home');
+  } else {
+    // Command tab — users with commandAccess:true in KNOWN_USERS
+    const leaderTabs = [
+      { id:'church',         label:'My Church', icon:'⛪' },
+      { id:'sector',         label:'Sector',    icon:'🌐' },
+      ...(hasCommandAccess() ? [{ id:'command', label:'Command', icon:'📊' }] : []),
+      { id:'log',            label:'Log',       icon:'✏️' },
+      { id:'leader-profile', label:'Profile',   icon:'👤' },
+    ];
+    buildTabs(leaderTabs);
+    renderChurchScreen();
+    renderLogScreen();
+    showTab('church');
+  }
+
+  showToast(`Welcome, ${APP.name.split(' ')[0]}! 🙏`);
+}
+
+// 
+// TABS
+// 
+function buildTabs(tabs) {
+  document.getElementById('tabbar').innerHTML = tabs.map(t =>
+    `<button class="tbbtn${t.id === currentTab ? ' active' : ''}" onclick="showTab('${t.id}')">
+      <span class="tbicon">${t.icon}</span>
+      <span class="tblabel">${t.label}</span>
+    </button>`
+  ).join('');
+}
+
+function showTab(id) {
+  currentTab = id;
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const scr = document.getElementById(`screen-${id}`);
+  if (scr) scr.classList.add('active');
+  document.getElementById('content').scrollTop = 0;
+  document.querySelectorAll('.tbbtn').forEach(btn => {
+    const m = btn.getAttribute('onclick').match(/'(.+?)'/);
+    if (m) btn.classList.toggle('active', m[1] === id);
+  });
+  const titles = {
+    home:'Home', log:'Log Action', 'mem-profile':'Profile',
+    church:'My Church', sector:'Sector', command:'Command', 'leader-profile':'Profile'
+  };
+  document.getElementById('nav-title').textContent = titles[id] || 'FLCC BOTR';
+
+  // Always refresh live data from Sheets when switching to a data screen
+  const dataScreens = ['home','church','sector','command'];
+  if (dataScreens.includes(id)) {
+    refreshLiveData(id);
+  } else {
+    // Non-data screens render immediately without a network call
+    if (id === 'log')            renderLogScreen();
+    if (id === 'mem-profile')    renderMemberProfile();
+    if (id === 'leader-profile') renderLeaderProfile();
+  }
+}
+
+// Reload data from Sheets then re-render the given screen
+async function refreshLiveData(screenId) {
+  showLoading('Loading latest data…');
+
+  await loadLiveData();
+
+  // Always re-merge current user's session actions into LIVE
+  if (APP.loggedIn && APP.name && APP.actions.length) {
+    applyCurrentUserToLive();
+  }
+
+  hideLoading();
+
+  // Re-render correct screen with fresh data
+  if (screenId === 'home')    renderMemberHome();
+  if (screenId === 'church')  renderChurchScreen();
+  if (screenId === 'sector')  renderSectorScreen();
+  if (screenId === 'command') renderCommandScreen();
+}
+
+// Merge the current signed-in user's session into LIVE store
+// Ensures their own actions are always visible even mid-refresh
+function applyCurrentUserToLive() {
+  if (!APP.actions.length) return;
+  const cId   = getChurchId(APP.church);
+  const secId = APP.sector;
+
+  const existing = LIVE.members.find(m =>
+    m.name.trim().toLowerCase() === APP.name.trim().toLowerCase()
+  );
+
+  if (existing) {
+    // Prefer whichever source has more complete action data
+    if (APP.actions.length > (existing.actions?.length || 0)) {
+      existing.actions = APP.actions;
+      existing.points  = APP.points;
+      existing.stage   = APP.stage;
+    }
+  } else {
+    // Not yet in Sheets — add to LIVE temporarily so dashboard shows their data
+    const gospel    = APP.actions.filter(a => a.type === 'Evangelism').length;
+    const disciples = APP.actions.filter(a => a.type === 'Discipleship').length;
+    const leaders   = APP.actions.filter(a => ['Leadership','Multiplying'].includes(a.type)).length;
+    const monthly   = new Array(8).fill(0);
+    APP.actions.forEach(a => {
+      if (a.type === 'Evangelism') monthly[Math.min(a.monthIndex || 0, 7)]++;
+    });
+    LIVE.members.push({
+      name: APP.name, church: APP.church, churchId: cId,
+      sector: secId, stage: APP.stage, role: APP.role,
+      points: APP.points, actionsCount: APP.actions.length,
+      gospel, disciples, leaders, monthlyActions: monthly,
+      actions: APP.actions,
+    });
+    if (LIVE.churches[cId]) {
+      LIVE.churches[cId].members++;
+      LIVE.churches[cId].gospel    += gospel;
+      LIVE.churches[cId].disciples += disciples;
+      LIVE.churches[cId].leaders   += leaders;
+      monthly.forEach((v, i) => { LIVE.churches[cId].monthly[i] += v; });
+    }
+    if (LIVE.sectors[secId]) {
+      LIVE.sectors[secId].gospel    += gospel;
+      LIVE.sectors[secId].disciples += disciples;
+      LIVE.sectors[secId].leaders   += leaders;
+    }
+    LIVE.totalGospel  += gospel;
+    LIVE.totalDisc    += disciples;
+    LIVE.totalLeaders += leaders;
+  }
+}
+
+// 
+// MEMBER: HOME  personal data + network total only
+// 
+function renderMemberHome() {
+  const sn   = APP.name || 'Member';
+  const sNum = stageNum(APP.stage);
+  const sect = SECTORS.find(x => x.id === APP.sector) || SECTORS[2];
+
+  document.getElementById('mh-av').textContent       = sn[0].toUpperCase();
+  document.getElementById('mh-name').textContent     = sn;
+  document.getElementById('mh-church').textContent   = `${APP.church} · ${sect.name} Sector`;
+  document.getElementById('mh-chip').textContent     = APP.stage;
+  document.getElementById('mh-stagenum').textContent = `Stage ${sNum} of 4`;
+  document.getElementById('mem-count').textContent   = APP.actions.length;
+  document.getElementById('mem-pts').textContent     = APP.points;
+  document.getElementById('mem-stagefrac').textContent = `${sNum}/4`;
+
+  // Stage tracker
+  document.getElementById('stk-prog').style.width = `${((sNum - 1) / 3) * 75}%`;
+  document.getElementById('stk-steps').innerHTML = STAGES.map((st, i) => {
+    const cls  = i < sNum - 1 ? 'done' : i === sNum - 1 ? 'cur' : 'pend';
+    const ncls = i < sNum - 1 ? 'done' : i === sNum - 1 ? 'active' : 'pend';
+    return `<div class="stk-step">
+      <div class="stk-dot ${cls}">${i < sNum - 1 ? '✓' : i + 1}</div>
+      <div class="stk-name ${ncls}">${st}</div>
+    </div>`;
+  }).join('');
+
+  // Gospel progress  network total only (no per-church breakdown for members)
+  const tG   = LIVE.totalGospel;
+  const tPct = (tG / 270000 * 100).toFixed(1);
+  document.getElementById('mem-gospel-label').textContent = `${tG.toLocaleString()} / 270,000`;
+  document.getElementById('mem-gospel-bar').style.width   = tPct + '%';
+  document.getElementById('mem-gospel-pct').textContent   = `${tPct}% of 2030 target`;
+
+  // Recent actions  only this member's own actions
+  const el = document.getElementById('mem-recent');
+  if (!APP.actions.length) {
+    el.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">✏️</div>
+      <div class="empty-title">No actions yet</div>
+      <div class="empty-sub">Tap "Log an Action" above to record your first gospel activity and begin your discipleship journey.</div>
+    </div>`;
+    return;
+  }
+  el.innerHTML = [...APP.actions].reverse().slice(0, 5).map((a, i, arr) => `
+    <div class="lr">
+      <div class="ibox" style="${typeStyle(a.type)}">${typeIcon(a.type)}</div>
+      <div class="rm">
+        <div class="rt">${a.label}</div>
+        <div class="rs">${a.type} · ${a.date}</div>
+      </div>
+      <div style="font-size:14px;font-weight:800;color:#FF9500">+${a.pts}</div>
+    </div>
+    ${i < arr.length - 1 ? '<div class="ldi"></div>' : ''}
+  `).join('');
+}
+
+// 
+// ATTACHMENT HANDLING
+// 
+const attachments = { photos: [], files: [], note: '' };
+
+function updateAttachCount() {
+  const total = attachments.photos.length + attachments.files.length + (attachments.note.trim() ? 1 : 0);
+  const badge = document.getElementById('attach-count');
+  if (!badge) return;
+  if (total === 0) {
+    badge.style.display = 'none';
+  } else {
+    badge.style.display = 'inline-flex';
+    badge.textContent = `📎 ${total} attachment${total > 1 ? 's' : ''} added`;
+  }
+  // Highlight active buttons
+  document.getElementById('attach-photo-btn')?.classList.toggle('active', attachments.photos.length > 0);
+  document.getElementById('attach-file-btn')?.classList.toggle('active', attachments.files.length > 0);
+  document.getElementById('attach-note-btn')?.classList.toggle('active', attachments.note.trim().length > 0);
+}
+
+function handlePhotoAttach(event) {
+  const files = Array.from(event.target.files);
+  if (!files.length) return;
+
+  files.forEach(file => {
+    if (!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const id = 'ph_' + Date.now() + '_' + Math.random().toString(36).substr(2,5);
+      attachments.photos.push({ id, name: file.name, dataUrl: e.target.result, size: file.size });
+      renderPhotoPreview();
+      updateAttachCount();
+    };
+    reader.readAsDataURL(file);
+  });
+  event.target.value = ''; // reset so same file can be re-selected
+}
+
+function handleFileAttach(event) {
+  const files = Array.from(event.target.files);
+  if (!files.length) return;
+
+  files.forEach(file => {
+    const id = 'fl_' + Date.now() + '_' + Math.random().toString(36).substr(2,5);
+    attachments.files.push({ id, name: file.name, size: file.size, type: file.type });
+    renderFileList();
+    updateAttachCount();
+  });
+  event.target.value = '';
+}
+
+function toggleNoteField() {
+  const wrap = document.getElementById('attach-note-wrap');
+  const ta   = document.getElementById('attach-note-text');
+  if (!wrap || !ta) return;
+  const isOpen = wrap.style.display !== 'none';
+  wrap.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) {
+    setTimeout(() => ta.focus(), 50);
+    ta.oninput = () => {
+      attachments.note = ta.value;
+      updateAttachCount();
+    };
+  } else {
+    attachments.note = '';
+    ta.value = '';
+    updateAttachCount();
+  }
+}
+
+function renderPhotoPreview() {
+  const el = document.getElementById('attach-photo-preview');
+  if (!el) return;
+  el.style.marginTop = attachments.photos.length ? '10px' : '0';
+  el.innerHTML = attachments.photos.map(p => `
+    <div class="attach-thumb">
+      <img src="${p.dataUrl}" alt="${p.name}" />
+      <div class="attach-thumb-del" onclick="removePhoto('${p.id}')">✕</div>
+    </div>
+  `).join('');
+}
+
+function removePhoto(id) {
+  attachments.photos = attachments.photos.filter(p => p.id !== id);
+  renderPhotoPreview();
+  updateAttachCount();
+}
+
+function fileIcon(type) {
+  if (type.includes('pdf'))          return '📄';
+  if (type.includes('word') || type.includes('document')) return '📝';
+  if (type.includes('sheet') || type.includes('excel'))   return '📊';
+  if (type.includes('presentation') || type.includes('powerpoint')) return '📑';
+  if (type.includes('text'))         return '📃';
+  return '📎';
+}
+
+function formatSize(bytes) {
+  if (bytes < 1024)        return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function renderFileList() {
+  const el = document.getElementById('attach-file-list');
+  if (!el) return;
+  el.style.marginTop = attachments.files.length ? '10px' : '0';
+  el.innerHTML = attachments.files.map(f => `
+    <div class="attach-file-row">
+      <div class="attach-file-icon">${fileIcon(f.type)}</div>
+      <div class="attach-file-info">
+        <div class="attach-file-name">${f.name}</div>
+        <div class="attach-file-size">${formatSize(f.size)}</div>
+      </div>
+      <div class="attach-file-del" onclick="removeFile('${f.id}')">✕</div>
+    </div>
+  `).join('');
+}
+
+function removeFile(id) {
+  attachments.files = attachments.files.filter(f => f.id !== id);
+  renderFileList();
+  updateAttachCount();
+}
+
+function clearAttachments() {
+  attachments.photos = [];
+  attachments.files  = [];
+  attachments.note   = '';
+  const previewEl = document.getElementById('attach-photo-preview');
+  const fileEl    = document.getElementById('attach-file-list');
+  const noteWrap  = document.getElementById('attach-note-wrap');
+  const noteText  = document.getElementById('attach-note-text');
+  if (previewEl) previewEl.innerHTML = '';
+  if (fileEl)    fileEl.innerHTML = '';
+  if (noteWrap)  { noteWrap.style.display = 'none'; }
+  if (noteText)  noteText.value = '';
+  updateAttachCount();
+}
+
+// Build a compact attachment summary string for saving
+function attachmentSummary() {
+  const parts = [];
+  if (attachments.photos.length) parts.push(`${attachments.photos.length} photo${attachments.photos.length > 1 ? 's' : ''}`);
+  if (attachments.files.length)  parts.push(attachments.files.map(f => f.name).join(', '));
+  if (attachments.note.trim())   parts.push(`Note: ${attachments.note.trim()}`);
+  return parts.join(' · ');
+}
+
+// ══════════════════════════════════════════════════════════
+// MEMBER: LOG ACTION
+// ══════════════════════════════════════════════════════════
+function renderLogScreen() {
+  document.getElementById('log-action-grid').innerHTML = ACTIONS_LIB.map((a, i) => `
+    <div class="arow${i === selAction ? ' sel' : ''}" onclick="selAct(${i})">
+      <div class="radio${i === selAction ? ' on' : ''}">${i === selAction ? '<div class="radio-in"></div>' : ''}</div>
+      <div class="aname">${a.label}
+        <span style="display:inline-block;padding:1px 7px;border-radius:8px;font-size:10.5px;font-weight:600;margin-left:5px;${typeStyle(a.type)}">${a.type}</span>
+      </div>
+      <div class="apts">+${a.pts}</div>
+    </div>
+    ${i < ACTIONS_LIB.length - 1 ? '<div class="adiv"></div>' : ''}
+  `).join('');
+}
+
+function selAct(i) { selAction = i; renderLogScreen(); }
+
+async function submitAction() {
+  const a    = ACTIONS_LIB[selAction];
+  const now  = new Date();
+  const date = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][now.getMonth()] + ' ' + now.getDate();
+
+  const evidenceText = document.getElementById('log-evid')?.value || '';
+  const attachSummary = attachmentSummary();
+  const fullEvidence = [evidenceText, attachSummary].filter(Boolean).join(' · ');
+
+  const actionWithDate = {
+    ...a, date,
+    reflection: document.getElementById('log-refl')?.value || '',
+    evidence:   fullEvidence,
+    photoCount: attachments.photos.length,
+    fileCount:  attachments.files.length,
+    hasNote:    attachments.note.trim().length > 0,
+  };
+
+  // Update app state
+  APP.actions.push(actionWithDate);
+  APP.points += a.pts;
+
+  // Persist immediately to localStorage (survives sign-out/sign-in)
+  saveActionsToLocal();
+
+  // Update live data store  pass full action so leader logs are populated
+  applyActionToLive(a.type, APP.church, APP.sector, actionWithDate);
+
+  // Save to Google Sheets
+  showLoading('Saving action…');
+  await apiPost({
+    action:      'logAction',
+    name:        APP.name,
+    role:        APP.role,
+    church:      APP.church,
+    sector:      APP.sector,
+    stage:       APP.stage,
+    actionLabel: a.label,
+    actionType:  a.type,
+    points:      a.pts,
+    date:        now.toISOString(),
+    reflection:  actionWithDate.reflection,
+    evidence:    fullEvidence,
+    attachments: attachSummary,
+  });
+  hideLoading();
+
+  // Clear form + attachments
+  document.getElementById('log-refl').value = '';
+  document.getElementById('log-evid').value = '';
+  clearAttachments();
+
+  showToast(`✓ Logged! +${a.pts} pts · Data saved`);
+
+  // Return to the right screen based on role
+  if (isLeader()) {
+    showTab('church');
+  } else {
+    showTab('home');
+  }
+}
+
+// 
+// MEMBER: PROFILE  full stats + private action log
+// 
+function renderMemberProfile() {
+  const sn   = APP.name || 'Member';
+  const sect = SECTORS.find(x => x.id === APP.sector) || SECTORS[2];
+  const knownP      = findKnownUser(APP.name);
+  const roleEmoji   = { Member:'🙏', 'Church Leader':'⛪', 'Sector Leader':'🌐', Pastor:'🎤', 'Ministry Head':'🌟', 'Ministry Leader':'🌱' }[APP.role] || '🙏';
+  const roleDisplay = knownP ? knownP.title : APP.role;
+
+  document.getElementById('pp-av').textContent          = sn[0].toUpperCase();
+  document.getElementById('pp-name').textContent        = sn;
+  document.getElementById('pp-role-chip').textContent   = `${roleEmoji} ${roleDisplay}`;
+  document.getElementById('pp-detail').textContent      = `${APP.church} · ${sect.name} Sector`;
+  document.getElementById('pp-church').textContent      = APP.church;
+  document.getElementById('pp-sector').textContent      = sect.name;
+  document.getElementById('pp-stage').textContent       = APP.stage;
+  document.getElementById('pp-pts').textContent         = `${APP.points} pts`;
+  document.getElementById('pp-action-count').textContent = `${APP.actions.length} logged`;
+  document.getElementById('edit-stage').value           = APP.stage;
+
+  const sync = document.getElementById('pp-sync');
+  sync.className   = SHEETS_ON ? 'sync-ok' : 'sync-fail';
+  sync.textContent = SHEETS_ON ? '✓ Synced to Google Sheets' : '⚠ Connect Google Sheets to save data';
+
+  // Action type breakdown counts
+  const ct = { Evangelism:0, Discipleship:0, Leadership:0, Multiplying:0 };
+  APP.actions.forEach(a => { if (ct[a.type] !== undefined) ct[a.type]++; });
+  document.getElementById('pp-ct-evang').textContent = ct.Evangelism;
+  document.getElementById('pp-ct-disc').textContent  = ct.Discipleship;
+  document.getElementById('pp-ct-lead').textContent  = ct.Leadership;
+  document.getElementById('pp-ct-mult').textContent  = ct.Multiplying;
+
+  // Full action log — newest first, with edit + delete
+  const logEl = document.getElementById('pp-action-log');
+  if (!APP.actions.length) {
+    logEl.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">📋</div>
+      <div class="empty-title">No actions logged yet</div>
+      <div class="empty-sub">Your full action history appears here each time you sign in.</div>
+    </div>`;
+    return;
+  }
+  logEl.innerHTML = renderActionLogHTML(APP.actions);
+}
+
+// ══════════════════════════════════════════════════════════
+// ACTION LOG — RENDER WITH EDIT + DELETE (member & leader profile)
+// ══════════════════════════════════════════════════════════
+
+/**
+ * Renders the action log HTML for the current user.
+ * Actions stored in chronological order; displayed newest-first.
+ * realIdx = APP.actions.length - 1 - displayIdx  (reversal mapping)
+ */
+function renderActionLogHTML(actions) {
+  const reversed = [...actions].reverse();
+  return reversed.map((a, displayIdx) => {
+    const realIdx   = actions.length - 1 - displayIdx;
+    const attachLine = [];
+    if (a.photoCount > 0) attachLine.push(`📷 ${a.photoCount} photo${a.photoCount > 1 ? 's' : ''}`);
+    if (a.fileCount  > 0) attachLine.push(`📎 ${a.fileCount} file${a.fileCount > 1 ? 's' : ''}`);
+    if (a.hasNote)        attachLine.push(`📝 note`);
+    return `
+      <div class="al-entry" id="al-entry-${realIdx}">
+        <div class="alr">
+          <div class="al-dot" style="${typeStyle(a.type)}">${typeIcon(a.type)}</div>
+          <div class="al-body">
+            <div class="al-title">${a.label}</div>
+            <div class="al-meta">${a.type} · ${a.date}</div>
+            ${a.reflection ? `<div class="al-refl" id="al-refl-${realIdx}">"${a.reflection}"</div>` : `<div class="al-refl" id="al-refl-${realIdx}" style="display:none"></div>`}
+            ${a.evidence   ? `<div class="al-evid" id="al-evid-${realIdx}" style="font-size:11px;color:var(--ter);margin-top:3px">📋 ${a.evidence}</div>` : `<div class="al-evid" id="al-evid-${realIdx}" style="display:none"></div>`}
+            ${attachLine.length ? `<div style="font-size:11px;color:var(--blue);margin-top:3px">${attachLine.join(' · ')}</div>` : ''}
+            <div class="al-actions">
+              <button class="al-edit-btn" onclick="editAction(${realIdx})">✏️ Edit</button>
+              <button class="al-del-btn"  onclick="showDeleteConfirm(${realIdx})">🗑️ Delete</button>
+            </div>
+          </div>
+          <div class="al-pts">+${a.pts}</div>
+        </div>
+        <!-- Inline edit form (hidden by default) -->
+        <div class="al-edit-form" id="al-edit-${realIdx}" style="display:none">
+          <label class="al-edit-label">Reflection</label>
+          <textarea class="al-edit-ta" id="al-edit-refl-${realIdx}" rows="3">${a.reflection || ''}</textarea>
+          <label class="al-edit-label">Evidence / Notes</label>
+          <input  class="al-edit-inp" id="al-edit-evid-${realIdx}" type="text" value="${(a.evidence || '').replace(/"/g,'&quot;')}" placeholder="e.g. Name of person, scripture studied…" />
+          <div class="al-edit-row">
+            <button class="al-save-btn"   onclick="saveEditAction(${realIdx})">Save Changes</button>
+            <button class="al-cancel-btn" onclick="cancelEditAction(${realIdx})">Cancel</button>
+          </div>
+        </div>
+        <!-- Delete confirmation (hidden by default) -->
+        <div class="al-confirm" id="al-confirm-${realIdx}" style="display:none">
+          <div class="al-confirm-text">Delete this action? This cannot be undone.</div>
+          <button class="al-confirm-yes" onclick="deleteAction(${realIdx})">Delete</button>
+          <button class="al-confirm-no"  onclick="cancelDelete(${realIdx})">Keep</button>
+        </div>
+        ${displayIdx < reversed.length - 1 ? '<div class="ldi"></div>' : ''}
+      </div>`;
+  }).join('');
+}
+
+/** Open edit form for a specific action (by real index) */
+function editAction(realIdx) {
+  cancelAllEdits(); // close any other open form first
+  document.getElementById(`al-edit-${realIdx}`).style.display   = 'block';
+  document.getElementById(`al-confirm-${realIdx}`).style.display = 'none';
+  document.getElementById(`al-edit-refl-${realIdx}`).focus();
+}
+
+/** Save edited reflection + evidence, persist to localStorage + Sheets */
+function saveEditAction(realIdx) {
+  const newRefl = document.getElementById(`al-edit-refl-${realIdx}`).value.trim();
+  const newEvid = document.getElementById(`al-edit-evid-${realIdx}`).value.trim();
+
+  // Update APP.actions in place
+  APP.actions[realIdx].reflection = newRefl;
+  APP.actions[realIdx].evidence   = newEvid;
+
+  // Persist immediately
+  saveActionsToLocal();
+
+  // Sync edit to Sheets if connected
+  if (SHEETS_ON && APP.actions[realIdx].id) {
+    apiPost({
+      action:     'editAction',
+      name:       APP.name,
+      church:     APP.church,
+      actionId:   APP.actions[realIdx].id,
+      reflection: newRefl,
+      evidence:   newEvid,
+    });
+  }
+
+  // Re-render the log to show updated content
+  const logEl = document.getElementById('pp-action-log') || document.getElementById('lp-action-log');
+  if (logEl) logEl.innerHTML = renderActionLogHTML(APP.actions);
+
+  // Refresh type breakdown counts
+  refreshActionCounts();
+  showToast('✓ Action updated');
+}
+
+/** Cancel edit without saving */
+function cancelEditAction(realIdx) {
+  document.getElementById(`al-edit-${realIdx}`).style.display = 'none';
+}
+
+/** Show inline delete confirmation */
+function showDeleteConfirm(realIdx) {
+  cancelAllEdits();
+  document.getElementById(`al-confirm-${realIdx}`).style.display = 'flex';
+}
+
+/** Confirmed delete — remove action, recalculate points, persist */
+function deleteAction(realIdx) {
+  const removed = APP.actions.splice(realIdx, 1)[0];
+
+  // Recalculate points
+  APP.points = APP.actions.reduce((sum, a) => sum + (a.pts || 0), 0);
+
+  // Persist
+  saveActionsToLocal();
+
+  // Sync delete to Sheets if connected
+  if (SHEETS_ON && removed?.id) {
+    apiPost({
+      action:   'deleteAction',
+      name:     APP.name,
+      church:   APP.church,
+      actionId: removed.id,
+    });
+  }
+
+  // Re-render full profile
+  const isLeaderProfile = !!document.getElementById('lp-action-log');
+  if (isLeaderProfile) {
+    renderLeaderProfile();
+  } else {
+    renderMemberProfile();
+  }
+  renderMemberHome();
+  showToast('Action deleted');
+}
+
+/** Cancel delete confirmation */
+function cancelDelete(realIdx) {
+  document.getElementById(`al-confirm-${realIdx}`).style.display = 'none';
+}
+
+/** Close all open edit forms and confirm dialogs */
+function cancelAllEdits() {
+  document.querySelectorAll('[id^="al-edit-"]').forEach(el => {
+    if (!el.id.includes('refl') && !el.id.includes('evid')) el.style.display = 'none';
+  });
+  document.querySelectorAll('[id^="al-confirm-"]').forEach(el => {
+    el.style.display = 'none';
+  });
+}
+
+/** Refresh the 4-tile action type breakdown counts */
+function refreshActionCounts() {
+  const ct = { Evangelism:0, Discipleship:0, Leadership:0, Multiplying:0 };
+  APP.actions.forEach(a => { if (ct[a.type] !== undefined) ct[a.type]++; });
+  const map = {
+    'pp-ct-evang': ct.Evangelism,
+    'pp-ct-disc':  ct.Discipleship,
+    'pp-ct-lead':  ct.Leadership,
+    'pp-ct-mult':  ct.Multiplying,
+    'lp-ct-evang': ct.Evangelism,
+    'lp-ct-disc':  ct.Discipleship,
+    'lp-ct-lead':  ct.Leadership,
+    'lp-ct-mult':  ct.Multiplying,
+  };
+  Object.entries(map).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  });
+  const countEl = document.getElementById('pp-action-count');
+  if (countEl) countEl.textContent = `${APP.actions.length} logged`;
+  const ptsEl = document.getElementById('pp-pts');
+  if (ptsEl) ptsEl.textContent = `${APP.points} pts`;
+}
+
+function updateStage() {
+  APP.stage = document.getElementById('edit-stage').value;
+  saveActionsToLocal(); // persist stage change
+  apiPost({ action:'updateStage', name:APP.name, church:APP.church, stage:APP.stage });
+  renderMemberHome();
+  showToast('Stage updated ✓');
+}
+
+// 
+// LEADER: MY CHURCH  all data from LIVE store
+// 
+function renderChurchScreen() {
+  // Leader sees their own church by default
+  const cId   = CHURCHES.find(c => c.name === APP.church)?.id || 'botr';
+  const cDef  = CHURCHES.find(c => c.id === cId);
+  const cLive = LIVE.churches[cId];
+  const sect  = SECTORS.find(s => s.id === (cDef?.sector || APP.sector)) || SECTORS[2];
+
+  const gospelPct = cLive.gospel / 22500;
+  const st        = statusFor(gospelPct);
+
+  // Header
+  document.getElementById('ch-icon-box').style.background = sect.light;
+  document.getElementById('ch-name').textContent           = APP.church;
+  document.getElementById('ch-sector-label').textContent   = `${sect.name} Sector`;
+  document.getElementById('ch-status-pill').className      = `pill ${st.cls}`;
+  document.getElementById('ch-status-pill').textContent    = st.label;
+  document.getElementById('ch-members-count').textContent  = cLive.members;
+  document.getElementById('ch-gospel').textContent         = cLive.gospel.toLocaleString();
+  document.getElementById('ch-score').textContent          = score(cId).toFixed(1);
+
+  // Progress rows
+  const rows = [
+    { label:'Gospel Shared', actual:cLive.gospel,    target:22500, color:sect.color },
+    { label:'Disciples',     actual:cLive.disciples, target:125,   color:'#007AFF'  },
+    { label:'Leaders',       actual:cLive.leaders,   target:146,   color:'#FF9500'  },
+  ];
+  document.getElementById('ch-prog').innerHTML = rows.map((p, i, a) => {
+    const pp = Math.min(p.actual / p.target * 100, 100);
+    return `<div style="${i < a.length - 1 ? 'margin-bottom:16px' : ''}">
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+        <span style="font-size:14px;font-weight:600">${p.label}</span>
+        <span style="font-size:13px;color:#8E8E93">
+          ${p.actual.toLocaleString()} / ${p.target.toLocaleString()}
+          <span style="font-size:11px;color:#AEAEB2;margin-left:4px">${pp.toFixed(0)}%</span>
+        </span>
+      </div>
+      <div class="pb" style="height:7px"><div class="pf" style="width:${pp}%;height:7px;background:${p.color}"></div></div>
+    </div>`;
+  }).join('');
+
+  // Members list  name + stage + points only. No action log detail.
+  // Church Leaders see aggregate view only. Logs are private.
+  const churchMembers = LIVE.members.filter(m => m.churchId === APP.church || m.churchId === cId);
+  const memberEl = document.getElementById('ch-member-list');
+  if (!churchMembers.length) {
+    memberEl.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">🙏</div>
+      <div class="empty-title">No members yet</div>
+      <div class="empty-sub">Members appear here once they sign in and log their first action.</div>
+    </div>`;
+  } else {
+    memberEl.innerHTML = churchMembers.map((m, i) => `
+      <div class="lr">
+        <div class="av" style="background:${avColor(i)}">${m.name[0].toUpperCase()}</div>
+        <div class="rm">
+          <div class="rt">${m.name}</div>
+          <div style="display:flex;align-items:center;gap:5px;margin-top:2px">
+            <div style="width:6px;height:6px;border-radius:3px;background:${stageColor(m.stage)}"></div>
+            <span style="font-size:12px;color:#8E8E93">${m.stage || 'Evangelism'}</span>
+          </div>
+        </div>
+        <div style="font-size:13px;font-weight:700;color:#FF9500">${(m.points || 0)} pts</div>
+      </div>
+      ${i < churchMembers.length - 1 ? '<div class="ldi"></div>' : ''}
+    `).join('') + `<div style="padding:10px 16px;border-top:.5px solid var(--fill4)">
+      <div class="priv-banner" style="margin:0">
+        <span style="font-size:14px">🔒</span>
+        <div class="priv-banner-text" style="font-size:11px">Individual action logs are private. Only Sector Leaders and the Lead Pastor can view them.</div>
+      </div>
+    </div>`;
+  }
+
+  // Chart  monthly data from LIVE
+  destroyChart('churchChart');
+  charts['churchChart'] = new Chart(document.getElementById('churchChart').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: MONTHS,
+      datasets: [{ label:'Gospel Shared', data: cLive.monthly, backgroundColor: sect.color + '33', borderColor: sect.color, borderWidth: 2, borderRadius: 6 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: v => `Gospel Shared: ${v.raw}` } } },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#8E8E93', font: { size: 10 } } },
+        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { color: '#8E8E93', font: { size: 10 }, callback: v => v >= 1000 ? `${v/1000}k` : v } },
+      },
+    },
+  });
+}
+
+// 
+// LEADER: SECTOR
+// 
+function renderSectorScreen() {
+  const s    = SECTORS.find(x => x.id === activeSector);
+  const sLv  = LIVE.sectors[activeSector];
+  const pct  = sLv.gospel / s.target.gospel;
+  const st   = statusFor(pct);
+
+  // Segmented control
+  document.getElementById('sec-seg').innerHTML = SECTORS.map(sec =>
+    `<button class="seg-btn${sec.id === activeSector ? ' active' : ''}" onclick="setSector('${sec.id}')">${sec.name}</button>`
+  ).join('');
+
+  // Hero card
+  document.getElementById('sec-hero').innerHTML = `
+    <div style="border-radius:18px;padding:20px;margin:4px 0;background:linear-gradient(135deg,${s.light} 0%,${s.color}10 100%);border:1px solid ${s.color}30">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+        <div>
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:${s.dark};margin-bottom:4px">${s.name} Sector</div>
+          <div style="font-size:30px;font-weight:800;letter-spacing:-.6px;color:#000;line-height:1">${sLv.gospel.toLocaleString()}</div>
+          <div style="font-size:13px;color:#8E8E93;margin-top:3px">gospel shared of ${s.target.gospel.toLocaleString()}</div>
+        </div>
+        <span class="pill ${st.cls}">${st.label}</span>
+      </div>
+      <div class="pb" style="height:8px"><div class="pf" style="width:${Math.min(pct*100,100).toFixed(1)}%;height:8px;background:${s.color}"></div></div>
+      <div style="font-size:12px;color:#8E8E93;margin-top:4px">${(pct*100).toFixed(1)}% of 2030 target</div>
+    </div>`;
+
+  document.getElementById('sec-disc').textContent     = sLv.disciples;
+  document.getElementById('sec-disc-sub').textContent = `of ${s.target.disciples}`;
+  document.getElementById('sec-lead').textContent     = sLv.leaders;
+  document.getElementById('sec-lead-sub').textContent = `of ${s.target.leaders}`;
+
+  // Progress rows
+  document.getElementById('sec-prog').innerHTML = [
+    { label:'Gospel Shared', actual:sLv.gospel,    target:s.target.gospel,    color:s.color   },
+    { label:'Disciples',     actual:sLv.disciples,  target:s.target.disciples,  color:'#007AFF' },
+    { label:'Leaders',       actual:sLv.leaders,    target:s.target.leaders,    color:'#FF9500' },
+  ].map((p, i, a) => {
+    const pp = Math.min(p.actual / p.target * 100, 100);
+    return `<div style="${i < a.length - 1 ? 'margin-bottom:14px' : ''}">
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+        <span style="font-size:14px;font-weight:600">${p.label}</span>
+        <span style="font-size:13px;color:#8E8E93">${p.actual.toLocaleString()} / ${p.target.toLocaleString()}
+          <span style="font-size:11px;color:#AEAEB2;margin-left:4px">${pp.toFixed(1)}%</span></span>
+      </div>
+      <div class="pb" style="height:7px"><div class="pf" style="width:${pp}%;height:7px;background:${p.color}"></div></div>
+    </div>`;
+  }).join('');
+
+  // Trend chart  monthly data aggregated from churches in this sector
+  const sectorChurchIds = CHURCHES.filter(c => c.sector === activeSector).map(c => c.id);
+  const monthlyData = MONTHS.map((_, idx) =>
+    sectorChurchIds.reduce((sum, cId) => sum + (LIVE.churches[cId].monthly[idx] || 0), 0)
+  );
+
+  document.getElementById('sec-chart-title').textContent = `${s.name} — Gospel Shared (May–Dec 2026)`;
+  document.getElementById('sec-chart-leg').innerHTML     = `<div class="leg-item"><div class="leg-dot" style="background:${s.color}"></div>${s.name} Sector</div>`;
+
+  destroyChart('secTrendChart');
+  charts['secTrendChart'] = new Chart(document.getElementById('secTrendChart').getContext('2d'), {
+    type: 'line',
+    data: { labels: MONTHS, datasets: [{ label:'Gospel Shared', data: monthlyData, borderColor: s.color, backgroundColor: s.color + '22', borderWidth: 2.5, fill: true, tension: 0.4, pointRadius: 3, pointBackgroundColor: s.color }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: v => `Gospel Shared: ${v.raw}` } } },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#8E8E93', font: { size: 10 }, maxRotation: 0 } },
+        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { color: '#8E8E93', font: { size: 10 }, callback: v => v >= 1000 ? `${v/1000}k` : v } },
+      },
+    },
+  });
+
+  // Insight
+  document.getElementById('sec-insight').innerHTML = `
+    <div class="ins-card" style="color:${s.dark}">
+      <div class="ins-tag">AI Analysis</div>
+      <div class="ins-text">${insightText(s, pct)}</div>
+      <div class="ins-div" style="border-color:${s.color}"></div>
+      <div class="ins-atag">This Week's Action</div>
+      <div class="ins-atext">${weeklyAct(s, pct)}</div>
+    </div>`;
+
+  // Church rankings  live scores
+  const chs = CHURCHES.filter(c => c.sector === activeSector).sort((a, b) => score(b.id) - score(a.id));
+  const medals = ['🥇', '🥈', '🥉', '#4'];
+  const hasAny = chs.some(c => score(c.id) > 0);
+
+  document.getElementById('sec-rankings').innerHTML = hasAny
+    ? chs.map((ch, i) => {
+        const cLv = LIVE.churches[ch.id];
+        return `<div class="lr">
+          <div style="width:28px;text-align:center;font-size:${i < 3 ? 18 : 13}px;color:${i >= 3 ? '#8E8E93' : 'inherit'};flex-shrink:0">${medals[i]}</div>
+          <div class="rm">
+            <div class="rt" style="font-weight:600">${ch.name}</div>
+            <div class="rs">${cLv.gospel.toLocaleString()} gospel shared · ${cLv.members} members</div>
+          </div>
+          <div class="rr"><div class="rv">${score(ch.id).toFixed(1)}</div><div class="rh">score</div></div>
+        </div>${i < chs.length - 1 ? '<div class="ldi" style="margin-left:40px"></div>' : ''}`;
+      }).join('')
+    : `<div class="empty-state">
+        <div class="empty-icon">📊</div>
+        <div class="empty-title">Rankings start at zero</div>
+        <div class="empty-sub">As members log gospel activities, rankings update automatically.</div>
+      </div>`;
+
+  // Member logs  Sector Leader / Pastor only
+  const logsSection = document.getElementById('sec-member-logs-section');
+  if (canViewLogs()) {
+    logsSection.style.display = 'block';
+    renderMemberLogsForSector(activeSector);
+  } else {
+    logsSection.style.display = 'none';
+  }
+
+  // Report tables — Multiplying Disciples + Sustainable Leaders
+  renderSectorReports(activeSector);
+}
+
+function setSector(id) { activeSector = id; renderSectorScreen(); }
+
+// 
+// LEADER: COMMAND CENTER
+// 
+function renderCommandScreen() {
+  const tG  = LIVE.totalGospel;
+  const tD  = LIVE.totalDisc;
+  const tL  = LIVE.totalLeaders;
+  const mPct = tG / 270000 * 0.5 + tD / 1500 * 0.3 + tL / 1750 * 0.2;
+
+  document.getElementById('cmd-pct').textContent    = (mPct * 100).toFixed(1) + '%';
+  document.getElementById('cmd-pct-bar').style.width = Math.min(mPct * 100, 100).toFixed(1) + '%';
+  document.getElementById('cmd-gospel').textContent = tG.toLocaleString();
+  document.getElementById('cmd-disc').textContent   = tD;
+  document.getElementById('cmd-leads').textContent  = tL;
+
+  // Sector cards
+  document.getElementById('cmd-sec-cards').innerHTML = SECTORS.map(s => {
+    const sLv = LIVE.sectors[s.id];
+    const pct = sLv.gospel / s.target.gospel;
+    const st  = statusFor(pct);
+    return `<div class="card" style="padding:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="display:flex;align-items:center;gap:7px">
+          <div style="width:10px;height:10px;border-radius:5px;background:${s.color}"></div>
+          <span style="font-size:17px;font-weight:800">${s.name}</span>
+        </div>
+        <span class="pill ${st.cls}">${st.label}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:8px">
+        <div style="font-size:24px;font-weight:800;color:${s.color};letter-spacing:-.5px">${sLv.gospel.toLocaleString()}</div>
+        <div style="font-size:13px;color:#8E8E93">of ${(s.target.gospel/1000).toFixed(0)}K · ${(pct*100).toFixed(1)}%</div>
+      </div>
+      <div class="pb" style="height:7px"><div class="pf" style="width:${Math.min(pct*100,100).toFixed(1)}%;height:7px;background:${s.color}"></div></div>
+      <div style="font-size:12.5px;color:#8E8E93;margin-top:10px;line-height:1.5">${insightText(s, pct).split('.')[0]}.</div>
+    </div>`;
+  }).join('');
+
+  // Trend legend
+  document.getElementById('cmd-trend-leg').innerHTML = SECTORS.map(s =>
+    `<div class="leg-item"><div class="leg-dot" style="background:${s.color}"></div>${s.name}</div>`
+  ).join('');
+
+  // Aggregate monthly per sector
+  const sectorMonthly = SECTORS.map(s => {
+    const cIds = CHURCHES.filter(c => c.sector === s.id).map(c => c.id);
+    return MONTHS.map((_, idx) => cIds.reduce((sum, cId) => sum + (LIVE.churches[cId].monthly[idx] || 0), 0));
+  });
+
+  // Chart 1  multi-sector trend
+  destroyChart('cmdTrendChart');
+  charts['cmdTrendChart'] = new Chart(document.getElementById('cmdTrendChart').getContext('2d'), {
+    type: 'line',
+    data: { labels: MONTHS, datasets: SECTORS.map((s, i) => ({ label: s.name, data: sectorMonthly[i], borderColor: s.color, backgroundColor: 'transparent', borderWidth: 2.5, tension: 0.4, pointRadius: 3, pointBackgroundColor: s.color, pointBorderWidth: 0 })) },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { mode:'index', intersect: false, callbacks: { label: v => `${v.dataset.label}: ${v.raw.toLocaleString()}` } } },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#8E8E93', font: { size: 10 }, maxRotation: 0 } },
+        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { color: '#8E8E93', font: { size: 10 }, callback: v => v >= 1000 ? `${v/1000}k` : v } },
+      },
+      interaction: { mode: 'nearest', axis: 'x', intersect: false },
+    },
+  });
+
+  // Chart 2  sector comparison
+  destroyChart('cmdBarChart');
+  charts['cmdBarChart'] = new Chart(document.getElementById('cmdBarChart').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: SECTORS.map(s => s.name),
+      datasets: [
+        { label:'Gospel Shared', data: SECTORS.map(s => LIVE.sectors[s.id].gospel),   backgroundColor: SECTORS.map(s => s.color + 'CC'), borderColor: SECTORS.map(s => s.color), borderWidth: 2, borderRadius: 8 },
+        { label:'2030 Target',   data: SECTORS.map(s => s.target.gospel), backgroundColor: 'rgba(0,0,0,0.05)', borderColor: 'rgba(0,0,0,0.15)', borderWidth: 1.5, borderRadius: 8 },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 10, font: { size: 11 }, color: '#8E8E93', padding: 14 } }, tooltip: { callbacks: { label: v => `${v.dataset.label}: ${v.raw.toLocaleString()}` } } },
+      scales: { x: { grid: { display: false }, ticks: { color: '#8E8E93', font: { size: 12 } } }, y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { color: '#8E8E93', font: { size: 10 }, callback: v => v >= 1000 ? `${v/1000}k` : v } } },
+    },
+  });
+
+  // Chart 3  5-year milestone
+  destroyChart('cmdYearChart');
+  charts['cmdYearChart'] = new Chart(document.getElementById('cmdYearChart').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: YEAR_TARGETS.map(y => y.year),
+      datasets: [
+        { label:'Annual Milestone', data: YEAR_TARGETS.map(y => y.target), backgroundColor: 'rgba(0,122,255,0.1)', borderColor: 'rgba(0,122,255,0.4)', borderWidth: 1.5, borderRadius: 8, type: 'bar' },
+        { label:'Current Progress', data: [tG, null, null, null, null], backgroundColor: '#007AFF', borderRadius: 8, type: 'bar' },
+        { label:'Milestone Line',   data: YEAR_TARGETS.map(y => y.target), borderColor: 'rgba(255,149,0,0.7)', borderWidth: 2, borderDash: [5, 3], type: 'line', tension: 0.1, pointRadius: 4, pointBackgroundColor: '#FF9500', fill: false },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 10, font: { size: 11 }, color: '#8E8E93', padding: 14 } }, tooltip: { callbacks: { label: v => v.raw != null ? `${v.dataset.label}: ${v.raw.toLocaleString()}` : 'Upcoming' } } },
+      scales: { x: { grid: { display: false }, ticks: { color: '#8E8E93', font: { size: 11 } } }, y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { color: '#8E8E93', font: { size: 10 }, callback: v => v >= 1000 ? `${(v/1000).toFixed(0)}k` : v } } },
+    },
+  });
+
+  // Weekly actions
+  document.getElementById('cmd-actions').innerHTML = SECTORS.map((s, i) => {
+    const pct = LIVE.sectors[s.id].gospel / s.target.gospel;
+    return `<div>
+      <div class="lr" style="align-items:flex-start">
+        <div style="width:8px;height:8px;border-radius:4px;background:${s.color};margin-top:6px;flex-shrink:0"></div>
+        <div style="flex:1">
+          <div style="font-size:11px;font-weight:700;color:#8E8E93;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">${s.name}</div>
+          <div style="font-size:13.5px;line-height:1.45">${weeklyAct(s, pct)}</div>
+        </div>
+      </div>
+      ${i < SECTORS.length - 1 ? '<div class="ld" style="margin-left:22px"></div>' : ''}
+    </div>`;
+  }).join('');
+
+  // Leaderboard  only show if any activity exists
+  const ranked   = [...CHURCHES].sort((a, b) => score(b.id) - score(a.id));
+  const hasScores = ranked.some(c => score(c.id) > 0);
+  document.getElementById('cmd-board').innerHTML = hasScores
+    ? ranked.map((c, i) => {
+        const s   = SECTORS.find(x => x.id === c.sector);
+        const cLv = LIVE.churches[c.id];
+        return `<div class="lr">
+          <div class="rnum" style="${i < 3 ? `background:${s.color};color:#fff` : 'background:#E5E5EA;color:#8E8E93'}">${i + 1}</div>
+          <div class="rm">
+            <div class="rt" style="font-weight:600">${c.name}</div>
+            <div style="display:flex;align-items:center;gap:5px;margin-top:2px">
+              <span class="pill p-${c.sector}" style="padding:1px 7px;font-size:10.5px">${s.name}</span>
+              <span style="font-size:11px;color:#8E8E93">${cLv.gospel.toLocaleString()} shared</span>
+            </div>
+          </div>
+          <div class="rr"><div class="rv">${score(c.id).toFixed(1)}</div><div class="rh">score</div></div>
+        </div>${i < ranked.length - 1 ? '<div class="ldi"></div>' : ''}`;
+      }).join('')
+    : `<div class="empty-state">
+        <div class="empty-icon">🏆</div>
+        <div class="empty-title">Leaderboard starts at zero</div>
+        <div class="empty-sub">Rankings will update as members across all 12 churches log their gospel activities.</div>
+      </div>`;
+
+  // All member logs  Pastor only (Jopet Alim has full network view)
+  renderAllMemberLogs();
+
+  // Report tables — Multiplying Disciples + Sustainable Leaders (all sectors)
+  renderCommandReports();
+}
+
+// 
+// MEMBER LOG RENDERERS  privacy-gated
+// 
+
+// Build one expandable log card per member
+function buildMemberLogCard(m) {
+  const logs = m.actions || [];
+  const hasLogs = logs.length > 0;
+  const uid = m.name.replace(/\s+/g,'_');
+  const ct = { Evangelism:0, Discipleship:0, Leadership:0, Multiplying:0 };
+  logs.forEach(a => { if (ct[a.type] !== undefined) ct[a.type]++; });
+
+  return `<div class="mlc">
+    <div class="mlc-hdr" onclick="toggleMemberLog('${uid}')">
+      <div class="av" style="background:${avColor(Math.floor(Math.random()*6))};width:36px;height:36px;border-radius:18px;flex-shrink:0;font-size:13px;font-weight:700;color:#fff;display:flex;align-items:center;justify-content:center">${m.name[0].toUpperCase()}</div>
+      <div class="rm">
+        <div class="rt" style="font-weight:600">${m.name}</div>
+        <div class="rs">${m.church} · ${m.stage || 'Evangelism'} · ${logs.length} action${logs.length !== 1 ? 's' : ''}</div>
+      </div>
+      <div style="text-align:right;margin-right:8px">
+        <div style="font-size:14px;font-weight:800;color:var(--orange)">${m.points || 0} pts</div>
+      </div>
+      <div class="mlc-arrow" id="arr_${uid}">▾</div>
+    </div>
+    <div class="mlc-body" id="body_${uid}">
+      ${!hasLogs
+        ? `<div class="mlc-empty">No actions logged yet</div>`
+        : `<div style="display:flex;gap:8px;padding:10px 16px;background:var(--bg);flex-wrap:wrap">
+            <span style="font-size:11px;padding:3px 9px;border-radius:20px;background:var(--hope-bg);color:var(--hope-dk);font-weight:600">🌱 ${ct.Evangelism}</span>
+            <span style="font-size:11px;padding:3px 9px;border-radius:20px;background:var(--blue-bg);color:#005AC0;font-weight:600">📖 ${ct.Discipleship}</span>
+            <span style="font-size:11px;padding:3px 9px;border-radius:20px;background:var(--orange-bg);color:#A05A00;font-weight:600">🏆 ${ct.Leadership}</span>
+            <span style="font-size:11px;padding:3px 9px;border-radius:20px;background:var(--love-bg);color:var(--love-dk);font-weight:600">⛪ ${ct.Multiplying}</span>
+          </div>
+          ${[...logs].reverse().map((a, i, arr) => {
+            const al = [];
+            if (a.photoCount > 0) al.push(`📷 ${a.photoCount}`);
+            if (a.fileCount  > 0) al.push(`📎 ${a.fileCount}`);
+            if (a.hasNote)        al.push(`📝`);
+            return `
+            <div class="alr" style="padding:11px 16px">
+              <div class="al-dot" style="${typeStyle(a.type)};width:34px;height:34px">${typeIcon(a.type)}</div>
+              <div class="al-body">
+                <div class="al-title" style="font-size:13.5px">${a.label}</div>
+                <div class="al-meta">${a.type} · ${a.date}</div>
+                ${a.reflection ? `<div class="al-refl">"${a.reflection}"</div>` : ''}
+                ${a.evidence   ? `<div style="font-size:11px;color:var(--ter);margin-top:2px">📋 ${a.evidence}</div>` : ''}
+                ${al.length    ? `<div style="font-size:11px;color:var(--blue);margin-top:2px">${al.join(' · ')}</div>` : ''}
+              </div>
+              <div class="al-pts" style="font-size:13px">+${a.pts}</div>
+            </div>
+            ${i < arr.length - 1 ? '<div class="ldi"></div>' : ''}
+          `}).join('')}`
+      }
+    </div>
+  </div>`;
+}
+
+function toggleMemberLog(uid) {
+  const body = document.getElementById(`body_${uid}`);
+  const arr  = document.getElementById(`arr_${uid}`);
+  if (!body || !arr) return;
+  body.classList.toggle('open');
+  arr.classList.toggle('open');
+}
+
+// Render member logs for a specific sector (Sector Leader)
+function renderMemberLogsForSector(sectorId) {
+  const sectorMembers = LIVE.members.filter(m => {
+    const c = CHURCHES.find(ch => ch.name === m.church || ch.id === m.churchId);
+    return c && c.sector === sectorId;
+  });
+  const el = document.getElementById('sec-member-logs');
+  if (!el) return;
+  if (!sectorMembers.length) {
+    el.innerHTML = `<div class="mlc"><div class="mlc-empty">No members in this sector yet.</div></div>`;
+    return;
+  }
+  el.innerHTML = sectorMembers.map(buildMemberLogCard).join('');
+}
+
+// Render all member logs for command center (Pastor)
+function renderAllMemberLogs() {
+  const el = document.getElementById('cmd-member-logs');
+  if (!el) return;
+  if (!LIVE.members.length) {
+    el.innerHTML = `<div style="padding:24px;text-align:center;color:var(--ter);font-size:13px">No members have logged actions yet.</div>`;
+    return;
+  }
+  el.innerHTML = LIVE.members.map(buildMemberLogCard).join('');
+}
+
+// ══════════════════════════════════════════════════════════
+// REPORT TABLES — Multiplying Disciples & Sustainable Leaders
+// ══════════════════════════════════════════════════════════
+
+/**
+ * Build per-member report rows from LIVE.members.
+ * Multiplying Disciples qualifies on: Evangelism OR Discipleship OR Leadership (any logged)
+ * Sustainable Leaders qualifies on:  Discipleship OR Leadership OR Multiplying (any logged)
+ */
+function buildReportRows(members) {
+  return members.map(m => {
+    const acts = m.actions || [];
+    const ct = {
+      Evangelism:  acts.filter(a => a.type === 'Evangelism').length,
+      Discipleship:acts.filter(a => a.type === 'Discipleship').length,
+      Leadership:  acts.filter(a => a.type === 'Leadership').length,
+      Multiplying: acts.filter(a => a.type === 'Multiplying').length,
+    };
+    const discQual = ct.Evangelism > 0 || ct.Discipleship > 0 || ct.Leadership > 0;
+    const leadQual = ct.Discipleship > 0 || ct.Leadership > 0 || ct.Multiplying > 0;
+    const sect = SECTORS.find(s => s.id === m.sector) || SECTORS[2];
+    return { ...m, ct, discQual, leadQual, sect };
+  });
+}
+
+function dotCell(count) {
+  if (count > 0) return `<span class="act-dot has" title="${count} action${count>1?'s':''}">${count}</span>`;
+  return `<span class="act-dot zero">—</span>`;
+}
+
+function qualChip(qual) {
+  return qual
+    ? `<span class="qual-chip qual-yes">✓ Qualifies</span>`
+    : `<span class="qual-chip qual-no">Not yet</span>`;
+}
+
+function tableHeaderRow(cols) {
+  return `<thead><tr>${cols.map((c,i) => `<th${i>0?' class="center"':''}>${c}</th>`).join('')}</tr></thead>`;
+}
+
+/** Render Multiplying Disciples table into a given element id */
+function renderDiscReport(tableId, pctId, ofId, barId, members, sectorTarget) {
+  const rows  = buildReportRows(members);
+  const qualified = rows.filter(r => r.discQual);
+  const pct   = sectorTarget > 0 ? Math.min(qualified.length / sectorTarget * 100, 100) : 0;
+
+  if (pctId) document.getElementById(pctId).textContent = pct.toFixed(1) + '%';
+  if (ofId)  document.getElementById(ofId).textContent  = `${qualified.length} / ${sectorTarget.toLocaleString()}`;
+  if (barId) document.getElementById(barId).style.width = pct.toFixed(1) + '%';
+
+  const el = document.getElementById(tableId);
+  if (!el) return;
+
+  if (!rows.length) {
+    el.innerHTML = `<div class="rep-empty">No members have logged actions yet.</div>`;
+    return;
+  }
+
+  const cols = ['Member','Church','Sector','🌱 Evang.','📖 Discip.','🏆 Leader.','Status'];
+  el.innerHTML = `
+    <div class="rep-wrap">
+      <table class="rep-table">
+        ${tableHeaderRow(cols)}
+        <tbody>
+          ${rows.map(r => `
+            <tr>
+              <td style="font-weight:600;min-width:100px">${r.name}</td>
+              <td class="center" style="font-size:11.5px;color:var(--sec)">${r.church}</td>
+              <td class="center">
+                <span style="font-size:10px;padding:2px 7px;border-radius:20px;font-weight:700;background:${r.sect.light};color:${r.sect.dark}">${r.sect.name}</span>
+              </td>
+              <td class="center">${dotCell(r.ct.Evangelism)}</td>
+              <td class="center">${dotCell(r.ct.Discipleship)}</td>
+              <td class="center">${dotCell(r.ct.Leadership)}</td>
+              <td class="center">${qualChip(r.discQual)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      <div class="rep-summary-row">
+        <span>Total qualified: <span class="rep-summary-count">${qualified.length}</span> of ${rows.length} members</span>
+        <span style="color:var(--blue);font-weight:700">${pct.toFixed(1)}% of ${sectorTarget.toLocaleString()} target</span>
+      </div>
+    </div>`;
+}
+
+/** Render Sustainable Leaders table into a given element id */
+function renderLeadReport(tableId, pctId, ofId, barId, members, sectorTarget) {
+  const rows  = buildReportRows(members);
+  const qualified = rows.filter(r => r.leadQual);
+  const pct   = sectorTarget > 0 ? Math.min(qualified.length / sectorTarget * 100, 100) : 0;
+
+  if (pctId) document.getElementById(pctId).textContent = pct.toFixed(1) + '%';
+  if (ofId)  document.getElementById(ofId).textContent  = `${qualified.length} / ${sectorTarget.toLocaleString()}`;
+  if (barId) document.getElementById(barId).style.width = pct.toFixed(1) + '%';
+
+  const el = document.getElementById(tableId);
+  if (!el) return;
+
+  if (!rows.length) {
+    el.innerHTML = `<div class="rep-empty">No members have logged actions yet.</div>`;
+    return;
+  }
+
+  const cols = ['Member','Church','Sector','📖 Discip.','🏆 Leader.','⛪ Multi.','Status'];
+  el.innerHTML = `
+    <div class="rep-wrap">
+      <table class="rep-table">
+        ${tableHeaderRow(cols)}
+        <tbody>
+          ${rows.map(r => `
+            <tr>
+              <td style="font-weight:600;min-width:100px">${r.name}</td>
+              <td class="center" style="font-size:11.5px;color:var(--sec)">${r.church}</td>
+              <td class="center">
+                <span style="font-size:10px;padding:2px 7px;border-radius:20px;font-weight:700;background:${r.sect.light};color:${r.sect.dark}">${r.sect.name}</span>
+              </td>
+              <td class="center">${dotCell(r.ct.Discipleship)}</td>
+              <td class="center">${dotCell(r.ct.Leadership)}</td>
+              <td class="center">${dotCell(r.ct.Multiplying)}</td>
+              <td class="center">${qualChip(r.leadQual)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      <div class="rep-summary-row">
+        <span>Total qualified: <span class="rep-summary-count">${qualified.length}</span> of ${rows.length} members</span>
+        <span style="color:var(--orange);font-weight:700">${pct.toFixed(1)}% of ${sectorTarget.toLocaleString()} target</span>
+      </div>
+    </div>`;
+}
+
+// ── SECTOR SCREEN helpers ─────────────────────────────────────────
+function renderSectorReports(sectorId) {
+  // Filter LIVE.members to this sector
+  const sectorMembers = LIVE.members.filter(m => {
+    const c = CHURCHES.find(ch => ch.name === m.church || ch.id === m.churchId);
+    return c && c.sector === sectorId;
+  });
+  renderDiscReport('sec-disc-table','sec-disc-pct','sec-disc-of','sec-disc-bar', sectorMembers, 500);
+  renderLeadReport('sec-lead-table','sec-lead-pct','sec-lead-of','sec-lead-bar', sectorMembers, 580);
+}
+
+// ── COMMAND SCREEN helpers ────────────────────────────────────────
+function renderCommandReports() {
+  renderDiscReport('cmd-disc-table','cmd-disc-pct','cmd-disc-of','cmd-disc-bar', LIVE.members, 1500);
+  renderLeadReport('cmd-lead-table','cmd-lead-pct','cmd-lead-of','cmd-lead-bar', LIVE.members, 1750);
+}
+
+
+function renderLeaderProfile() {
+  const knownL    = findKnownUser(APP.name);
+  const roleLabel = knownL
+    ? knownL.title
+    : { 'Church Leader':'⛪ Church Leader', 'Sector Leader':'🌐 Sector Leader / Pastor', Pastor:'🎤 Pastor', 'Ministry Head':'🌟 Ministry Head', 'Ministry Leader':'🌱 Ministry Leader' }[APP.role] || APP.role;
+  const sect      = SECTORS.find(x => x.id === APP.sector) || SECTORS[2];
+
+  document.getElementById('lp-av').textContent     = APP.name[0].toUpperCase();
+  document.getElementById('lp-name').textContent   = APP.name;
+  document.getElementById('lp-chip').textContent   = roleLabel;
+  document.getElementById('lp-detail').textContent = `${APP.church} · ${sect.name} Sector · FLCC BOTR`;
+
+  // 5-year milestone rows
+  const tG = LIVE.totalGospel;
+  document.getElementById('lp-year-rows').innerHTML = YEAR_TARGETS.map((y, i) => {
+    const actual = i === 0 ? tG : 0;
+    const pct    = Math.min(actual / y.target * 100, 100);
+    return `<div class="yr" style="${i < YEAR_TARGETS.length - 1 ? '' : 'margin-bottom:0'}">
+      <div class="yl" style="color:${i === 0 ? '#007AFF' : '#8E8E93'}">${y.year}</div>
+      <div class="yb"><div class="yfill" style="width:${pct}%;background:${i === 0 ? '#007AFF' : '#E5E5EA'}"></div></div>
+      <div class="ypct">${pct > 0 ? pct.toFixed(0) + '%' : '—'}</div>
+    </div>`;
+  }).join('');
+
+  // Leader's own action breakdown
+  const ct = { Evangelism:0, Discipleship:0, Leadership:0, Multiplying:0 };
+  APP.actions.forEach(a => { if (ct[a.type] !== undefined) ct[a.type]++; });
+  document.getElementById('lp-ct-evang').textContent = ct.Evangelism;
+  document.getElementById('lp-ct-disc').textContent  = ct.Discipleship;
+  document.getElementById('lp-ct-lead').textContent  = ct.Leadership;
+  document.getElementById('lp-ct-mult').textContent  = ct.Multiplying;
+
+  // Leader's own action log — with edit + delete
+  const logEl = document.getElementById('lp-action-log');
+  if (!APP.actions.length) {
+    logEl.innerHTML = `<div class="mlc-empty">No actions logged yet. Tap Log to record your first action.</div>`;
+  } else {
+    logEl.innerHTML = renderActionLogHTML(APP.actions);
+  }
+
+  // Sector health overview
+  document.getElementById('lp-sec-overview').innerHTML = SECTORS.map((s, i) => {
+    const pct = LIVE.sectors[s.id].gospel / s.target.gospel;
+    const st  = statusFor(pct);
+    return `<div>
+      <div class="srow">
+        <div class="sleft">
+          <div style="width:10px;height:10px;border-radius:5px;background:${s.color};margin-left:2px;margin-right:2px"></div>
+          <div class="slabel2">${s.name} Sector</div>
+        </div>
+        <span class="pill ${st.cls}" style="font-size:11px;padding:2px 8px">${st.label}</span>
+      </div>
+      ${i < SECTORS.length - 1 ? '<div class="ld"></div>' : ''}
+    </div>`;
+  }).join('');
+}
+
+// 
+// SIGN OUT  clears session only, localStorage preserved
+// 
+function signOut() {
+  // Save current session data to localStorage before clearing
+  if (APP.loggedIn && APP.name) saveActionsToLocal();
+
+  Object.assign(APP, { loggedIn:false, role:null, name:'', church:'', sector:'', stage:'Evangelism', points:0, actions:[] });
+  currentTab = 'home'; activeSector = 'love'; selAction = 0;
+  Object.keys(charts).forEach(destroyChart);
+  document.getElementById('tabbar').style.display       = 'none';
+  document.getElementById('nav-role-row').style.display = 'none';
+  document.getElementById('nav-title').textContent      = 'FLCC BOTR';
+  document.getElementById('l-name').value   = '';
+  document.getElementById('l-role').value   = '';
+  document.getElementById('l-church').value = '';
+  document.getElementById('l-role').disabled   = false;
+  document.getElementById('l-church').disabled = false;
+  document.getElementById('l-role').style.opacity   = '1';
+  document.getElementById('l-church').style.opacity = '1';
+  hideKnownBadge();
+  document.getElementById('sec-prev').style.display = 'none';
+  document.getElementById('l-submit').disabled      = true;
+  document.getElementById('refresh-btn').style.display = 'none';
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-login').classList.add('active');
+  renderRecentSessions(); // refresh the quick-login cards
+  showToast('Signed out. Your data is saved. 🙏');
+}
+
+// Manual refresh tap — re-reads Sheets and re-renders current screen
+async function onRefreshTap() {
+  const btn = document.getElementById('refresh-btn');
+  if (btn) { btn.textContent = '⟳ Loading…'; btn.disabled = true; }
+  await refreshLiveData(currentTab);
+  if (btn) { btn.textContent = '⟳ Refresh'; btn.disabled = false; }
+  showToast('✓ Data refreshed');
+}
+
+// 
+// UTILS
+// 
+function toggleSw(id) { const el = document.getElementById(id); el.classList.toggle('on'); el.classList.toggle('off'); }
+function showToast(msg) { const el = document.getElementById('toast'); el.textContent = msg; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2800); }
+
+// 
+// INIT
+// 
+window.addEventListener('DOMContentLoaded', () => {
+  const now = new Date();
+  document.getElementById('sb-time').textContent = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+  renderRecentSessions();
+  checkConnection();
+});
+
+// Auto-refresh when mobile phone returns from background / screen wakes up
+// This handles the case where someone logs on another device while this screen is asleep
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && APP.loggedIn) {
+    const dataScreens = ['home', 'church', 'sector', 'command'];
+    if (dataScreens.includes(currentTab)) {
+      refreshLiveData(currentTab);
+    }
+  }
+});
+
+async function checkConnection() {
+  const el = document.getElementById('conn-status');
+  if (!el) return;
+
+  if (!SHEETS_ON) {
+    el.innerHTML = '⚠️ Script URL not set';
+    el.style.color = 'var(--orange)';
+    return;
+  }
+
+  if (!SHEET_ID || SHEET_ID === 'YOUR_SPREADSHEET_ID_HERE') {
+    el.innerHTML = '⚠️ Spreadsheet ID not set';
+    el.style.color = 'var(--orange)';
+    return;
+  }
+
+  // Both are set — show green. Real test happens on first sign-in.
+  el.innerHTML = '✅ Google Sheets configured — data syncs on sign-in';
+  el.style.color = '#1C7A35';
+}
+</script>
+</body>
+</html>
