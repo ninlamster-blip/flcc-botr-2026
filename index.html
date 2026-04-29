@@ -1908,47 +1908,89 @@ function fetchFromAppsScript() {
   });
 }
 
+// Read from LIVE_DATA tab (rewritten by Apps Script on every action = always fresh)
+// Falls back to reading USERS directly if LIVE_DATA not yet created
 async function loadViaGviz(backup) {
-  const [userRows, actionRows] = await Promise.all([readSheet('USERS'), readSheet('ACTIONS')]);
-  if (!userRows.length && !actionRows.length) {
-    Object.assign(LIVE, backup);
-    hydrateFromLocalStorage();
-    const el = document.getElementById('conn-status');
-    if (el) { el.innerHTML='⚠️ Publish your Sheet — File → Share → Publish to web'; el.style.color='var(--orange)'; }
+  const liveRows = await readSheet('LIVE_DATA');
+
+  if (!liveRows.length) {
+    // LIVE_DATA not created yet — read USERS directly
+    const userRows = await readSheet('USERS');
+    if (!userRows.length) {
+      Object.assign(LIVE, backup);
+      hydrateFromLocalStorage();
+      const el = document.getElementById('conn-status');
+      if (el) { el.innerHTML='⚠️ No data yet — publish sheet and log first action'; el.style.color='var(--orange)'; }
+      return;
+    }
+    buildLiveFromUserRows(userRows);
     return;
   }
-  CHURCHES.forEach(c => { LIVE.churches[c.id]={gospel:0,disciples:0,leaders:0,members:0,monthly:new Array(8).fill(0)}; });
-  SECTORS.forEach(s => { LIVE.sectors[s.id]={gospel:0,disciples:0,leaders:0}; });
-  const actByUser={};
-  actionRows.filter(r=>r[0]).forEach(r=>{
-    const uid=String(r[1]||''); if(!uid)return;
-    if(!actByUser[uid])actByUser[uid]=[];
-    actByUser[uid].push({label:r[7]||'',type:r[8]||'Evangelism',pts:Number(r[9])||0,
-      reflection:r[10]||'',evidence:r[11]||'',date:parseDateLabel(r[12]),
-      monthIndex:Math.max(0,Math.min(7,Number(r[13])||0)),photoCount:0,fileCount:0,hasNote:false});
+
+  // Parse LIVE_DATA tab
+  CHURCHES.forEach(c => {
+    LIVE.churches[c.id] = { gospel:0, disciples:0, leaders:0, members:0, monthly:new Array(8).fill(0) };
   });
-  LIVE.members=userRows.filter(r=>r[0]).map(r=>{
-    const uid=String(r[0]),church=r[3]||'',sector=r[4]||getChurchSector(church),actions=actByUser[uid]||[];
-    const gospel=Number(r[8])||0,disciples=Number(r[9])||0,leaders=Number(r[10])||0;
-    const monthly=new Array(8).fill(0);
-    actions.forEach(a=>{if(a.type==='Evangelism')monthly[a.monthIndex]++;});
-    const cId=getChurchId(church);
-    if(LIVE.churches[cId]){LIVE.churches[cId].members++;LIVE.churches[cId].gospel+=gospel;
-      LIVE.churches[cId].disciples+=disciples;LIVE.churches[cId].leaders+=leaders;
-      monthly.forEach((v,i)=>{LIVE.churches[cId].monthly[i]+=v;});}
-    if(LIVE.sectors[sector]){LIVE.sectors[sector].gospel+=gospel;LIVE.sectors[sector].disciples+=disciples;LIVE.sectors[sector].leaders+=leaders;}
-    return{userId:uid,name:r[1]||'',role:r[2]||'Member',church,churchId:cId,sector,
-      stage:r[5]||'Evangelism',points:Number(r[6])||0,actionsCount:Number(r[7])||0,
-      gospel,disciples,leaders,monthlyActions:monthly,actions};
-  });
-  LIVE.totalGospel=SECTORS.reduce((t,s)=>t+LIVE.sectors[s.id].gospel,0);
-  LIVE.totalDisc=SECTORS.reduce((t,s)=>t+LIVE.sectors[s.id].disciples,0);
-  LIVE.totalLeaders=SECTORS.reduce((t,s)=>t+LIVE.sectors[s.id].leaders,0);
+  SECTORS.forEach(s => { LIVE.sectors[s.id] = { gospel:0, disciples:0, leaders:0 }; });
+  LIVE.members = [];
+
+  // Sector rows at index 2,3,4 (hope, faith, love)
+  for (let i = 2; i <= 4 && i < liveRows.length; i++) {
+    const r = liveRows[i];
+    const sid = String(r[0]||'').toLowerCase();
+    if (LIVE.sectors[sid]) {
+      LIVE.sectors[sid].gospel    = Number(r[1]) || 0;
+      LIVE.sectors[sid].disciples = Number(r[2]) || 0;
+      LIVE.sectors[sid].leaders   = Number(r[3]) || 0;
+    }
+  }
+
+  // Member rows from index 7 onwards
+  for (let i = 7; i < liveRows.length; i++) {
+    const r = liveRows[i];
+    if (!r[0]) continue;
+    const name     = String(r[0]);
+    const church   = String(r[2]||'');
+    const churchId = String(r[3]||getChurchId(church));
+    const sector   = String(r[4]||getChurchSector(church));
+    LIVE.members.push({
+      name, role:String(r[1]||'Member'), church, churchId, sector,
+      stage:String(r[5]||'Evangelism'), points:Number(r[6])||0,
+      actionsCount:Number(r[7])||0, gospel:Number(r[8])||0,
+      disciples:0, leaders:0, monthlyActions:new Array(8).fill(0), actions:[],
+    });
+    if (LIVE.churches[churchId]) {
+      LIVE.churches[churchId].members++;
+      LIVE.churches[churchId].gospel += Number(r[8])||0;
+    }
+  }
+
+  LIVE.totalGospel  = SECTORS.reduce((t,s) => t + LIVE.sectors[s.id].gospel,    0);
+  LIVE.totalDisc    = SECTORS.reduce((t,s) => t + LIVE.sectors[s.id].disciples, 0);
+  LIVE.totalLeaders = SECTORS.reduce((t,s) => t + LIVE.sectors[s.id].leaders,   0);
+
+  const el = document.getElementById('conn-status');
+  if (el) { el.innerHTML='✅ Google Sheets connected — live data loaded'; el.style.color='#1C7A35'; }
   hydrateActionLogsFromLocal();
 }
 
+function buildLiveFromUserRows(userRows) {
+  CHURCHES.forEach(c => { LIVE.churches[c.id]={gospel:0,disciples:0,leaders:0,members:0,monthly:new Array(8).fill(0)}; });
+  SECTORS.forEach(s => { LIVE.sectors[s.id]={gospel:0,disciples:0,leaders:0}; });
+  LIVE.members = userRows.filter(r=>r[0]).map(r => {
+    const church=r[3]||'', sector=r[4]||getChurchSector(church), cId=getChurchId(church);
+    const gospel=Number(r[8])||0;
+    if(LIVE.churches[cId]){ LIVE.churches[cId].members++; LIVE.churches[cId].gospel+=gospel; }
+    if(LIVE.sectors[sector]) LIVE.sectors[sector].gospel+=gospel;
+    return { name:r[1]||'', role:r[2]||'Member', church, churchId:cId, sector,
+      stage:r[5]||'Evangelism', points:Number(r[6])||0, actionsCount:Number(r[7])||0,
+      gospel, disciples:0, leaders:0, monthlyActions:new Array(8).fill(0), actions:[] };
+  });
+  LIVE.totalGospel  = SECTORS.reduce((t,s)=>t+LIVE.sectors[s.id].gospel,0);
+  LIVE.totalDisc    = 0; LIVE.totalLeaders = 0;
+  hydrateActionLogsFromLocal();
+}
 
-// Scan all localStorage keys for flcc_actions_* and hydrate LIVE.members action logs
 function hydrateFromLocalStorage() {
   try {
     for (let i = 0; i < localStorage.length; i++) {
