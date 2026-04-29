@@ -1808,8 +1808,7 @@ function apiGet(params) {
   });
 }
 
-// Load live data — reads through Netlify proxy → Apps Script → Google Sheet (always fresh)
-// Falls back to gviz if proxy not available
+// Load live data — tries 3 methods in order, always gets freshest available data
 async function loadLiveData() {
   const backup = {
     members:      [...LIVE.members],
@@ -1821,30 +1820,35 @@ async function loadLiveData() {
   };
 
   let data = null;
-  let useProxy = true;
 
+  // METHOD 1 — Netlify/Cloudflare proxy (works when _redirects deployed)
   try {
-    // Try Netlify proxy first — server-to-server, no CORS, no caching
-    const res = await fetch('/api?action=getLiveData&_=' + Date.now(), {
-      cache: 'no-store',
-    });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    data = await res.json();
-    if (!data || data.error || !data.members) throw new Error('Bad proxy response');
-  } catch(proxyErr) {
-    useProxy = false;
-    console.warn('Proxy unavailable, trying gviz:', proxyErr.message);
+    const res = await Promise.race([
+      fetch('/api?action=getLiveData&_=' + Date.now(), { cache:'no-store' }),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
+    ]);
+    if (res.ok) {
+      const json = await res.json();
+      if (json && json.members && !json.error) data = json;
+    }
+  } catch(e) {}
+
+  // METHOD 2 — Apps Script JSONP direct (fresh data, works on GitHub Pages too)
+  if (!data) {
+    try {
+      data = await fetchFromAppsScript();
+    } catch(e) {}
   }
 
-  if (!useProxy) {
-    // Fallback to gviz
+  // METHOD 3 — gviz fallback (slightly cached but always works)
+  if (!data) {
     await loadViaGviz(backup);
     return;
   }
 
-  // Good proxy data — rebuild LIVE from Apps Script response
+  // Rebuild LIVE store from data
   CHURCHES.forEach(c => {
-    LIVE.churches[c.id] = { gospel:0, disciples:0, leaders:0, members:0, monthly: new Array(8).fill(0) };
+    LIVE.churches[c.id] = { gospel:0, disciples:0, leaders:0, members:0, monthly:new Array(8).fill(0) };
   });
   SECTORS.forEach(s => { LIVE.sectors[s.id] = { gospel:0, disciples:0, leaders:0 }; });
 
@@ -1883,11 +1887,30 @@ async function loadLiveData() {
 
   const connEl = document.getElementById('conn-status');
   if (connEl) { connEl.innerHTML='✅ Google Sheets connected — live data loaded'; connEl.style.color='#1C7A35'; }
-
   hydrateActionLogsFromLocal();
 }
 
-// Fallback: read via gviz (may be slightly cached but works without Netlify proxy)
+// Apps Script JSONP — reads getLiveData directly, always fresh, no proxy needed
+function fetchFromAppsScript() {
+  return new Promise((resolve, reject) => {
+    const cb    = 'asCb_' + Date.now() + '_' + Math.floor(Math.random()*99999);
+    const el    = document.createElement('script');
+    const timer = setTimeout(() => { cleanup(); reject(new Error('timeout')); }, 10000);
+    function cleanup() {
+      clearTimeout(timer); delete window[cb];
+      try { document.head.removeChild(el); } catch(e) {}
+    }
+    window[cb] = function(d) {
+      cleanup();
+      if (d && d.members) resolve(d);
+      else reject(new Error('empty'));
+    };
+    el.onerror = () => { cleanup(); reject(new Error('error')); };
+    el.src = SCRIPT_URL + '?action=getLiveData&callback=' + cb + '&_=' + Date.now();
+    document.head.appendChild(el);
+  });
+}
+
 async function loadViaGviz(backup) {
   const [userRows, actionRows] = await Promise.all([readSheet('USERS'), readSheet('ACTIONS')]);
   if (!userRows.length && !actionRows.length) {
