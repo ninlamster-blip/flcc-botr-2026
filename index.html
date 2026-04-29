@@ -1908,69 +1908,92 @@ function fetchFromAppsScript() {
   });
 }
 
-// Read from LIVE_DATA tab (rewritten by Apps Script on every action = always fresh)
-// Falls back to reading USERS directly if LIVE_DATA not yet created
+// Read from LIVE_DATA tab — rewritten by Apps Script on every action
 async function loadViaGviz(backup) {
   const liveRows = await readSheet('LIVE_DATA');
 
   if (!liveRows.length) {
-    // LIVE_DATA not created yet — read USERS directly
-    const userRows = await readSheet('USERS');
-    if (!userRows.length) {
-      Object.assign(LIVE, backup);
-      hydrateFromLocalStorage();
-      const el = document.getElementById('conn-status');
-      if (el) { el.innerHTML='⚠️ No data yet — publish sheet and log first action'; el.style.color='var(--orange)'; }
-      return;
+    Object.assign(LIVE, backup);
+    hydrateFromLocalStorage();
+    const el = document.getElementById('conn-status');
+    if (el) {
+      el.innerHTML = '⚠️ Run writeLiveSummaryTab in Apps Script first';
+      el.style.color = 'var(--orange)';
     }
-    buildLiveFromUserRows(userRows);
     return;
   }
 
-  // Parse LIVE_DATA tab
+  // Parse KEY | VALUE format written by writeLiveSummaryTab
+  const kv = {};
+  const memberLines = [];
+  let inMembers = false;
+
+  liveRows.forEach(r => {
+    const key = String(r[0] || '').trim();
+    const val = String(r[1] || '').trim();
+    if (key === '---MEMBERS---') { inMembers = true; return; }
+    if (inMembers && key) { memberLines.push({ name: key, data: val }); return; }
+    if (key) kv[key] = val;
+  });
+
+  // Reset LIVE store
   CHURCHES.forEach(c => {
     LIVE.churches[c.id] = { gospel:0, disciples:0, leaders:0, members:0, monthly:new Array(8).fill(0) };
   });
   SECTORS.forEach(s => { LIVE.sectors[s.id] = { gospel:0, disciples:0, leaders:0 }; });
   LIVE.members = [];
 
-  // Sector rows at index 2,3,4 (hope, faith, love)
-  for (let i = 2; i <= 4 && i < liveRows.length; i++) {
-    const r = liveRows[i];
-    const sid = String(r[0]||'').toLowerCase();
-    if (LIVE.sectors[sid]) {
-      LIVE.sectors[sid].gospel    = Number(r[1]) || 0;
-      LIVE.sectors[sid].disciples = Number(r[2]) || 0;
-      LIVE.sectors[sid].leaders   = Number(r[3]) || 0;
-    }
-  }
+  // Apply sector totals from key-value pairs
+  LIVE.sectors.hope  = LIVE.sectors.hope  || { gospel:0, disciples:0, leaders:0 };
+  LIVE.sectors.faith = LIVE.sectors.faith || { gospel:0, disciples:0, leaders:0 };
+  LIVE.sectors.love  = LIVE.sectors.love  || { gospel:0, disciples:0, leaders:0 };
 
-  // Member rows from index 7 onwards
-  for (let i = 7; i < liveRows.length; i++) {
-    const r = liveRows[i];
-    if (!r[0]) continue;
-    const name     = String(r[0]);
-    const church   = String(r[2]||'');
-    const churchId = String(r[3]||getChurchId(church));
-    const sector   = String(r[4]||getChurchSector(church));
+  ['hope','faith','love'].forEach(sid => {
+    if (!LIVE.sectors[sid]) return;
+    LIVE.sectors[sid].gospel    = Number(kv[sid + '_gospel'])    || 0;
+    LIVE.sectors[sid].disciples = Number(kv[sid + '_disciples']) || 0;
+    LIVE.sectors[sid].leaders   = Number(kv[sid + '_leaders'])   || 0;
+  });
+
+  LIVE.totalGospel  = Number(kv.totalGospel)  || 0;
+  LIVE.totalDisc    = Number(kv.totalDisc)     || 0;
+  LIVE.totalLeaders = Number(kv.totalLeaders)  || 0;
+
+  // Parse member rows — each value is pipe-separated fields
+  memberLines.forEach(m => {
+    const parts  = m.data.split('|');
+    const church   = parts[1] || '';
+    const churchId = parts[2] || getChurchId(church);
+    const sector   = parts[3] || getChurchSector(church);
+    const gospel   = Number(parts[7]) || 0;
+
     LIVE.members.push({
-      name, role:String(r[1]||'Member'), church, churchId, sector,
-      stage:String(r[5]||'Evangelism'), points:Number(r[6])||0,
-      actionsCount:Number(r[7])||0, gospel:Number(r[8])||0,
-      disciples:0, leaders:0, monthlyActions:new Array(8).fill(0), actions:[],
+      name:         m.name,
+      role:         parts[0] || 'Member',
+      church,
+      churchId,
+      sector,
+      stage:        parts[4] || 'Evangelism',
+      points:       Number(parts[5]) || 0,
+      actionsCount: Number(parts[6]) || 0,
+      gospel,
+      disciples:    Number(parts[8]) || 0,
+      leaders:      Number(parts[9]) || 0,
+      monthlyActions: new Array(8).fill(0),
+      actions: [],
     });
+
     if (LIVE.churches[churchId]) {
       LIVE.churches[churchId].members++;
-      LIVE.churches[churchId].gospel += Number(r[8])||0;
+      LIVE.churches[churchId].gospel += gospel;
     }
-  }
-
-  LIVE.totalGospel  = SECTORS.reduce((t,s) => t + LIVE.sectors[s.id].gospel,    0);
-  LIVE.totalDisc    = SECTORS.reduce((t,s) => t + LIVE.sectors[s.id].disciples, 0);
-  LIVE.totalLeaders = SECTORS.reduce((t,s) => t + LIVE.sectors[s.id].leaders,   0);
+  });
 
   const el = document.getElementById('conn-status');
-  if (el) { el.innerHTML='✅ Google Sheets connected — live data loaded'; el.style.color='#1C7A35'; }
+  if (el) {
+    el.innerHTML = '✅ Google Sheets connected — live data loaded';
+    el.style.color = '#1C7A35';
+  }
   hydrateActionLogsFromLocal();
 }
 
