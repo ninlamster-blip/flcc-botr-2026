@@ -1972,6 +1972,11 @@ async function loadViaGviz(backup) {
   LIVE.totalDisc    = Number(kv.totalDisc)     || 0;
   LIVE.totalLeaders = Number(kv.totalLeaders)  || 0;
 
+  // DEBUG — show parsed numbers as toast so we can verify
+  setTimeout(() => {
+    showToast('G:' + LIVE.totalGospel + ' D:' + LIVE.totalDisc + ' M:' + LIVE.members.length);
+  }, 1000);
+
   // Parse member rows — each value is pipe-separated fields
   memberLines.forEach(m => {
     const parts  = m.data.split('|');
