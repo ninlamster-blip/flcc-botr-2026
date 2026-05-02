@@ -1684,44 +1684,36 @@ function hideLoading() { document.getElementById('loading').classList.remove('sh
 async function apiPost(data) {
   if (!SHEETS_ON) return;
 
-  // Try fetch POST first (fast, clean)
+  // Build GET URL for fallback
+  const params = new URLSearchParams();
+  Object.entries(data).forEach(([k,v]) => {
+    if (v !== null && v !== undefined) params.append(k, String(v).substring(0, 300));
+  });
+  params.append('_t', String(Date.now()));
+  const getUrl = SCRIPT_URL + '?' + params.toString();
+
+  // Try POST first
   try {
     await fetch(SCRIPT_URL, {
       method: 'POST',
       mode:   'no-cors',
       body:   JSON.stringify(data),
     });
-    return; // success
-  } catch(e) {
-    console.warn('POST failed, trying GET fallback:', e.message);
-  }
+    return;
+  } catch(e) {}
 
-  // Fallback — send via script tag GET (works even on restrictive mobile networks)
-  // Apps Script doGet handles this as a write operation
+  // Fallback 1: fetch GET (works on most mobile networks)
   try {
-    const params = new URLSearchParams({
-      action:   data.action   || '',
-      name:     data.name     || '',
-      church:   data.church   || '',
-      sector:   data.sector   || '',
-      role:     data.role     || '',
-      stage:    data.stage    || '',
-      points:   String(data.points || 0),
-      actionLabel: data.actionLabel || '',
-      actionType:  data.actionType  || '',
-      reflection:  (data.reflection || '').substring(0, 200),
-      evidence:    (data.evidence   || '').substring(0, 200),
-      joinDate:    data.joinDate || '',
-      _t:       String(Date.now()),
-    });
-    const s = document.createElement('script');
-    s.src = SCRIPT_URL + '?' + params.toString();
-    s.onerror = () => {};
-    document.head.appendChild(s);
-    setTimeout(() => { try { document.head.removeChild(s); } catch(e) {} }, 5000);
-  } catch(e2) {
-    console.warn('GET fallback also failed:', e2.message);
-  }
+    await fetch(getUrl, { mode: 'no-cors', cache: 'no-store' });
+    return;
+  } catch(e) {}
+
+  // Fallback 2: Image ping (works on ALL networks, even restricted ones)
+  // Apps Script doGet handles write actions - data is saved even via GET
+  try {
+    const img = new Image();
+    img.src = getUrl;
+  } catch(e) {}
 }
 
 // ── GOOGLE SHEETS DIRECT READ via gviz API (no CORS, no Apps Script needed) ──
@@ -1837,7 +1829,7 @@ function apiGet(params) {
 }
 
 // Load live data — reads LIVE_DATA tab via gviz (always fresh, rewritten on every action)
-// Load live data — Apps Script JSONP only (no gviz, no publishing needed)
+// Load live data — direct fetch to Apps Script (same as browser, always works)
 async function loadLiveData() {
   const backup = {
     members:      [...LIVE.members],
@@ -1848,89 +1840,127 @@ async function loadLiveData() {
     totalLeaders: LIVE.totalLeaders,
   };
 
-  return new Promise(resolve => {
-    const cb    = 'flcc_' + Date.now();
-    const el    = document.createElement('script');
-    const timer = setTimeout(() => {
-      cleanup(); Object.assign(LIVE, backup); hydrateActionLogsFromLocal(); resolve();
-    }, 15000);
+  try {
+    // Direct fetch — Apps Script redirects to googleapis.com which has CORS headers
+    // This is exactly what the browser does when you open the URL directly
+    const url  = SCRIPT_URL + '?action=getLiveData'
+               + '&t='  + Date.now()
+               + '&r='  + Math.random().toString(36).substr(2,9);
+    const res  = await fetch(url, {
+      method:   'GET',
+      redirect: 'follow',
+      cache:    'no-store',
+    });
+    const data = await res.json();
+    applyLiveData(data, backup);
+  } catch(fetchErr) {
+    // Fetch failed (strict CORS) — try JSONP script tag fallback
+    try {
+      await loadViaJSONP(backup);
+    } catch(jsonpErr) {
+      // Both failed — restore backup so UI never shows zeros
+      Object.assign(LIVE, backup);
+      hydrateActionLogsFromLocal();
+    }
+  }
+}
 
+// Apply fetched data to LIVE store
+function applyLiveData(data, backup) {
+  if (!data || data.error || !data.members) {
+    Object.assign(LIVE, backup);
+    hydrateActionLogsFromLocal();
+    return;
+  }
+
+  // Reset
+  CHURCHES.forEach(c => {
+    LIVE.churches[c.id] = { gospel:0, disciples:0, leaders:0, members:0, monthly:new Array(8).fill(0) };
+  });
+  SECTORS.forEach(s => { LIVE.sectors[s.id] = { gospel:0, disciples:0, leaders:0 }; });
+
+  // Church aggregates
+  if (data.churchAgg) {
+    Object.entries(data.churchAgg).forEach(([cn, agg]) => {
+      const cDef = CHURCHES.find(c => c.name === cn);
+      if (!cDef) return;
+      LIVE.churches[cDef.id] = {
+        gospel:    agg.gospel    || 0,
+        disciples: agg.disciples || 0,
+        leaders:   agg.leaders   || 0,
+        members:   agg.members   || 0,
+        monthly:   agg.monthly   || new Array(8).fill(0),
+      };
+    });
+  }
+
+  // Sector aggregates
+  if (data.sectorAgg) {
+    Object.entries(data.sectorAgg).forEach(([sId, agg]) => {
+      if (LIVE.sectors[sId]) {
+        LIVE.sectors[sId].gospel    = agg.gospel    || 0;
+        LIVE.sectors[sId].disciples = agg.disciples || 0;
+        LIVE.sectors[sId].leaders   = agg.leaders   || 0;
+      }
+    });
+  }
+
+  // Members
+  LIVE.members = (data.members || []).map(m => ({
+    userId:       m.userId       || '',
+    name:         m.name         || '',
+    role:         m.role         || 'Member',
+    church:       m.church       || '',
+    churchId:     m.churchId     || getChurchId(m.church || ''),
+    sector:       m.sector       || getChurchSector(m.church || ''),
+    stage:        m.stage        || 'Evangelism',
+    points:       Number(m.points)       || 0,
+    actionsCount: Number(m.actionsCount) || 0,
+    gospel:       Number(m.gospel)       || 0,
+    disciples:    Number(m.disciples)    || 0,
+    leaders:      Number(m.leaders)      || 0,
+    monthlyActions: m.monthlyActions || new Array(8).fill(0),
+    actions: (m.actions || []).map(a => ({
+      ...a, date: a.date || parseDateLabel(a.dateIso),
+    })),
+  }));
+
+  LIVE.totalGospel  = Number(data.totalGospel)  || 0;
+  LIVE.totalDisc    = Number(data.totalDisc)     || 0;
+  LIVE.totalLeaders = Number(data.totalLeaders)  || 0;
+
+  const el = document.getElementById('conn-status');
+  if (el) {
+    el.innerHTML = '✅ Live — ' + LIVE.members.length + ' members · Gospel: ' + LIVE.totalGospel;
+    el.style.color = '#1C7A35';
+  }
+  hydrateActionLogsFromLocal();
+}
+
+// JSONP fallback — used if fetch() is blocked by strict CORS
+function loadViaJSONP(backup) {
+  return new Promise((resolve, reject) => {
+    const cb    = 'flcc_' + Date.now() + '_' + Math.floor(Math.random()*99999);
+    const el    = document.createElement('script');
+    const timer = setTimeout(() => { cleanup(); reject(new Error('timeout')); }, 12000);
     function cleanup() {
       clearTimeout(timer); delete window[cb];
       try { document.head.removeChild(el); } catch(e) {}
     }
-
     window[cb] = function(data) {
       cleanup();
-      try {
-        if (!data || data.error || !data.members) {
-          Object.assign(LIVE, backup); hydrateActionLogsFromLocal(); resolve(); return;
-        }
-
-        // Reset LIVE store
-        CHURCHES.forEach(c => {
-          LIVE.churches[c.id] = { gospel:0, disciples:0, leaders:0, members:0, monthly:new Array(8).fill(0) };
-        });
-        SECTORS.forEach(s => { LIVE.sectors[s.id] = { gospel:0, disciples:0, leaders:0 }; });
-
-        // Apply church aggregates
-        if (data.churchAgg) {
-          Object.entries(data.churchAgg).forEach(([cn, agg]) => {
-            const cDef = CHURCHES.find(c => c.name === cn);
-            if (!cDef) return;
-            LIVE.churches[cDef.id] = {
-              gospel:agg.gospel||0, disciples:agg.disciples||0,
-              leaders:agg.leaders||0, members:agg.members||0,
-              monthly:agg.monthly||new Array(8).fill(0),
-            };
-          });
-        }
-
-        // Apply sector aggregates
-        if (data.sectorAgg) {
-          Object.entries(data.sectorAgg).forEach(([sId, agg]) => {
-            if (LIVE.sectors[sId]) {
-              LIVE.sectors[sId].gospel    = agg.gospel    || 0;
-              LIVE.sectors[sId].disciples = agg.disciples || 0;
-              LIVE.sectors[sId].leaders   = agg.leaders   || 0;
-            }
-          });
-        }
-
-        // Build member list
-        LIVE.members = (data.members||[]).map(m => ({
-          userId:m.userId||'', name:m.name||'', role:m.role||'Member',
-          church:m.church||'', churchId:m.churchId||getChurchId(m.church||''),
-          sector:m.sector||getChurchSector(m.church||''),
-          stage:m.stage||'Evangelism',
-          points:Number(m.points)||0, actionsCount:Number(m.actionsCount)||0,
-          gospel:Number(m.gospel)||0, disciples:Number(m.disciples)||0,
-          leaders:Number(m.leaders)||0,
-          monthlyActions:new Array(8).fill(0), actions:[],
-        }));
-
-        LIVE.totalGospel  = Number(data.totalGospel)  || 0;
-        LIVE.totalDisc    = Number(data.totalDisc)     || 0;
-        LIVE.totalLeaders = Number(data.totalLeaders)  || 0;
-
-        const connEl = document.getElementById('conn-status');
-        if (connEl) {
-          connEl.innerHTML = '✅ Live — ' + LIVE.members.length + ' members · Gospel: ' + LIVE.totalGospel;
-          connEl.style.color = '#1C7A35';
-        }
-        hydrateActionLogsFromLocal();
-      } catch(err) {
-        Object.assign(LIVE, backup); hydrateActionLogsFromLocal();
-      }
+      applyLiveData(data, backup);
       resolve();
     };
-
-    el.onerror = () => { cleanup(); Object.assign(LIVE, backup); hydrateActionLogsFromLocal(); resolve(); };
-    // Call getLiveData via JSONP — already deployed and working
-    el.src = SCRIPT_URL + '?action=getLiveData&callback=' + cb + '&_=' + Date.now();
+    el.onerror = () => { cleanup(); reject(new Error('script error')); };
+    el.src = SCRIPT_URL
+      + '?action=getLiveData&callback=' + cb
+      + '&t=' + Date.now()
+      + '&r=' + Math.random().toString(36).substr(2,6);
     document.head.appendChild(el);
   });
 }
+
 
 function hydrateFromLocalStorage() {
   try {
@@ -2148,7 +2178,7 @@ async function doLogin() {
 // 
 // START APP  role is locked after login
 // 
-function startApp() {
+async function startApp() {
   const known     = findKnownUser(APP.name);
   const roleEmoji = {
     Member:'🙏', 'Church Leader':'⛪', 'Sector Leader':'🌐',
@@ -2159,6 +2189,15 @@ function startApp() {
   document.getElementById('nav-chip').textContent = `${roleEmoji} ${chipLabel} · ${APP.church}`;
   document.getElementById('refresh-btn').style.display = 'inline-flex';
   document.getElementById('tabbar').style.display = 'flex';
+
+  // CRITICAL: Force fresh data fetch from Google Sheets BEFORE rendering anything
+  // This ensures every device shows the latest synced state
+  showLoading('Loading latest data from Google Sheets…');
+  await loadLiveData();
+  if (APP.loggedIn && APP.name && APP.actions.length) {
+    applyCurrentUserToLive();
+  }
+  hideLoading();
 
   // Update sync badge
   const syncEl = document.getElementById('pp-sync');
@@ -3543,14 +3582,18 @@ window.addEventListener('DOMContentLoaded', () => {
   checkConnection();
 });
 
-// Auto-refresh when mobile phone returns from background / screen wakes up
-// This handles the case where someone logs on another device while this screen is asleep
-document.addEventListener('visibilitychange', () => {
+// Silent background sync when phone returns from background
+// Refreshes all data screens silently without loading spinner
+document.addEventListener('visibilitychange', async () => {
   if (document.visibilityState === 'visible' && APP.loggedIn) {
-    const dataScreens = ['home', 'church', 'sector', 'command'];
-    if (dataScreens.includes(currentTab)) {
-      refreshLiveData(currentTab);
-    }
+    // Silent refresh — no loading overlay, just pull fresh data
+    await loadLiveData();
+    if (APP.actions.length) applyCurrentUserToLive();
+    // Re-render whichever tab is currently visible
+    if (currentTab === 'home')    renderMemberHome();
+    if (currentTab === 'church')  renderChurchScreen();
+    if (currentTab === 'sector')  renderSectorScreen();
+    if (currentTab === 'command') renderCommandScreen();
   }
 });
 
