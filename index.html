@@ -652,16 +652,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
               <option value="Cornerstone|hope">Cornerstone</option>
             </optgroup>
             <optgroup label="─ Faith Sector ─">
-              <option value="GIL|faith">GIL</option>
-              <option value="Harvester|faith">Harvester</option>
-              <option value="MTCC|faith">MTCC</option>
+              <option value="BOTR Fri/Sun|faith">BOTR Fri/Sun</option>
+              <option value="Shekinah|faith">Shekinah</option>
               <option value="Agape|faith">Agape</option>
+              <option value="HOTK|faith">HOTK</option>
             </optgroup>
             <optgroup label="─ Love Sector ─">
-              <option value="Shekinah|love">Shekinah</option>
-              <option value="Virtual Church|love">Virtual Church</option>
-              <option value="BOTR|love">BOTR</option>
+              <option value="MTCC|love">MTCC</option>
+              <option value="GIL|love">GIL</option>
               <option value="JAOC|love">JAOC</option>
+              <option value="Harvester|love">Harvester</option>
+              <option value="Virtual Church|love">Virtual Church</option>
             </optgroup>
           </select>
 
@@ -1319,17 +1320,17 @@ const SHEET_ID = '1Z-nY7P4GWuXKwEQNLwvry42bzYgXrsCFpaZ2PE-uE1c';
 // Keys must match exactly how users type their name (case-sensitive)
 const KNOWN_USERS = {
   // Network Lead Pastor
-  'Jopet Alim':         { role:'Pastor',         church:'BOTR',          sector:'hope',  title:'FLCC BOTR Lead Pastor',         commandAccess:true  },
+  'Jopet Alim':         { role:'Pastor',         church:'FB',            sector:'hope',  title:'FLCC Lead Pastor',                    commandAccess:true  },
   // Sector Leaders / Pastors
-  'Rodel Comayingking': { role:'Sector Leader',  church:'F&T',           sector:'hope',  title:'Sector Leader / Pastor',        commandAccess:false },
-  'Virgilio Monastrial':{ role:'Sector Leader',  church:'BOTR',          sector:'love',  title:'Sector Leader / Pastor',        commandAccess:false },
-  'Oscar Tumambing':    { role:'Sector Leader',  church:'MTCC',          sector:'faith', title:'Sector Leader / Pastor',        commandAccess:false },
+  'Rodel Comayingking': { role:'Sector Leader',  church:'F&T',           sector:'hope',  title:'Hope Sector Leader',                  commandAccess:false },
+  'Virgilio Monastrial':{ role:'Sector Leader',  church:'BOTR Fri/Sun',  sector:'faith', title:'Faith Sector Leader',                 commandAccess:false },
+  'Oscar Tumambing':    { role:'Sector Leader',  church:'MTCC',          sector:'love',  title:'Love Sector Leader',                  commandAccess:false },
   // Evangelism Ministry Head
-  'Lizel Ocenar':       { role:'Ministry Head',  church:'Abundance',     sector:'hope',  title:'Evangelism Ministry Head',      commandAccess:true  },
+  'Lizel Ocenar':       { role:'Ministry Head',  church:'Abundance',     sector:'hope',  title:'Evangelism Ministry Head',            commandAccess:true  },
   // Evangelism Ministry Sub-leaders
   'Fretzie Guerzon':    { role:'Ministry Leader',church:'Abundance',     sector:'hope',  title:'Evangelism Hope Sector Coordinator',  commandAccess:true  },
-  'Maricel De Grano':   { role:'Ministry Leader',church:'BOTR',          sector:'love',  title:'Evangelism Love Sector Coordinator',  commandAccess:true  },
-  'Anne Sacueza':       { role:'Ministry Leader',church:'GIL',           sector:'faith', title:'Evangelism Faith Sector Coordinator', commandAccess:true  },
+  'Maricel De Grano':   { role:'Ministry Leader',church:'GIL',           sector:'love',  title:'Evangelism Love Sector Coordinator',  commandAccess:true  },
+  'Anne Sacueza':       { role:'Ministry Leader',church:'BOTR Fri/Sun',  sector:'faith', title:'Evangelism Faith Sector Coordinator', commandAccess:true  },
   'Elena Aboy':         { role:'Ministry Leader',church:'Virtual Church',sector:'love',  title:'Evangelism Love Sector Coordinator',  commandAccess:true  },
 };
 
@@ -1360,18 +1361,23 @@ const SECTORS = [
 ];
 
 const CHURCHES = [
-  { id:'abundance',   name:'Abundance',     sector:'hope'  },
-  { id:'fb',          name:'FB',            sector:'hope'  },
-  { id:'ft',          name:'F&T',           sector:'hope'  },
-  { id:'cornerstone', name:'Cornerstone',   sector:'hope'  },
-  { id:'gil',         name:'GIL',           sector:'faith' },
-  { id:'harvester',   name:'Harvester',     sector:'faith' },
-  { id:'mtcc',        name:'MTCC',          sector:'faith' },
-  { id:'agape',       name:'Agape',         sector:'faith' },
-  { id:'shekinah',    name:'Shekinah',      sector:'love'  },
-  { id:'virtual',     name:'Virtual Church',sector:'love'  },
-  { id:'botr',        name:'BOTR',          sector:'love'  },
-  { id:'jaoc',        name:'JAOC',          sector:'love'  },
+  // Hope Sector
+  { id:'abundance',     name:'Abundance',      sector:'hope'  },
+  { id:'fb',            name:'FB',             sector:'hope'  },
+  { id:'ft',            name:'F&T',            sector:'hope'  },
+  { id:'cornerstone',   name:'Cornerstone',    sector:'hope'  },
+  // Faith Sector
+  { id:'botrfrisun',    name:'BOTR Fri/Sun',   sector:'faith' },
+  { id:'shekinah',      name:'Shekinah',       sector:'faith' },
+  { id:'agape',         name:'Agape',          sector:'faith' },
+  { id:'hotk',          name:'HOTK',           sector:'faith' },
+  // Love Sector
+  { id:'mtcc',          name:'MTCC',           sector:'love'  },
+  { id:'gil',           name:'GIL',            sector:'love'  },
+  { id:'jaoc',          name:'JAOC',           sector:'love'  },
+  { id:'harvester',     name:'Harvester',      sector:'love'  },
+  // Other
+  { id:'virtual',       name:'Virtual Church', sector:'love'  },
 ];
 
 // May 2026 start  months May through Dec
@@ -2791,10 +2797,10 @@ function showDeleteConfirm(realIdx) {
 function deleteAction(realIdx) {
   const removed = APP.actions.splice(realIdx, 1)[0];
 
-  // Recalculate points
+  // Recalculate points from remaining actions
   APP.points = APP.actions.reduce((sum, a) => sum + (a.pts || 0), 0);
 
-  // Persist
+  // Persist to localStorage
   saveActionsToLocal();
 
   // Sync delete to Sheets if connected
@@ -2807,13 +2813,48 @@ function deleteAction(realIdx) {
     });
   }
 
+  // Recalculate LIVE store so My Church / Sector dashboards update immediately
+  // Decrement church and sector aggregates
+  const cId  = getChurchId(APP.church);
+  const secId = APP.sector;
+
+  if (removed && LIVE.churches[cId]) {
+    if (removed.type === 'Evangelism') {
+      LIVE.churches[cId].gospel    = Math.max(0, (LIVE.churches[cId].gospel    || 0) - 1);
+      if (LIVE.sectors[secId]) LIVE.sectors[secId].gospel    = Math.max(0, (LIVE.sectors[secId].gospel    || 0) - 1);
+      LIVE.totalGospel  = Math.max(0, LIVE.totalGospel  - 1);
+    }
+    if (removed.type === 'Discipleship') {
+      LIVE.churches[cId].disciples = Math.max(0, (LIVE.churches[cId].disciples || 0) - 1);
+      if (LIVE.sectors[secId]) LIVE.sectors[secId].disciples = Math.max(0, (LIVE.sectors[secId].disciples || 0) - 1);
+      LIVE.totalDisc    = Math.max(0, LIVE.totalDisc    - 1);
+    }
+    if (removed.type === 'Leadership' || removed.type === 'Multiplying') {
+      LIVE.churches[cId].leaders   = Math.max(0, (LIVE.churches[cId].leaders   || 0) - 1);
+      if (LIVE.sectors[secId]) LIVE.sectors[secId].leaders   = Math.max(0, (LIVE.sectors[secId].leaders   || 0) - 1);
+      LIVE.totalLeaders = Math.max(0, LIVE.totalLeaders - 1);
+    }
+    LIVE.churches[cId].actionsCount = Math.max(0, (LIVE.churches[cId].actionsCount || 0) - 1);
+  }
+
+  // Update the member in LIVE.members too
+  const liveMember = LIVE.members.find(m => m.name.trim().toLowerCase() === APP.name.trim().toLowerCase());
+  if (liveMember && removed) {
+    liveMember.points      = APP.points;
+    liveMember.actionsCount= APP.actions.length;
+    liveMember.actions     = APP.actions;
+    if (removed.type === 'Evangelism')   liveMember.gospel    = Math.max(0, (liveMember.gospel    || 0) - 1);
+    if (removed.type === 'Discipleship') liveMember.disciples = Math.max(0, (liveMember.disciples || 0) - 1);
+    if (removed.type === 'Leadership' || removed.type === 'Multiplying')
+                                         liveMember.leaders   = Math.max(0, (liveMember.leaders   || 0) - 1);
+  }
+
   // Re-render full profile
   const isLeaderProfile = !!document.getElementById('lp-action-log');
-  if (isLeaderProfile) {
-    renderLeaderProfile();
-  } else {
-    renderMemberProfile();
-  }
+  if (isLeaderProfile) renderLeaderProfile();
+  else                 renderMemberProfile();
+
+  // Also refresh home/church if visible
   renderMemberHome();
   showToast('Action deleted');
 }
