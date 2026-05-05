@@ -1915,13 +1915,14 @@ function applyLiveData(data, backup) {
   SECTORS.forEach(s => { LIVE.sectors[s.id] = { gospel:0, disciples:0, leaders:0 }; });
 
   // Apply sector aggregates FIRST — these come straight from stored sector column
-  // and are always correct regardless of church name changes
+  // Normalize to lowercase to handle 'Hope'/'hope', 'Faith'/'faith', 'Love'/'love'
   if (data.sectorAgg) {
     Object.entries(data.sectorAgg).forEach(([sId, agg]) => {
-      if (LIVE.sectors[sId]) {
-        LIVE.sectors[sId].gospel    = Number(agg.gospel)    || 0;
-        LIVE.sectors[sId].disciples = Number(agg.disciples) || 0;
-        LIVE.sectors[sId].leaders   = Number(agg.leaders)   || 0;
+      const sid = sId.toString().toLowerCase().trim();
+      if (LIVE.sectors[sid]) {
+        LIVE.sectors[sid].gospel    = Number(agg.gospel)    || 0;
+        LIVE.sectors[sid].disciples = Number(agg.disciples) || 0;
+        LIVE.sectors[sid].leaders   = Number(agg.leaders)   || 0;
       }
     });
   }
@@ -1951,14 +1952,14 @@ function applyLiveData(data, backup) {
     });
   }
 
-  // Members
+  // Build member list — normalize all sector values to lowercase
   LIVE.members = (data.members || []).map(m => ({
     userId:       m.userId       || '',
     name:         m.name         || '',
     role:         m.role         || 'Member',
     church:       m.church       || '',
     churchId:     m.churchId     || getChurchId(m.church || ''),
-    sector:       m.sector       || getChurchSector(m.church || ''),
+    sector:       (m.sector      || getChurchSector(m.church || '')).toString().toLowerCase().trim(),
     stage:        m.stage        || 'Evangelism',
     points:       Number(m.points)       || 0,
     actionsCount: Number(m.actionsCount) || 0,
@@ -2836,16 +2837,18 @@ function showDeleteConfirm(realIdx) {
 
 /** Confirmed delete — remove action, recalculate points, persist */
 function deleteAction(realIdx) {
+  // ARRAY FILTERING — remove from APP.actions before recalculating
   const removed = APP.actions.splice(realIdx, 1)[0];
+  if (!removed) return;
 
-  // Recalculate points from remaining actions
-  APP.points = APP.actions.reduce((sum, a) => sum + (a.pts || 0), 0);
+  // Recalculate points from filtered array
+  APP.points = APP.actions.reduce(function(sum,a){ return sum + (Number(a.pts)||0); }, 0);
 
-  // Persist to localStorage
+  // Persist filtered array to localStorage
   saveActionsToLocal();
 
-  // Sync delete to Sheets if connected
-  if (SHEETS_ON && removed?.id) {
+  // BACKEND SYNC — send delete to Google Sheets
+  if (SHEETS_ON && removed.id) {
     apiPost({
       action:   'deleteAction',
       name:     APP.name,
@@ -2854,57 +2857,62 @@ function deleteAction(realIdx) {
     });
   }
 
-  // Recalculate LIVE store so My Church / Sector dashboards update immediately
-  // Decrement church and sector aggregates
-  const cId  = getChurchId(APP.church);
-  const secId = APP.sector;
+  // STATE MANAGEMENT — subtract from LIVE immediately
+  // Normalize sector to lowercase (fixes Hope/hope, Faith/faith, Love/love mismatch)
+  const cId   = getChurchId(APP.church);
+  const secId = (APP.sector || '').toLowerCase().trim();
 
-  if (removed && LIVE.churches[cId]) {
+  if (LIVE.churches[cId]) {
     if (removed.type === 'Evangelism') {
-      LIVE.churches[cId].gospel    = Math.max(0, (LIVE.churches[cId].gospel    || 0) - 1);
-      if (LIVE.sectors[secId]) LIVE.sectors[secId].gospel    = Math.max(0, (LIVE.sectors[secId].gospel    || 0) - 1);
+      LIVE.churches[cId].gospel  = Math.max(0, (LIVE.churches[cId].gospel  ||0) - 1);
+      if (LIVE.sectors[secId]) LIVE.sectors[secId].gospel    = Math.max(0, (LIVE.sectors[secId].gospel    ||0) - 1);
       LIVE.totalGospel  = Math.max(0, LIVE.totalGospel  - 1);
     }
     if (removed.type === 'Discipleship') {
-      LIVE.churches[cId].disciples = Math.max(0, (LIVE.churches[cId].disciples || 0) - 1);
-      if (LIVE.sectors[secId]) LIVE.sectors[secId].disciples = Math.max(0, (LIVE.sectors[secId].disciples || 0) - 1);
+      LIVE.churches[cId].disciples = Math.max(0, (LIVE.churches[cId].disciples||0) - 1);
+      if (LIVE.sectors[secId]) LIVE.sectors[secId].disciples = Math.max(0, (LIVE.sectors[secId].disciples||0) - 1);
       LIVE.totalDisc    = Math.max(0, LIVE.totalDisc    - 1);
     }
     if (removed.type === 'Leadership' || removed.type === 'Multiplying') {
-      LIVE.churches[cId].leaders   = Math.max(0, (LIVE.churches[cId].leaders   || 0) - 1);
-      if (LIVE.sectors[secId]) LIVE.sectors[secId].leaders   = Math.max(0, (LIVE.sectors[secId].leaders   || 0) - 1);
+      LIVE.churches[cId].leaders   = Math.max(0, (LIVE.churches[cId].leaders  ||0) - 1);
+      if (LIVE.sectors[secId]) LIVE.sectors[secId].leaders   = Math.max(0, (LIVE.sectors[secId].leaders  ||0) - 1);
       LIVE.totalLeaders = Math.max(0, LIVE.totalLeaders - 1);
     }
-    LIVE.churches[cId].actionsCount = Math.max(0, (LIVE.churches[cId].actionsCount || 0) - 1);
+    LIVE.churches[cId].actionsCount = Math.max(0, (LIVE.churches[cId].actionsCount||0) - 1);
   }
 
-  // Update the member in LIVE.members too
-  const liveMember = LIVE.members.find(m => m.name.trim().toLowerCase() === APP.name.trim().toLowerCase());
-  if (liveMember && removed) {
-    liveMember.points      = APP.points;
-    liveMember.actionsCount= APP.actions.length;
-    liveMember.actions     = APP.actions;
-    if (removed.type === 'Evangelism')   liveMember.gospel    = Math.max(0, (liveMember.gospel    || 0) - 1);
-    if (removed.type === 'Discipleship') liveMember.disciples = Math.max(0, (liveMember.disciples || 0) - 1);
+  // Update this member in LIVE.members array
+  const liveMember = LIVE.members.find(function(m){
+    return m.name.trim().toLowerCase() === APP.name.trim().toLowerCase();
+  });
+  if (liveMember) {
+    liveMember.points       = APP.points;
+    liveMember.actionsCount = APP.actions.length;
+    liveMember.actions      = APP.actions;
+    if (removed.type === 'Evangelism')   liveMember.gospel    = Math.max(0,(liveMember.gospel   ||0)-1);
+    if (removed.type === 'Discipleship') liveMember.disciples = Math.max(0,(liveMember.disciples||0)-1);
     if (removed.type === 'Leadership' || removed.type === 'Multiplying')
-                                         liveMember.leaders   = Math.max(0, (liveMember.leaders   || 0) - 1);
+                                         liveMember.leaders   = Math.max(0,(liveMember.leaders  ||0)-1);
   }
 
-  // Re-render full profile
+  // RECALCULATION TRIGGER — re-run calculateTotals + updateDashboard for ALL sectors
+  calculateAndRenderAll();
+  showToast('Action deleted');
+}
+
+// calculateTotals() + updateDashboard() combined
+// Re-renders every dashboard screen so Love, Faith, Hope sectors all update
+function calculateAndRenderAll() {
   const isLeaderProfile = !!document.getElementById('lp-action-log');
   if (isLeaderProfile) renderLeaderProfile();
   else                 renderMemberProfile();
 
-  // Refresh ALL data screens so every dashboard reflects the deletion immediately
   renderMemberHome();
-  if (currentTab === 'church')  renderChurchScreen();
-  if (currentTab === 'sector')  renderSectorScreen();
-  if (currentTab === 'command') renderCommandScreen();
-
-  showToast('Action deleted');
+  renderChurchScreen();
+  renderSectorScreen();
+  renderCommandScreen();
 }
 
-/** Cancel delete confirmation */
 function cancelDelete(realIdx) {
   document.getElementById(`al-confirm-${realIdx}`).style.display = 'none';
 }
