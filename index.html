@@ -1795,13 +1795,24 @@ function readSheet(sheetName, attempt) {
 // Helper: church name → sector id
 function getChurchSector(churchName) {
   const c = CHURCHES.find(x => x.name === churchName);
-  return c ? c.sector : 'love';
+  if (c) return c.sector;
+  // Backward compatibility for old names
+  if (CHURCH_ALIASES[churchName]) {
+    const c2 = CHURCHES.find(x => x.name === CHURCH_ALIASES[churchName]);
+    if (c2) return c2.sector;
+  }
+  return 'love';
 }
 
-// Helper: church name → church id
 function getChurchId(churchName) {
   const c = CHURCHES.find(x => x.name === churchName);
-  return c ? c.id : churchName.toLowerCase().replace(/\s+/g,'');
+  if (c) return c.id;
+  // Backward compatibility for old names
+  if (CHURCH_ALIASES[churchName]) {
+    const c2 = CHURCHES.find(x => x.name === CHURCH_ALIASES[churchName]);
+    if (c2) return c2.id;
+  }
+  return churchName.toLowerCase().replace(/[^a-z0-9]/g,'');
 }
 
 // Helper: ISO date string → "May 28" label
@@ -1879,6 +1890,16 @@ async function loadLiveData() {
   }
 }
 
+// Old church name → new church name mapping (backward compatibility)
+const CHURCH_ALIASES = {
+  'BOTR':          'BOTR Fri/Sun',
+  'botr':          'BOTR Fri/Sun',
+  'Virtual':       'Virtual Church',
+  'Harvester':     'Harvester',
+  'GIL':           'GIL',
+  'MTCC':          'MTCC',
+};
+
 // Apply fetched data to LIVE store
 function applyLiveData(data, backup) {
   if (!data || data.error || !data.members) {
@@ -1893,29 +1914,40 @@ function applyLiveData(data, backup) {
   });
   SECTORS.forEach(s => { LIVE.sectors[s.id] = { gospel:0, disciples:0, leaders:0 }; });
 
-  // Church aggregates
-  if (data.churchAgg) {
-    Object.entries(data.churchAgg).forEach(([cn, agg]) => {
-      const cDef = CHURCHES.find(c => c.name === cn);
-      if (!cDef) return;
-      LIVE.churches[cDef.id] = {
-        gospel:    agg.gospel    || 0,
-        disciples: agg.disciples || 0,
-        leaders:   agg.leaders   || 0,
-        members:   agg.members   || 0,
-        monthly:   agg.monthly   || new Array(8).fill(0),
-      };
-    });
-  }
-
-  // Sector aggregates
+  // Apply sector aggregates FIRST — these come straight from stored sector column
+  // and are always correct regardless of church name changes
   if (data.sectorAgg) {
     Object.entries(data.sectorAgg).forEach(([sId, agg]) => {
       if (LIVE.sectors[sId]) {
-        LIVE.sectors[sId].gospel    = agg.gospel    || 0;
-        LIVE.sectors[sId].disciples = agg.disciples || 0;
-        LIVE.sectors[sId].leaders   = agg.leaders   || 0;
+        LIVE.sectors[sId].gospel    = Number(agg.gospel)    || 0;
+        LIVE.sectors[sId].disciples = Number(agg.disciples) || 0;
+        LIVE.sectors[sId].leaders   = Number(agg.leaders)   || 0;
       }
+    });
+  }
+
+  // Apply church aggregates — with backward compatibility for old church names
+  if (data.churchAgg) {
+    Object.entries(data.churchAgg).forEach(([cn, agg]) => {
+      // Try exact match first, then alias lookup
+      let cDef = CHURCHES.find(c => c.name === cn);
+      if (!cDef && CHURCH_ALIASES[cn]) {
+        cDef = CHURCHES.find(c => c.name === CHURCH_ALIASES[cn]);
+      }
+      if (!cDef) {
+        // Last resort: match by id (lowercase, no spaces/special chars)
+        const cleanId = cn.toLowerCase().replace(/[^a-z0-9]/g,'');
+        cDef = CHURCHES.find(c => c.id === cleanId);
+      }
+      if (!cDef) return; // unknown church — skip but sector totals already set above
+
+      LIVE.churches[cDef.id] = {
+        gospel:    Number(agg.gospel)    || 0,
+        disciples: Number(agg.disciples) || 0,
+        leaders:   Number(agg.leaders)   || 0,
+        members:   Number(agg.members)   || 0,
+        monthly:   agg.monthly           || new Array(8).fill(0),
+      };
     });
   }
 
