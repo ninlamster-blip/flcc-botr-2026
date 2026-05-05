@@ -1846,28 +1846,36 @@ async function loadLiveData() {
     totalLeaders: LIVE.totalLeaders,
   };
 
+  const url = SCRIPT_URL + '?action=getLiveData&t=' + Date.now();
+
+  // Try 1: fetch with proper CORS settings for Apps Script
   try {
-    // Direct fetch — Apps Script redirects to googleapis.com which has CORS headers
-    // This is exactly what the browser does when you open the URL directly
-    const url  = SCRIPT_URL + '?action=getLiveData'
-               + '&t='  + Date.now()
-               + '&r='  + Math.random().toString(36).substr(2,9);
-    const res  = await fetch(url, {
-      method:   'GET',
-      redirect: 'follow',
-      cache:    'no-store',
-    });
-    const data = await res.json();
-    applyLiveData(data, backup);
-  } catch(fetchErr) {
-    // Fetch failed (strict CORS) — try JSONP script tag fallback
-    try {
-      await loadViaJSONP(backup);
-    } catch(jsonpErr) {
-      // Both failed — restore backup so UI never shows zeros
-      Object.assign(LIVE, backup);
-      hydrateActionLogsFromLocal();
+    const res = await Promise.race([
+      fetch(url, {
+        method:      'GET',
+        mode:        'cors',
+        credentials: 'omit',
+        redirect:    'follow',
+        cache:       'no-store',
+      }),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 8000)),
+    ]);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.members && data.members.length > 0) {
+        applyLiveData(data, backup);
+        return;
+      }
     }
+  } catch(e) { /* try next method */ }
+
+  // Try 2: JSONP via script tag (works when CORS blocked)
+  try {
+    await loadViaJSONP(backup);
+  } catch(e) {
+    // All methods failed — keep backup data, never show zeros
+    Object.assign(LIVE, backup);
+    hydrateActionLogsFromLocal();
   }
 }
 
@@ -1943,26 +1951,27 @@ function applyLiveData(data, backup) {
   hydrateActionLogsFromLocal();
 }
 
-// JSONP fallback — used if fetch() is blocked by strict CORS
+// JSONP fallback — wraps response in callback
+// Also handles raw JSON response if deployed version doesn't support callback
 function loadViaJSONP(backup) {
   return new Promise((resolve, reject) => {
     const cb    = 'flcc_' + Date.now() + '_' + Math.floor(Math.random()*99999);
     const el    = document.createElement('script');
-    const timer = setTimeout(() => { cleanup(); reject(new Error('timeout')); }, 12000);
+    const timer = setTimeout(() => { cleanup(); reject(new Error('JSONP timeout')); }, 12000);
+
     function cleanup() {
       clearTimeout(timer); delete window[cb];
       try { document.head.removeChild(el); } catch(e) {}
     }
+
     window[cb] = function(data) {
       cleanup();
       applyLiveData(data, backup);
       resolve();
     };
-    el.onerror = () => { cleanup(); reject(new Error('script error')); };
-    el.src = SCRIPT_URL
-      + '?action=getLiveData&callback=' + cb
-      + '&t=' + Date.now()
-      + '&r=' + Math.random().toString(36).substr(2,6);
+
+    el.onerror = () => { cleanup(); reject(new Error('JSONP error')); };
+    el.src = SCRIPT_URL + '?action=getLiveData&callback=' + cb + '&t=' + Date.now();
     document.head.appendChild(el);
   });
 }
@@ -2854,8 +2863,12 @@ function deleteAction(realIdx) {
   if (isLeaderProfile) renderLeaderProfile();
   else                 renderMemberProfile();
 
-  // Also refresh home/church if visible
+  // Refresh ALL data screens so every dashboard reflects the deletion immediately
   renderMemberHome();
+  if (currentTab === 'church')  renderChurchScreen();
+  if (currentTab === 'sector')  renderSectorScreen();
+  if (currentTab === 'command') renderCommandScreen();
+
   showToast('Action deleted');
 }
 
