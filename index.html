@@ -1914,15 +1914,15 @@ function applyLiveData(data, backup) {
   });
   SECTORS.forEach(s => { LIVE.sectors[s.id] = { gospel:0, disciples:0, leaders:0 }; });
 
-  // Apply sector aggregates FIRST — these come straight from stored sector column
-  // Normalize to lowercase to handle 'Hope'/'hope', 'Faith'/'faith', 'Love'/'love'
+  // Apply sector aggregates — normalize keys to lowercase
+  // Sheet stores 'Hope','Faith','Love' but LIVE.sectors uses 'hope','faith','love'
   if (data.sectorAgg) {
     Object.entries(data.sectorAgg).forEach(([sId, agg]) => {
-      const sid = sId.toString().toLowerCase().trim();
-      if (LIVE.sectors[sid]) {
-        LIVE.sectors[sid].gospel    = Number(agg.gospel)    || 0;
-        LIVE.sectors[sid].disciples = Number(agg.disciples) || 0;
-        LIVE.sectors[sid].leaders   = Number(agg.leaders)   || 0;
+      const key = sId.toLowerCase().trim();
+      if (LIVE.sectors[key]) {
+        LIVE.sectors[key].gospel    = Number(agg.gospel)    || 0;
+        LIVE.sectors[key].disciples = Number(agg.disciples) || 0;
+        LIVE.sectors[key].leaders   = Number(agg.leaders)   || 0;
       }
     });
   }
@@ -2205,7 +2205,7 @@ async function doLogin() {
 
   Object.assign(APP, {
     loggedIn: true, role, name, church,
-    sector:   sectorId,
+    sector:   sectorId.toLowerCase().trim(),
     stage:    existing?.stage || local?.stage || 'Evangelism',
     points:   mergedPoints,
     actions:  mergedActions,
