@@ -3050,10 +3050,26 @@ function renderChurchScreen() {
 // LEADER: SECTOR
 // 
 function renderSectorScreen() {
-  const s    = SECTORS.find(x => x.id === activeSector);
-  const sLv  = LIVE.sectors[activeSector];
-  const pct  = sLv.gospel / s.target.gospel;
-  const st   = statusFor(pct);
+  const s = SECTORS.find(x => x.id === activeSector);
+
+  // SSOT: Filter LIVE.members directly by sector — same source as Reports tab
+  // This is the only reliable way: both use the raw array, not pre-aggregated totals
+  const sectorMembers = LIVE.members.filter(function(m) {
+    return (m.sector || '').toString().toLowerCase().trim() === activeSector;
+  });
+
+  // Explicit summation with Number() — REQ 1
+  const sLv = {
+    gospel:    sectorMembers.reduce(function(sum,m){ return sum + (Number(m.gospel)    || 0); }, 0),
+    disciples: sectorMembers.reduce(function(sum,m){ return sum + (Number(m.disciples) || 0); }, 0),
+    leaders:   sectorMembers.reduce(function(sum,m){ return sum + (Number(m.leaders)   || 0); }, 0),
+  };
+
+  // Debug log — confirms what Faith/Love sectors are reading
+  console.log('Sector', activeSector, 'members:', sectorMembers.length, '→', sLv);
+
+  const pct = sLv.gospel / s.target.gospel;
+  const st  = statusFor(pct);
 
   // Segmented control
   document.getElementById('sec-seg').innerHTML = SECTORS.map(sec =>
@@ -3172,9 +3188,15 @@ function setSector(id) { activeSector = id; renderSectorScreen(); }
 // LEADER: COMMAND CENTER
 // 
 function renderCommandScreen() {
-  const tG  = LIVE.totalGospel;
-  const tD  = LIVE.totalDisc;
-  const tL  = LIVE.totalLeaders;
+  // SSOT: Calculate ALL totals by filtering LIVE.members directly
+  // Never trust pre-aggregated LIVE.sectors — always recalculate from the raw array
+  const tG = LIVE.members.reduce(function(sum,m){ return sum + (Number(m.gospel)    || 0); }, 0);
+  const tD = LIVE.members.reduce(function(sum,m){ return sum + (Number(m.disciples) || 0); }, 0);
+  const tL = LIVE.members.reduce(function(sum,m){ return sum + (Number(m.leaders)   || 0); }, 0);
+
+  // Debug log
+  console.log('Command totals from members array:', { tG, tD, tL, members: LIVE.members.length });
+
   const mPct = tG / 270000 * 0.5 + tD / 1500 * 0.3 + tL / 1750 * 0.2;
 
   document.getElementById('cmd-pct').textContent    = (mPct * 100).toFixed(1) + '%';
@@ -3183,9 +3205,17 @@ function renderCommandScreen() {
   document.getElementById('cmd-disc').textContent   = tD;
   document.getElementById('cmd-leads').textContent  = tL;
 
-  // Sector cards
+  // Sector cards — filter members by sector, sum directly
   document.getElementById('cmd-sec-cards').innerHTML = SECTORS.map(s => {
-    const sLv = LIVE.sectors[s.id];
+    const secMembers = LIVE.members.filter(function(m){
+      return (m.sector || '').toString().toLowerCase().trim() === s.id;
+    });
+    const sLv = {
+      gospel:    secMembers.reduce(function(sum,m){ return sum + (Number(m.gospel)    || 0); }, 0),
+      disciples: secMembers.reduce(function(sum,m){ return sum + (Number(m.disciples) || 0); }, 0),
+      leaders:   secMembers.reduce(function(sum,m){ return sum + (Number(m.leaders)   || 0); }, 0),
+    };
+    console.log('Sector card', s.id, '→', sLv);
     const pct = sLv.gospel / s.target.gospel;
     const st  = statusFor(pct);
     return `<div class="card" style="padding:16px">
