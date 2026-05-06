@@ -2847,54 +2847,32 @@ function showDeleteConfirm(realIdx) {
 
 /** Confirmed delete — remove action, recalculate points, persist */
 function deleteAction(realIdx) {
-  // Remove from local array first
   const removed = APP.actions.splice(realIdx, 1)[0];
   if (!removed) return;
 
-  // Recalculate points
+  // Recalculate from filtered array with Number() force
   APP.points = APP.actions.reduce(function(sum, a) {
-    return sum + (Number(a.pts) || 0); // REQ 1: Force numeric
+    return sum + (Number(a.pts) || 0);
   }, 0);
 
-  // Persist to localStorage
   saveActionsToLocal();
 
-  // Sync delete to Google Sheets
+  // Sync delete to Sheets
   if (SHEETS_ON && removed.id) {
-    apiPost({
-      action:   'deleteAction',
-      name:     APP.name,
-      church:   APP.church,
-      actionId: removed.id,
-    });
+    apiPost({ action:'deleteAction', name:APP.name, church:APP.church, actionId:removed.id });
   }
 
-  // REQ 3: SSOT — after delete, re-fetch from server to rebuild ALL totals
-  // Do NOT try to manually decrement — always trust the server as single source of truth
+  showToast('Deleted — refreshing…');
+
+  // Gemini Step 2: full re-fetch forces dashboard to recount from live Sheet
   showLoading('Updating dashboard…');
   loadLiveData().then(function() {
     hideLoading();
-
-    // REQ 4: Debug log to verify what Faith and Love sectors received
-    console.log('Dashboard Data after delete:', {
-      totalGospel:  LIVE.totalGospel,
-      totalDisc:    LIVE.totalDisc,
-      totalLeaders: LIVE.totalLeaders,
-      sectors: {
-        hope:  LIVE.sectors.hope,
-        faith: LIVE.sectors.faith,
-        love:  LIVE.sectors.love,
-      },
-      memberCount: LIVE.members.length,
-    });
-
-    // Rebuild ALL dashboards from fresh server data
     calculateAndRenderAll();
-    showToast('Action deleted');
+    showToast('✓ Dashboard updated');
   });
 }
 
-// Re-renders every dashboard screen — the "updateDashboard()" equivalent
 function calculateAndRenderAll() {
   const isLeaderProfile = !!document.getElementById('lp-action-log');
   if (isLeaderProfile) renderLeaderProfile();
@@ -3571,10 +3549,16 @@ function renderLeadReport(tableId, pctId, ofId, barId, members, sectorTarget) {
 
 // ── SECTOR SCREEN helpers ─────────────────────────────────────────
 function renderSectorReports(sectorId) {
-  // Filter using CHURCHES lookup — matches church name to sector regardless of stored sector value
+  // Use church lookup with full trim — fixes hidden spaces in sheet data (Gemini step 3)
   const sectorMembers = LIVE.members.filter(m => {
-    const c = CHURCHES.find(ch => ch.name === m.church || ch.id === m.churchId);
-    return c && c.sector === sectorId;
+    // Method 1: look up church in CHURCHES array
+    const c = CHURCHES.find(ch =>
+      (ch.name || '').trim() === (m.church || '').trim() ||
+      (ch.id   || '').trim() === (m.churchId || '').trim()
+    );
+    if (c) return c.sector.trim() === sectorId.trim();
+    // Method 2: fallback — use stored sector with full normalization
+    return (m.sector || '').toString().toLowerCase().trim() === sectorId.trim();
   });
   renderDiscReport('sec-disc-table','sec-disc-pct','sec-disc-of','sec-disc-bar', sectorMembers, 500);
   renderLeadReport('sec-lead-table','sec-lead-pct','sec-lead-of','sec-lead-bar', sectorMembers, 580);
