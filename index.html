@@ -3571,19 +3571,92 @@ function renderLeadReport(tableId, pctId, ofId, barId, members, sectorTarget) {
 
 // ── SECTOR SCREEN helpers ─────────────────────────────────────────
 function renderSectorReports(sectorId) {
-  // Filter LIVE.members to this sector
+  // Filter using CHURCHES lookup — matches church name to sector regardless of stored sector value
   const sectorMembers = LIVE.members.filter(m => {
     const c = CHURCHES.find(ch => ch.name === m.church || ch.id === m.churchId);
     return c && c.sector === sectorId;
   });
   renderDiscReport('sec-disc-table','sec-disc-pct','sec-disc-of','sec-disc-bar', sectorMembers, 500);
   renderLeadReport('sec-lead-table','sec-lead-pct','sec-lead-of','sec-lead-bar', sectorMembers, 580);
+
+  // Bridge: sync the hero dashboard with the same sectorMembers the report just used
+  syncDashboardWithReports(sectorId, sectorMembers);
 }
 
 // ── COMMAND SCREEN helpers ────────────────────────────────────────
 function renderCommandReports() {
   renderDiscReport('cmd-disc-table','cmd-disc-pct','cmd-disc-of','cmd-disc-bar', LIVE.members, 1500);
   renderLeadReport('cmd-lead-table','cmd-lead-pct','cmd-lead-of','cmd-lead-bar', LIVE.members, 1750);
+
+  // Bridge: sync command totals with same LIVE.members the report used
+  syncCommandDashboard();
+}
+
+// ── REPORT-TO-DASHBOARD BRIDGE ────────────────────────────────────
+// Takes the SAME member array the reports use and forces it into the dashboard UI
+// This is the Single Source of Truth — reports and dashboard always match
+function syncDashboardWithReports(sectorId, sectorMembers) {
+  // REQ 2+3: Manual sum with Number() force — prevents string/null zero issues
+  let gospelSum = 0;
+  let discSum   = 0;
+  let leaderSum = 0;
+
+  sectorMembers.forEach(function(m) {
+    gospelSum += Number(m.gospel)    || 0;
+    discSum   += Number(m.disciples) || 0;
+    leaderSum += Number(m.leaders)   || 0;
+  });
+
+  console.log('syncDashboardWithReports:', sectorId, '→ gospel:', gospelSum, 'disc:', discSum, 'members:', sectorMembers.length);
+
+  const s   = SECTORS.find(x => x.id === sectorId);
+  if (!s) return;
+  const pct = gospelSum / s.target.gospel;
+  const st  = statusFor(pct);
+
+  // REQ 5: Direct ID injection into the hero card elements
+  const hero = document.getElementById('sec-hero');
+  if (hero) {
+    hero.innerHTML = `
+      <div style="border-radius:18px;padding:20px;margin:4px 0;background:linear-gradient(135deg,${s.light} 0%,${s.color}10 100%);border:1px solid ${s.color}30">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+          <div>
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:${s.dark};margin-bottom:4px">${s.name} Sector</div>
+            <div style="font-size:30px;font-weight:800;letter-spacing:-.6px;color:#000;line-height:1">${gospelSum.toLocaleString()}</div>
+            <div style="font-size:13px;color:#8E8E93;margin-top:3px">gospel shared of ${s.target.gospel.toLocaleString()}</div>
+          </div>
+          <span class="pill ${st.cls}">${st.label}</span>
+        </div>
+        <div class="pb" style="height:8px"><div class="pf" style="width:${Math.min(pct*100,100).toFixed(1)}%;height:8px;background:${s.color}"></div></div>
+        <div style="font-size:12px;color:#8E8E93;margin-top:4px">${(pct*100).toFixed(1)}% of 2030 target</div>
+      </div>`;
+  }
+
+  // Force disc and leader tiles too
+  const discEl = document.getElementById('sec-disc');
+  const leadEl = document.getElementById('sec-lead');
+  if (discEl) discEl.textContent = discSum;
+  if (leadEl) leadEl.textContent = leaderSum;
+}
+
+// Sync the Command screen totals using LIVE.members directly
+function syncCommandDashboard() {
+  let tG = 0, tD = 0, tL = 0;
+
+  LIVE.members.forEach(function(m) {
+    tG += Number(m.gospel)    || 0;
+    tD += Number(m.disciples) || 0;
+    tL += Number(m.leaders)   || 0;
+  });
+
+  console.log('syncCommandDashboard → gospel:', tG, 'disc:', tD, 'leaders:', tL, 'members:', LIVE.members.length);
+
+  const gospelEl = document.getElementById('cmd-gospel');
+  const discEl   = document.getElementById('cmd-disc');
+  const leadEl   = document.getElementById('cmd-leads');
+  if (gospelEl) gospelEl.textContent = tG.toLocaleString();
+  if (discEl)   discEl.textContent   = tD;
+  if (leadEl)   leadEl.textContent   = tL;
 }
 
 
