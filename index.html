@@ -1986,6 +1986,22 @@ function applyLiveData(data, backup) {
   LIVE.totalDisc    = Number(data.totalDisc)     || 0;
   LIVE.totalLeaders = Number(data.totalLeaders)  || 0;
 
+  // DEFINITIVE DEBUG — shows exact sector and gospel for every member
+  console.table(LIVE.members.map(m => ({
+    name:    m.name,
+    church:  m.church,
+    sector:  m.sector,
+    gospel:  m.gospel,
+  })));
+  // Sector totals calculated from members:
+  ['hope','faith','love'].forEach(sid => {
+    const total = LIVE.members
+      .filter(m => m.sector === sid)
+      .reduce((s,m) => s + (Number(m.gospel)||0), 0);
+    console.log('SECTOR', sid.toUpperCase(), '→ gospel:', total,
+      '| members:', LIVE.members.filter(m => m.sector === sid).length);
+  });
+
   const el = document.getElementById('conn-status');
   if (el) {
     el.innerHTML = '✅ Live — ' + LIVE.members.length + ' members · Gospel: ' + LIVE.totalGospel;
