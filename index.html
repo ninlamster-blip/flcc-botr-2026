@@ -1914,15 +1914,25 @@ function applyLiveData(data, backup) {
   });
   SECTORS.forEach(s => { LIVE.sectors[s.id] = { gospel:0, disciples:0, leaders:0 }; });
 
-  // Apply sector aggregates — normalize keys to lowercase
-  // Sheet stores 'Hope','Faith','Love' but LIVE.sectors uses 'hope','faith','love'
+  // REQ 4: Debug log — shows exactly what Faith and Love sectors received
+  console.log('Dashboard Data from server:', {
+    totalGospel:  data.totalGospel,
+    sectorAgg:    data.sectorAgg,
+    memberCount:  (data.members||[]).length,
+    churchAgg:    data.churchAgg,
+  });
+
+  // Apply sector aggregates
+  // REQ 2: Case-insensitive — normalize BOTH the key AND compare with toLowerCase().trim()
   if (data.sectorAgg) {
     Object.entries(data.sectorAgg).forEach(([sId, agg]) => {
-      const key = sId.toLowerCase().trim();
+      const key = sId.toString().toLowerCase().trim();
       if (LIVE.sectors[key]) {
+        // REQ 1: Force numeric conversion — handles strings, nulls, undefined
         LIVE.sectors[key].gospel    = Number(agg.gospel)    || 0;
         LIVE.sectors[key].disciples = Number(agg.disciples) || 0;
         LIVE.sectors[key].leaders   = Number(agg.leaders)   || 0;
+        console.log('Sector', key, '→ gospel:', LIVE.sectors[key].gospel);
       }
     });
   }
@@ -2837,17 +2847,19 @@ function showDeleteConfirm(realIdx) {
 
 /** Confirmed delete — remove action, recalculate points, persist */
 function deleteAction(realIdx) {
-  // ARRAY FILTERING — remove from APP.actions before recalculating
+  // Remove from local array first
   const removed = APP.actions.splice(realIdx, 1)[0];
   if (!removed) return;
 
-  // Recalculate points from filtered array
-  APP.points = APP.actions.reduce(function(sum,a){ return sum + (Number(a.pts)||0); }, 0);
+  // Recalculate points
+  APP.points = APP.actions.reduce(function(sum, a) {
+    return sum + (Number(a.pts) || 0); // REQ 1: Force numeric
+  }, 0);
 
-  // Persist filtered array to localStorage
+  // Persist to localStorage
   saveActionsToLocal();
 
-  // BACKEND SYNC — send delete to Google Sheets
+  // Sync delete to Google Sheets
   if (SHEETS_ON && removed.id) {
     apiPost({
       action:   'deleteAction',
@@ -2857,51 +2869,32 @@ function deleteAction(realIdx) {
     });
   }
 
-  // STATE MANAGEMENT — subtract from LIVE immediately
-  // Normalize sector to lowercase (fixes Hope/hope, Faith/faith, Love/love mismatch)
-  const cId   = getChurchId(APP.church);
-  const secId = (APP.sector || '').toLowerCase().trim();
+  // REQ 3: SSOT — after delete, re-fetch from server to rebuild ALL totals
+  // Do NOT try to manually decrement — always trust the server as single source of truth
+  showLoading('Updating dashboard…');
+  loadLiveData().then(function() {
+    hideLoading();
 
-  if (LIVE.churches[cId]) {
-    if (removed.type === 'Evangelism') {
-      LIVE.churches[cId].gospel  = Math.max(0, (LIVE.churches[cId].gospel  ||0) - 1);
-      if (LIVE.sectors[secId]) LIVE.sectors[secId].gospel    = Math.max(0, (LIVE.sectors[secId].gospel    ||0) - 1);
-      LIVE.totalGospel  = Math.max(0, LIVE.totalGospel  - 1);
-    }
-    if (removed.type === 'Discipleship') {
-      LIVE.churches[cId].disciples = Math.max(0, (LIVE.churches[cId].disciples||0) - 1);
-      if (LIVE.sectors[secId]) LIVE.sectors[secId].disciples = Math.max(0, (LIVE.sectors[secId].disciples||0) - 1);
-      LIVE.totalDisc    = Math.max(0, LIVE.totalDisc    - 1);
-    }
-    if (removed.type === 'Leadership' || removed.type === 'Multiplying') {
-      LIVE.churches[cId].leaders   = Math.max(0, (LIVE.churches[cId].leaders  ||0) - 1);
-      if (LIVE.sectors[secId]) LIVE.sectors[secId].leaders   = Math.max(0, (LIVE.sectors[secId].leaders  ||0) - 1);
-      LIVE.totalLeaders = Math.max(0, LIVE.totalLeaders - 1);
-    }
-    LIVE.churches[cId].actionsCount = Math.max(0, (LIVE.churches[cId].actionsCount||0) - 1);
-  }
+    // REQ 4: Debug log to verify what Faith and Love sectors received
+    console.log('Dashboard Data after delete:', {
+      totalGospel:  LIVE.totalGospel,
+      totalDisc:    LIVE.totalDisc,
+      totalLeaders: LIVE.totalLeaders,
+      sectors: {
+        hope:  LIVE.sectors.hope,
+        faith: LIVE.sectors.faith,
+        love:  LIVE.sectors.love,
+      },
+      memberCount: LIVE.members.length,
+    });
 
-  // Update this member in LIVE.members array
-  const liveMember = LIVE.members.find(function(m){
-    return m.name.trim().toLowerCase() === APP.name.trim().toLowerCase();
+    // Rebuild ALL dashboards from fresh server data
+    calculateAndRenderAll();
+    showToast('Action deleted');
   });
-  if (liveMember) {
-    liveMember.points       = APP.points;
-    liveMember.actionsCount = APP.actions.length;
-    liveMember.actions      = APP.actions;
-    if (removed.type === 'Evangelism')   liveMember.gospel    = Math.max(0,(liveMember.gospel   ||0)-1);
-    if (removed.type === 'Discipleship') liveMember.disciples = Math.max(0,(liveMember.disciples||0)-1);
-    if (removed.type === 'Leadership' || removed.type === 'Multiplying')
-                                         liveMember.leaders   = Math.max(0,(liveMember.leaders  ||0)-1);
-  }
-
-  // RECALCULATION TRIGGER — re-run calculateTotals + updateDashboard for ALL sectors
-  calculateAndRenderAll();
-  showToast('Action deleted');
 }
 
-// calculateTotals() + updateDashboard() combined
-// Re-renders every dashboard screen so Love, Faith, Hope sectors all update
+// Re-renders every dashboard screen — the "updateDashboard()" equivalent
 function calculateAndRenderAll() {
   const isLeaderProfile = !!document.getElementById('lp-action-log');
   if (isLeaderProfile) renderLeaderProfile();
