@@ -436,7 +436,65 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .al-confirm-yes{background:var(--red);color:#fff}
 .al-confirm-no{background:var(--fill4);color:var(--sec)}
 
-/* ── MULTIPLYING DISCIPLES / SUSTAINABLE LEADERS REPORT TABLES ── */
+/* ── PIN ENTRY ── */
+.pin-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px}
+.pin-card{background:var(--surface);border-radius:24px;padding:28px 24px;width:100%;max-width:320px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.pin-title{font-size:18px;font-weight:800;color:var(--label);text-align:center;margin-bottom:4px}
+.pin-sub{font-size:13px;color:var(--sec);text-align:center;margin-bottom:20px}
+.pin-dots{display:flex;justify-content:center;gap:12px;margin-bottom:24px}
+.pin-dot{width:14px;height:14px;border-radius:7px;background:var(--fill4);transition:background .15s}
+.pin-dot.filled{background:var(--blue)}
+.pin-dot.error{background:var(--red)}
+.pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.pin-btn{background:var(--bg);border:none;border-radius:14px;padding:16px;font-size:22px;font-weight:700;color:var(--label);cursor:pointer;font-family:inherit;transition:all .1s}
+.pin-btn:active{background:var(--blue);color:#fff;transform:scale(.95)}
+.pin-btn.del{font-size:16px;color:var(--sec)}
+.pin-error{text-align:center;color:var(--red);font-size:13px;font-weight:600;margin-top:12px;min-height:18px}
+
+/* ── OUTREACH PERSON DETAILS FORM ── */
+.outreach-form{background:var(--blue-bg);border-radius:14px;padding:14px;margin-bottom:14px;border:1px solid rgba(0,122,255,.15)}
+.outreach-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--blue);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.outreach-inp{width:100%;padding:10px 12px;border-radius:10px;border:.5px solid var(--fill4);font-size:14px;background:var(--surface);color:var(--label);font-family:inherit;outline:none;margin-bottom:10px;transition:border-color .2s}
+.outreach-inp:focus{border-color:var(--blue)}
+.outreach-row{display:flex;gap:8px}
+.outreach-row .outreach-inp{flex:1;margin-bottom:0}
+.outreach-sel{width:100%;padding:10px 12px;border-radius:10px;border:.5px solid var(--fill4);font-size:14px;background:var(--surface);color:var(--label);font-family:inherit;outline:none;margin-bottom:10px;appearance:none;-webkit-appearance:none}
+.outreach-sel:focus{border-color:var(--blue)}
+
+/* ── OUTREACH REPORT TABLE ── */
+.outreach-report-card{border-radius:14px;overflow:hidden;border:.5px solid var(--fill4);margin-bottom:14px}
+.outreach-filter-bar{display:flex;gap:6px;padding:10px 12px;background:var(--bg);border-bottom:.5px solid var(--fill4);overflow-x:auto;flex-wrap:nowrap}
+.outreach-filter-btn{padding:5px 12px;border-radius:20px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;background:var(--fill4);color:var(--sec);white-space:nowrap;transition:all .15s}
+.outreach-filter-btn.active{background:var(--blue);color:#fff}
+.outreach-table-wrap{overflow-x:auto}
+.outreach-table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:480px}
+.outreach-table th{padding:9px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--sec);border-bottom:1px solid var(--fill4);background:var(--bg);white-space:nowrap}
+.outreach-table td{padding:10px;border-bottom:.5px solid var(--fill4);vertical-align:middle;color:var(--label)}
+.outreach-table tr:last-child td{border-bottom:none}
+.outreach-table tr:hover td{background:var(--bg)}
+.status-chip{padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:700;display:inline-block}
+.status-accepted{background:#E8F8ED;color:#1C7A35}
+.status-interested{background:#FFF4E0;color:#C05000}
+.status-followup{background:var(--blue-bg);color:var(--blue)}
+.status-notyet{background:var(--bg);color:var(--ter)}
+.location-badge{display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--sec)}
+
+/* ── OUTREACH SUMMARY STATS ── */
+.outreach-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.outreach-stat{background:var(--surface);border-radius:12px;padding:12px 8px;text-align:center;box-shadow:var(--shadow)}
+.outreach-stat-val{font-size:20px;font-weight:800;color:var(--label);line-height:1}
+.outreach-stat-lbl{font-size:10px;color:var(--sec);margin-top:3px}
+
+/* ── LOCATION HEAT LIST ── */
+.location-list{padding:4px 0}
+.location-row{display:flex;align-items:center;padding:10px 14px;gap:10px;border-bottom:.5px solid var(--fill4)}
+.location-row:last-child{border-bottom:none}
+.location-bar-wrap{flex:1;height:6px;background:var(--fill4);border-radius:3px;overflow:hidden}
+.location-bar-fill{height:6px;background:var(--blue);border-radius:3px;transition:width .4s}
+.location-name{font-size:13px;font-weight:600;color:var(--label);min-width:100px}
+.location-count{font-size:12px;font-weight:700;color:var(--blue);min-width:30px;text-align:right}
+
+/* -- REPORT TABLES -- */
 .report-header-card{border-radius:14px;padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px}
 .rh-icon{font-size:24px;flex-shrink:0}
 .rh-body{flex:1;min-width:0}
@@ -478,7 +536,34 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     </div>
   </div>
 
-  <!-- NAV HEADER -->
+  <!-- PIN Entry Overlay -->
+  <div id="pin-overlay" style="display:none" class="pin-overlay">
+    <div class="pin-card">
+      <div class="pin-title" id="pin-name">Enter PIN</div>
+      <div class="pin-sub">This account is PIN protected</div>
+      <div class="pin-dots">
+        <div class="pin-dot" id="pd0"></div>
+        <div class="pin-dot" id="pd1"></div>
+        <div class="pin-dot" id="pd2"></div>
+        <div class="pin-dot" id="pd3"></div>
+      </div>
+      <div class="pin-grid">
+        <button class="pin-btn" onclick="pinPress('1')">1</button>
+        <button class="pin-btn" onclick="pinPress('2')">2</button>
+        <button class="pin-btn" onclick="pinPress('3')">3</button>
+        <button class="pin-btn" onclick="pinPress('4')">4</button>
+        <button class="pin-btn" onclick="pinPress('5')">5</button>
+        <button class="pin-btn" onclick="pinPress('6')">6</button>
+        <button class="pin-btn" onclick="pinPress('7')">7</button>
+        <button class="pin-btn" onclick="pinPress('8')">8</button>
+        <button class="pin-btn" onclick="pinPress('9')">9</button>
+        <button class="pin-btn" onclick="pinCancel()">✕</button>
+        <button class="pin-btn" onclick="pinPress('0')">0</button>
+        <button class="pin-btn del" onclick="pinDelete()">⌫</button>
+      </div>
+      <div class="pin-error" id="pin-error"></div>
+    </div>
+  </div>
   <div class="nav">
     <div class="nav-row">
       <div class="nav-title" id="nav-title">FLCC BOTR</div>
@@ -810,6 +895,40 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
         <!-- Attachment count badge -->
         <div id="attach-count" style="display:none" class="attach-count-badge"></div>
       </div>
+      <!-- Outreach Person Details (shown for evangelism actions that need it) -->
+      <div id="outreach-form" style="display:none" class="outreach-form">
+        <div class="outreach-title">👤 Person Reached</div>
+        <input class="outreach-inp" id="out-person-name" type="text"
+          placeholder="Full name of person reached…"
+          autocomplete="off" />
+        <div class="outreach-row">
+          <input class="outreach-inp" id="out-location" type="text"
+            placeholder="📍 Location (building, area, city…)"
+            style="flex:2" />
+          <input class="outreach-inp" id="out-contact-date" type="date"
+            style="flex:1" />
+        </div>
+        <select class="outreach-sel" id="out-status">
+          <option value="">Response status…</option>
+          <option value="Accepted">✅ Accepted the Gospel</option>
+          <option value="Interested">🙏 Interested / Open</option>
+          <option value="Follow-up">📌 Follow-up Needed</option>
+          <option value="Not Yet">⏳ Not Yet Ready</option>
+        </select>
+      </div>
+
+      <!-- Location only (for Outreach Event) -->
+      <div id="outreach-location-form" style="display:none" class="outreach-form">
+        <div class="outreach-title">📍 Outreach Event Details</div>
+        <div class="outreach-row">
+          <input class="outreach-inp" id="out-event-location" type="text"
+            placeholder="Location (building, area, city…)"
+            style="flex:2" />
+          <input class="outreach-inp" id="out-event-date" type="date"
+            style="flex:1" />
+        </div>
+      </div>
+
       <button class="log-btn" style="margin-top:8px" onclick="submitAction()">Submit Action</button>
     </div>
 
@@ -1139,6 +1258,47 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
         </div>
       </div>
 
+      <!-- OUTREACH CONTACTS REPORT -->
+      <div class="slabel">Outreach Contacts Report</div>
+      <div class="outreach-stats" id="cmd-outreach-stats">
+        <div class="outreach-stat"><div class="outreach-stat-val" id="out-total">0</div><div class="outreach-stat-lbl">Total Reached</div></div>
+        <div class="outreach-stat"><div class="outreach-stat-val" id="out-accepted" style="color:#1C7A35">0</div><div class="outreach-stat-lbl">Accepted</div></div>
+        <div class="outreach-stat"><div class="outreach-stat-val" id="out-interested" style="color:#FF9500">0</div><div class="outreach-stat-lbl">Interested</div></div>
+        <div class="outreach-stat"><div class="outreach-stat-val" id="out-followup" style="color:var(--blue)">0</div><div class="outreach-stat-lbl">Follow-up</div></div>
+      </div>
+
+      <!-- Location heat list -->
+      <div class="slabel">Top Outreach Locations</div>
+      <div class="card" id="cmd-location-list">
+        <div class="rep-empty">No outreach contacts logged yet.</div>
+      </div>
+
+      <!-- Full contacts table -->
+      <div class="slabel">All Contacts</div>
+      <div class="outreach-report-card">
+        <div class="outreach-filter-bar" id="cmd-outreach-filters">
+          <button class="outreach-filter-btn active" onclick="filterOutreach('all',this)">All</button>
+          <button class="outreach-filter-btn" onclick="filterOutreach('Accepted',this)">✅ Accepted</button>
+          <button class="outreach-filter-btn" onclick="filterOutreach('Interested',this)">🙏 Interested</button>
+          <button class="outreach-filter-btn" onclick="filterOutreach('Follow-up',this)">📌 Follow-up</button>
+          <button class="outreach-filter-btn" onclick="filterOutreach('Not Yet',this)">⏳ Not Yet</button>
+        </div>
+        <div class="outreach-table-wrap" id="cmd-outreach-table">
+          <div class="rep-empty">No outreach contacts logged yet.</div>
+        </div>
+      </div>
+
+      <!-- CHURCH HEALTH DASHBOARD -->
+      <div class="slabel">Church Health Dashboard</div>
+      <div class="report-header-card" style="background:var(--bg);border:1px solid var(--fill4);margin-bottom:12px">
+        <div class="rh-icon">🏥</div>
+        <div class="rh-body">
+          <div class="rh-title">Network Health Overview</div>
+          <div class="rh-sub">🟢 On Track ≥60% · 🟡 At Risk 30–59% · 🔴 Behind &lt;30%</div>
+        </div>
+      </div>
+      <div id="cmd-health-cards"></div>
+
       <!-- ALL MEMBER LOGS — Pastor only -->
       <div class="slabel">All Member Action Logs</div>
       <div class="access-banner">
@@ -1318,20 +1478,19 @@ const SHEET_ID = '1Z-nY7P4GWuXKwEQNLwvry42bzYgXrsCFpaZ2PE-uE1c';
 
 // ── KNOWN USERS — auto-assigned on name match ─────────────────
 // Keys must match exactly how users type their name (case-sensitive)
+// Google Drive folder for photo uploads
+const DRIVE_FOLDER_ID = '1gGZwP15Nx_hbKtYMgXpqUakSmOzkJl1D';
+
 const KNOWN_USERS = {
-  // Network Lead Pastor
-  'Jopet Alim':         { role:'Pastor',         church:'FB',            sector:'hope',  title:'FLCC Lead Pastor',                    commandAccess:true  },
-  // Sector Leaders / Pastors
-  'Rodel Comayingking': { role:'Sector Leader',  church:'F&T',           sector:'hope',  title:'Hope Sector Leader',                  commandAccess:false },
-  'Virgilio Monastrial':{ role:'Sector Leader',  church:'BOTR Fri/Sun',  sector:'faith', title:'Faith Sector Leader',                 commandAccess:false },
-  'Oscar Tumambing':    { role:'Sector Leader',  church:'MTCC',          sector:'love',  title:'Love Sector Leader',                  commandAccess:false },
-  // Evangelism Ministry Head
-  'Lizel Ocenar':       { role:'Ministry Head',  church:'Abundance',     sector:'hope',  title:'Evangelism Ministry Head',            commandAccess:true  },
-  // Evangelism Ministry Sub-leaders
-  'Fretzie Guerzon':    { role:'Ministry Leader',church:'Abundance',     sector:'hope',  title:'Evangelism Hope Sector Coordinator',  commandAccess:true  },
-  'Maricel De Grano':   { role:'Ministry Leader',church:'GIL',           sector:'love',  title:'Evangelism Love Sector Coordinator',  commandAccess:true  },
-  'Anne Sacueza':       { role:'Ministry Leader',church:'BOTR Fri/Sun',  sector:'faith', title:'Evangelism Faith Sector Coordinator', commandAccess:true  },
-  'Elena Aboy':         { role:'Ministry Leader',church:'Virtual Church',sector:'love',  title:'Evangelism Love Sector Coordinator',  commandAccess:true  },
+  'Jopet Alim':         { role:'Pastor',         church:'FB',            sector:'hope',  title:'FLCC Lead Pastor',                    commandAccess:true,  pin:'7777' },
+  'Rodel Comayingking': { role:'Sector Leader',  church:'F&T',           sector:'hope',  title:'Hope Sector Leader',                  commandAccess:false, pin:'1111' },
+  'Virgilio Monastrial':{ role:'Sector Leader',  church:'BOTR Fri/Sun',  sector:'faith', title:'Faith Sector Leader',                 commandAccess:false, pin:'2222' },
+  'Oscar Tumambing':    { role:'Sector Leader',  church:'MTCC',          sector:'love',  title:'Love Sector Leader',                  commandAccess:false, pin:'3333' },
+  'Lizel Ocenar':       { role:'Ministry Head',  church:'Abundance',     sector:'hope',  title:'Evangelism Ministry Head',            commandAccess:true,  pin:'5555' },
+  'Fretzie Guerzon':    { role:'Ministry Leader',church:'Abundance',     sector:'hope',  title:'Evangelism Hope Sector Coordinator',  commandAccess:true,  pin:'1122' },
+  'Maricel De Grano':   { role:'Ministry Leader',church:'GIL',           sector:'love',  title:'Evangelism Love Sector Coordinator',  commandAccess:true,  pin:'3344' },
+  'Anne Sacueza':       { role:'Ministry Leader',church:'BOTR Fri/Sun',  sector:'faith', title:'Evangelism Faith Sector Coordinator', commandAccess:true,  pin:'2233' },
+  'Elena Aboy':         { role:'Ministry Leader',church:'Virtual Church',sector:'love',  title:'Evangelism Love Sector Coordinator',  commandAccess:true,  pin:'3355' },
 };
 
 // Returns KNOWN_USERS entry if name matches (case-insensitive trim)
@@ -1392,10 +1551,10 @@ const YEAR_TARGETS = [
 ];
 
 const ACTIONS_LIB = [
-  { label:'Shared the Gospel Personally',      type:'Evangelism',   pts:10 },
-  { label:'Invited Someone to Church',         type:'Evangelism',   pts:10 },
-  { label:'Led Someone to Pray for Salvation', type:'Evangelism',   pts:10 },
-  { label:'Participated in Outreach Event',    type:'Evangelism',   pts:10 },
+  { label:'Shared the Gospel Personally',      type:'Evangelism',   pts:10, needsPerson:true  },
+  { label:'Invited Someone to Church',         type:'Evangelism',   pts:10, needsPerson:true  },
+  { label:'Led Someone to Pray for Salvation', type:'Evangelism',   pts:10, needsPerson:true  },
+  { label:'Participated in Outreach Event',    type:'Evangelism',   pts:10, needsPerson:false, needsLocation:true },
   { label:'Completed a Bible Study Module',    type:'Discipleship', pts:20 },
   { label:'Attended a Mentoring Session',      type:'Discipleship', pts:20 },
   { label:'Completed Fasting & Prayer Week',   type:'Discipleship', pts:20 },
@@ -2201,17 +2360,27 @@ function validateLogin() {
 async function doLogin() {
   const name      = document.getElementById('l-name').value.trim();
   const known     = findKnownUser(name);
-  // Known users get their pre-assigned role + church regardless of form values
   const role      = known ? known.role      : document.getElementById('l-role').value;
   const churchVal = known
     ? `${known.church}|${known.sector}`
     : document.getElementById('l-church').value;
   const [church, sectorId] = churchVal.split('|');
 
-  showLoading('Signing you in…');
-
-  // Load local actions first (fast, works offline)
+  // Load local actions early (fast, works offline)
   const local = loadActionsFromLocal(name, church);
+
+  // Known users with PIN — verify before proceeding
+  if (known && known.pin) {
+    requirePin(name, () => completeLogin(name, role, church, sectorId, churchVal, known, local));
+    return;
+  }
+  await completeLogin(name, role, church, sectorId, churchVal, known, local);
+}
+
+async function completeLogin(name, role, church, sectorId, churchVal, known, local) {
+
+  // local is passed in from doLogin (already loaded from localStorage)
+  if (!local) local = loadActionsFromLocal(name, church);
 
   // Load ALL live data from Google Sheets via gviz (populates LIVE.members)
   await loadLiveData();
@@ -2643,7 +2812,22 @@ function renderLogScreen() {
   `).join('');
 }
 
-function selAct(i) { selAction = i; renderLogScreen(); }
+function selAct(i) {
+  selAction = i;
+  renderLogScreen();
+  // Show/hide outreach person details based on selected action
+  const a = ACTIONS_LIB[i];
+  const personForm   = document.getElementById('outreach-form');
+  const locationForm = document.getElementById('outreach-location-form');
+  if (personForm)   personForm.style.display   = a.needsPerson    ? 'block' : 'none';
+  if (locationForm) locationForm.style.display = (a.needsLocation && !a.needsPerson) ? 'block' : 'none';
+  // Set today as default date
+  const today = new Date().toISOString().split('T')[0];
+  const d1 = document.getElementById('out-contact-date');
+  const d2 = document.getElementById('out-event-date');
+  if (d1 && !d1.value) d1.value = today;
+  if (d2 && !d2.value) d2.value = today;
+}
 
 async function submitAction() {
   const a    = ACTIONS_LIB[selAction];
@@ -2654,13 +2838,36 @@ async function submitAction() {
   const attachSummary = attachmentSummary();
   const fullEvidence = [evidenceText, attachSummary].filter(Boolean).join(' · ');
 
+  // Collect outreach person/location details
+  let outreachData = null;
+  if (a.needsPerson) {
+    outreachData = {
+      personName:   (document.getElementById('out-person-name')?.value || '').trim(),
+      location:     (document.getElementById('out-location')?.value || '').trim(),
+      contactDate:  document.getElementById('out-contact-date')?.value || date,
+      status:       document.getElementById('out-status')?.value || '',
+    };
+  } else if (a.needsLocation) {
+    outreachData = {
+      personName:   '',
+      location:     (document.getElementById('out-event-location')?.value || '').trim(),
+      contactDate:  document.getElementById('out-event-date')?.value || date,
+      status:       '',
+    };
+  }
+
   const actionWithDate = {
     ...a, date,
-    reflection: document.getElementById('log-refl')?.value || '',
-    evidence:   fullEvidence,
-    photoCount: attachments.photos.length,
-    fileCount:  attachments.files.length,
-    hasNote:    attachments.note.trim().length > 0,
+    reflection:  document.getElementById('log-refl')?.value || '',
+    evidence:    fullEvidence,
+    photoCount:  attachments.photos.length,
+    fileCount:   attachments.files.length,
+    hasNote:     attachments.note.trim().length > 0,
+    // Outreach details
+    personName:  outreachData?.personName  || '',
+    location:    outreachData?.location    || '',
+    contactDate: outreachData?.contactDate || date,
+    outStatus:   outreachData?.status      || '',
   };
 
   // Update app state
@@ -2689,13 +2896,22 @@ async function submitAction() {
     reflection:  actionWithDate.reflection,
     evidence:    fullEvidence,
     attachments: attachSummary,
+    // Outreach contact details
+    personName:  actionWithDate.personName,
+    location:    actionWithDate.location,
+    contactDate: actionWithDate.contactDate,
+    outStatus:   actionWithDate.outStatus,
   });
   hideLoading();
 
-  // Clear form + attachments
+  // Clear form + attachments + outreach fields
   document.getElementById('log-refl').value = '';
   document.getElementById('log-evid').value = '';
   clearAttachments();
+  const outFields = ['out-person-name','out-location','out-contact-date','out-status','out-event-location','out-event-date'];
+  outFields.forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  document.getElementById('outreach-form').style.display = 'none';
+  document.getElementById('outreach-location-form').style.display = 'none';
 
   showToast(`✓ Logged! +${a.pts} pts · Data saved`);
 
@@ -2887,6 +3103,107 @@ function deleteAction(realIdx) {
     calculateAndRenderAll();
     showToast('✓ Dashboard updated');
   });
+}
+
+// ══════════════════════════════════════════════════════════
+// OUTREACH CONTACTS REPORT
+// ══════════════════════════════════════════════════════════
+
+function getAllOutreachContacts(filterSector) {
+  const contacts = [];
+  LIVE.members.forEach(m => {
+    if (filterSector && (m.sector||'').toLowerCase() !== filterSector) return;
+    (m.actions||[]).forEach(a => {
+      if (a.type === 'Evangelism' && a.personName) {
+        contacts.push({
+          memberName:  m.name,
+          church:      m.church,
+          sector:      (m.sector||'').toLowerCase(),
+          actionLabel: a.label,
+          personName:  a.personName,
+          location:    a.location    || '',
+          contactDate: a.contactDate || a.date || '',
+          outStatus:   a.outStatus   || '',
+        });
+      }
+    });
+  });
+  return contacts.sort((a,b) => b.contactDate > a.contactDate ? 1 : -1);
+}
+
+let outreachFilter = 'all';
+
+function filterOutreach(status, btn) {
+  outreachFilter = status;
+  document.querySelectorAll('.outreach-filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderOutreachReport();
+}
+
+function renderOutreachReport() {
+  const all      = getAllOutreachContacts();
+  const filtered = outreachFilter === 'all' ? all : all.filter(c => c.outStatus === outreachFilter);
+
+  const accepted   = all.filter(c => c.outStatus === 'Accepted').length;
+  const interested = all.filter(c => c.outStatus === 'Interested').length;
+  const followup   = all.filter(c => c.outStatus === 'Follow-up').length;
+
+  const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+  set('out-total', all.length);
+  set('out-accepted', accepted);
+  set('out-interested', interested);
+  set('out-followup', followup);
+
+  // Location heat list
+  const locMap = {};
+  all.forEach(c => { const loc = (c.location||'Unknown').trim(); locMap[loc] = (locMap[loc]||0)+1; });
+  const topLocs = Object.entries(locMap).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const maxLoc  = topLocs[0]?.[1] || 1;
+  const locEl   = document.getElementById('cmd-location-list');
+  if (locEl) {
+    locEl.innerHTML = topLocs.length
+      ? '<div class="location-list">'+topLocs.map(([loc,cnt])=>`
+          <div class="location-row">
+            <div class="location-name">📍 ${loc}</div>
+            <div class="location-bar-wrap"><div class="location-bar-fill" style="width:${(cnt/maxLoc*100).toFixed(0)}%"></div></div>
+            <div class="location-count">${cnt}</div>
+          </div>`).join('')+'</div>'
+      : '<div class="rep-empty">No locations recorded yet.</div>';
+  }
+
+  const tableEl = document.getElementById('cmd-outreach-table');
+  if (!tableEl) return;
+  if (!filtered.length) { tableEl.innerHTML='<div class="rep-empty">No contacts found.</div>'; return; }
+
+  const chip = s => {
+    if (!s) return '<span class="status-chip status-notyet">—</span>';
+    const cls = {Accepted:'accepted',Interested:'interested','Follow-up':'followup','Not Yet':'notyet'}[s]||'notyet';
+    const ico = {Accepted:'✅',Interested:'🙏','Follow-up':'📌','Not Yet':'⏳'}[s]||'';
+    return `<span class="status-chip status-${cls}">${ico} ${s}</span>`;
+  };
+
+  tableEl.innerHTML = `
+    <table class="outreach-table">
+      <thead><tr>
+        <th>Person Reached</th><th>By Member</th><th>Church</th>
+        <th>Action</th><th>📍 Location</th><th>Date</th><th>Status</th>
+      </tr></thead>
+      <tbody>${filtered.map(c=>`
+        <tr>
+          <td style="font-weight:700">${c.personName}</td>
+          <td style="font-size:12px;color:var(--sec)">${c.memberName}</td>
+          <td style="font-size:11.5px;color:var(--sec)">${c.church}</td>
+          <td style="font-size:11.5px">${c.actionLabel}</td>
+          <td>${c.location?'📍 '+c.location:'<span style="color:var(--ter)">—</span>'}</td>
+          <td style="font-size:12px;white-space:nowrap">${c.contactDate}</td>
+          <td>${chip(c.outStatus)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+    <div class="rep-summary-row">
+      <span>Showing <span class="rep-summary-count">${filtered.length}</span> of ${all.length}</span>
+      <span style="color:#1C7A35;font-weight:700">${accepted} accepted · ${interested} interested</span>
+    </div>`;
 }
 
 function calculateAndRenderAll() {
@@ -3188,8 +3505,14 @@ function renderCommandScreen() {
   const tD = LIVE.members.reduce(function(sum,m){ return sum + (Number(m.disciples) || 0); }, 0);
   const tL = LIVE.members.reduce(function(sum,m){ return sum + (Number(m.leaders)   || 0); }, 0);
 
-  // Debug log
-  console.log('Command totals from members array:', { tG, tD, tL, members: LIVE.members.length });
+  // Church Health Cards
+  const healthEl = document.getElementById('cmd-health-cards');
+  if (healthEl) {
+    healthEl.innerHTML = CHURCHES.map(c => renderHealthCard(c.id, c.name)).join('');
+  }
+
+  // Outreach Contacts Report
+  renderOutreachReport();
 
   const mPct = tG / 270000 * 0.5 + tD / 1500 * 0.3 + tL / 1750 * 0.2;
 
@@ -3765,6 +4088,182 @@ function showToast(msg) { const el = document.getElementById('toast'); el.textCo
 // 
 // INIT
 // 
+// ══════════════════════════════════════════════════════════
+// PIN PROTECTION
+// ══════════════════════════════════════════════════════════
+let pinBuffer    = '';
+let pinCallback  = null;
+
+function requirePin(name, onSuccess) {
+  const known = KNOWN_USERS[name];
+  if (!known || !known.pin) { onSuccess(); return; }
+  pinBuffer  = '';
+  pinCallback= onSuccess;
+  document.getElementById('pin-name').textContent = '🔐 ' + name;
+  document.getElementById('pin-error').textContent = '';
+  updatePinDots();
+  document.getElementById('pin-overlay').style.display = 'flex';
+}
+
+function pinPress(digit) {
+  if (pinBuffer.length >= 4) return;
+  pinBuffer += digit;
+  updatePinDots();
+  if (pinBuffer.length === 4) {
+    setTimeout(checkPin, 100);
+  }
+}
+
+function checkPin() {
+  // Find matching known user by name from pin-name display
+  const displayName = document.getElementById('pin-name').textContent.replace('🔐 ','');
+  const known = KNOWN_USERS[displayName];
+  if (known && pinBuffer === known.pin) {
+    document.getElementById('pin-overlay').style.display = 'none';
+    pinBuffer = '';
+    if (pinCallback) { pinCallback(); pinCallback = null; }
+  } else {
+    document.getElementById('pin-error').textContent = '❌ Wrong PIN — try again';
+    document.querySelectorAll('.pin-dot').forEach(d => { d.classList.add('error'); d.classList.remove('filled'); });
+    setTimeout(() => {
+      pinBuffer = '';
+      updatePinDots();
+      document.querySelectorAll('.pin-dot').forEach(d => d.classList.remove('error'));
+      document.getElementById('pin-error').textContent = '';
+    }, 800);
+  }
+}
+
+function updatePinDots() {
+  for (let i = 0; i < 4; i++) {
+    const dot = document.getElementById('pd' + i);
+    dot.classList.toggle('filled', i < pinBuffer.length);
+  }
+}
+
+function pinDelete() {
+  pinBuffer = pinBuffer.slice(0, -1);
+  updatePinDots();
+}
+
+function pinCancel() {
+  pinBuffer  = '';
+  pinCallback = null;
+  document.getElementById('pin-overlay').style.display = 'none';
+}
+
+// ══════════════════════════════════════════════════════════
+// PHOTO UPLOAD TO GOOGLE DRIVE
+// ══════════════════════════════════════════════════════════
+const DRIVE_FOLDER  = '1gGZwP15Nx_hbKtYMgXpqUakSmOzkJl1D';
+const UPLOAD_URL    = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
+
+async function uploadPhotoToDrive(file, memberName, actionLabel) {
+  try {
+    // Use Apps Script as proxy to upload to Drive (avoids OAuth in browser)
+    const reader = new FileReader();
+    return new Promise((resolve) => {
+      reader.onload = async function(e) {
+        const base64 = e.target.result.split(',')[1];
+        const ext    = file.name.split('.').pop() || 'jpg';
+        const fname  = `${memberName}_${actionLabel}_${Date.now()}.${ext}`.replace(/\s+/g,'_');
+
+        // Send to Apps Script which uploads to Drive
+        await apiPost({
+          action:     'uploadPhoto',
+          folderId:   DRIVE_FOLDER,
+          fileName:   fname,
+          mimeType:   file.type || 'image/jpeg',
+          base64Data: base64,
+        });
+
+        // Return the Drive folder link (direct file link needs Apps Script to return it)
+        const link = `https://drive.google.com/drive/folders/${DRIVE_FOLDER}`;
+        resolve(link);
+      };
+      reader.readAsDataURL(file);
+    });
+  } catch(e) {
+    console.warn('Photo upload failed:', e);
+    return '';
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// CHURCH HEALTH INDICATORS
+// ══════════════════════════════════════════════════════════
+function getChurchHealth(churchId) {
+  const c       = LIVE.churches[churchId] || { gospel:0, disciples:0, leaders:0, members:0 };
+  const church  = CHURCHES.find(x => x.id === churchId);
+  const sector  = SECTORS.find(s => s.id === (church?.sector || 'hope'));
+
+  // Monthly target = annual target / 8 months
+  const monthlyGospelTarget = sector ? Math.round(sector.target.gospel / 8) : 1000;
+  const gospelPct           = c.gospel / Math.max(monthlyGospelTarget, 1);
+
+  // Active members = members who logged at least 1 action
+  const activeCount = LIVE.members.filter(m =>
+    (m.churchId === churchId || getChurchId(m.church) === churchId) &&
+    (m.actionsCount || 0) > 0
+  ).length;
+  const totalCount  = c.members || 0;
+  const activePct   = totalCount > 0 ? activeCount / totalCount : 0;
+
+  // Disciple to Leader ratio (ideal = at least 1 leader per 3 disciples)
+  const disc    = c.disciples || 0;
+  const leaders = c.leaders   || 0;
+  const ratio   = disc > 0 ? leaders / disc : (leaders > 0 ? 1 : 0);
+
+  // Overall health score
+  const score = (gospelPct * 0.5) + (activePct * 0.3) + (Math.min(ratio, 1) * 0.2);
+
+  let status, color, icon;
+  if (score >= 0.6)      { status='On Track';  color='#1C7A35'; icon='🟢'; }
+  else if (score >= 0.3) { status='At Risk';   color='#FF9500'; icon='🟡'; }
+  else                   { status='Behind';    color='var(--red)'; icon='🔴'; }
+
+  return { gospelPct, activePct, ratio, score, status, color, icon,
+    gospel:c.gospel, disciples:disc, leaders, members:totalCount, activeCount };
+}
+
+function renderHealthCard(churchId, churchName) {
+  const h     = getChurchHealth(churchId);
+  const church = CHURCHES.find(x => x.id === churchId);
+  const sector = SECTORS.find(s => s.id === (church?.sector || 'hope'));
+  const sColor = sector?.color || '#007AFF';
+
+  return `
+    <div class="card" style="padding:16px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:8px;height:8px;border-radius:4px;background:${sColor}"></div>
+          <span style="font-size:15px;font-weight:800">${churchName}</span>
+        </div>
+        <span style="font-size:13px;font-weight:700;color:${h.color}">${h.icon} ${h.status}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px">
+        <div style="background:var(--bg);border-radius:10px;padding:10px;text-align:center">
+          <div style="font-size:18px;font-weight:800;color:${sColor}">${h.gospel}</div>
+          <div style="font-size:10px;color:var(--sec);margin-top:2px">Gospel</div>
+        </div>
+        <div style="background:var(--bg);border-radius:10px;padding:10px;text-align:center">
+          <div style="font-size:18px;font-weight:800;color:var(--blue)">${h.activeCount}/${h.members}</div>
+          <div style="font-size:10px;color:var(--sec);margin-top:2px">Active</div>
+        </div>
+        <div style="background:var(--bg);border-radius:10px;padding:10px;text-align:center">
+          <div style="font-size:18px;font-weight:800;color:var(--orange)">${h.disciples}/${h.leaders}</div>
+          <div style="font-size:10px;color:var(--sec);margin-top:2px">D/L Ratio</div>
+        </div>
+      </div>
+      <div class="pb" style="height:6px">
+        <div class="pf" style="width:${Math.min(h.score*100,100).toFixed(0)}%;height:6px;background:${h.color}"></div>
+      </div>
+      <div style="font-size:11px;color:var(--ter);margin-top:4px">
+        Health score: ${(h.score*100).toFixed(0)}% · Gospel: ${(h.gospelPct*100).toFixed(0)}% of monthly target
+      </div>
+    </div>`;
+}
+
 window.addEventListener('DOMContentLoaded', () => {
   const now = new Date();
   document.getElementById('sb-time').textContent = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
