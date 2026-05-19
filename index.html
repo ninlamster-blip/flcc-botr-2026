@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval'; connect-src *;">
 <title>FLCC BOTR Strategic Direction 2026</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
@@ -1478,7 +1479,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 //  GOOGLE SHEETS CONFIGURATION
 // Replace with your deployed Google Apps Script Web App URL
 // 
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzDgI1BcrtabYZxRSVFI3brLHh1VWQExCvPYn4f4KP9wTnKAVzIJN5kp5n2eiReuYnC/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwvKuqB85PnY3S3Cn6o9JwqesCMpeKxvZ2Q1lWTJT0mrWAez8eMFY-hWE4os30f0JEx/exec';
 const SHEETS_ON  = SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE';
 
 // Google Sheets ID — used for direct data reads via Google's gviz API (no CORS)
@@ -1807,7 +1808,7 @@ function loadActionsFromLocal(name, church) {
 // 
 const LEADER_ROLES = ['Church Leader','Sector Leader','Pastor','Ministry Head','Ministry Leader'];
 const isLeader = () => LEADER_ROLES.includes(APP.role);
-const stageNum  = s  => STAGES.indexOf(s) + 1 || 1;
+const _stageNumHelper = s => STAGES.indexOf(s) + 1 || 1;
 const avColor   = i  => ['#FF2D55','#007AFF','#34C759','#FF9500','#5AC8FA','#AF52DE'][i % 6];
 const stageColor= s  => ({ Evangelism:'#5AC8FA', Discipleship:'#007AFF', 'Leadership Dev':'#FF9500', Multiplying:'#FF2D55' }[s] || '#8E8E93');
 const typeStyle = t  => ({ Leadership:'background:#FFF4E0;color:#A05A00', Discipleship:'background:#E8F8ED;color:#1C7A35', Evangelism:'background:#EBF8FE;color:#0071A4', Multiplying:'background:#FFECF0;color:#C0002A' }[t] || '');
@@ -2017,45 +2018,72 @@ function apiGet(params) {
 // Load live data — direct fetch to Apps Script (same as browser, always works)
 async function loadLiveData() {
   const backup = {
-    members:      [...LIVE.members],
-    churches:     JSON.parse(JSON.stringify(LIVE.churches)),
-    sectors:      JSON.parse(JSON.stringify(LIVE.sectors)),
-    totalGospel:  LIVE.totalGospel,
-    totalDisc:    LIVE.totalDisc,
-    totalLeaders: LIVE.totalLeaders,
+    members:     [...LIVE.members],
+    churches:    JSON.parse(JSON.stringify(LIVE.churches)),
+    sectors:     JSON.parse(JSON.stringify(LIVE.sectors)),
+    totalGospel: LIVE.totalGospel,
+    totalDisc:   LIVE.totalDisc,
+    totalLeaders:LIVE.totalLeaders,
   };
 
-  const url = SCRIPT_URL + '?action=getLiveData&t=' + Date.now();
-
-  // Try 1: fetch with proper CORS settings for Apps Script
+  // Method 1: standard fetch (works on desktop Chrome/Firefox)
   try {
-    const res = await Promise.race([
-      fetch(url, {
-        method:      'GET',
-        mode:        'cors',
-        credentials: 'omit',
-        redirect:    'follow',
-        cache:       'no-store',
-      }),
-      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 8000)),
+    const response = await Promise.race([
+      fetch(SCRIPT_URL + '?action=getLiveData&t=' + Date.now()),
+      new Promise((_,r) => setTimeout(() => r(new Error('timeout')), 8000)),
     ]);
-    if (res.ok) {
-      const data = await res.json();
+    if (response.ok) {
+      const data = await response.json();
       if (data && data.members && data.members.length > 0) {
         applyLiveData(data, backup);
         return;
       }
     }
-  } catch(e) { /* try next method */ }
-
-  // Try 2: JSONP via script tag (works when CORS blocked)
-  try {
-    await loadViaJSONP(backup);
-  } catch(e) {
-    // All methods failed — keep backup data, never show zeros
-    Object.assign(LIVE, backup);
-    hydrateActionLogsFromLocal();
+  } catch(fetchError) {
+    console.warn('Fetch failed, trying JSONP...', fetchError.message);
   }
+
+  // Method 2: JSONP fallback (bypasses CORS, works on all mobile browsers)
+  return new Promise(resolve => {
+    const cb  = 'flcc_' + Date.now() + '_' + Math.floor(Math.random()*99999);
+    const el  = document.createElement('script');
+
+    const timer = setTimeout(() => {
+      cleanup();
+      console.warn('JSONP timeout — using backup data');
+      Object.assign(LIVE, backup);
+      hydrateActionLogsFromLocal();
+      resolve();
+    }, 15000);
+
+    function cleanup() {
+      clearTimeout(timer); delete window[cb];
+      try { document.head.removeChild(el); } catch(e) {}
+    }
+
+    window[cb] = function(data) {
+      cleanup();
+      console.log('JSONP success — members:', (data.members||[]).length, 'gospel:', data.totalGospel);
+      if (data && data.members && data.members.length > 0) {
+        applyLiveData(data, backup);
+      } else {
+        Object.assign(LIVE, backup);
+        hydrateActionLogsFromLocal();
+      }
+      resolve();
+    };
+
+    el.onerror = function() {
+      cleanup();
+      console.warn('JSONP script error — using backup data');
+      Object.assign(LIVE, backup);
+      hydrateActionLogsFromLocal();
+      resolve();
+    };
+
+    el.src = SCRIPT_URL + '?action=getLiveData&callback=' + cb + '&t=' + Date.now();
+    document.head.appendChild(el);
+  });
 }
 
 // Old church name → new church name mapping (backward compatibility)
@@ -3119,8 +3147,30 @@ function deleteAction(realIdx) {
 }
 
 // ══════════════════════════════════════════════════════════
-// OUTREACH CONTACTS REPORT
+// HELPER FUNCTIONS
 // ══════════════════════════════════════════════════════════
+
+function stageNum(stage) {
+  const idx = STAGES.indexOf(stage);
+  return idx >= 0 ? idx + 1 : 1;
+}
+
+function parseDateLabel(isoStr) {
+  if (!isoStr) return '';
+  try {
+    const d = new Date(isoStr);
+    const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return m[d.getMonth()] + ' ' + d.getDate();
+  } catch(e) { return String(isoStr).substring(0, 10); }
+}
+
+function attachmentSummary() {
+  const parts = [];
+  if (attachments.photos.length) parts.push(`${attachments.photos.length} photo${attachments.photos.length > 1 ? 's' : ''}`);
+  if (attachments.files.length)  parts.push(attachments.files.map(f => f.name).join(', '));
+  if (attachments.note.trim())   parts.push(`Note: ${attachments.note.trim()}`);
+  return parts.join(' · ');
+}
 
 function getAllOutreachContacts(filterSector) {
   const contacts = [];
@@ -3280,11 +3330,10 @@ function updateStage() {
 // LEADER: MY CHURCH  all data from LIVE store
 // 
 function renderChurchScreen() {
-  // Leader sees their own church by default
-  const cId   = CHURCHES.find(c => c.name === APP.church)?.id || 'botr';
+  const cId   = CHURCHES.find(c => c.name === APP.church)?.id || 'abundance';
   const cDef  = CHURCHES.find(c => c.id === cId);
-  const cLive = LIVE.churches[cId];
-  const sect  = SECTORS.find(s => s.id === (cDef?.sector || APP.sector)) || SECTORS[2];
+  const cLive = LIVE.churches[cId] || { gospel:0, disciples:0, leaders:0, members:0, monthly:new Array(8).fill(0) };
+  const sect  = SECTORS.find(s => s.id === (cDef?.sector || APP.sector)) || SECTORS[0];
 
   const gospelPct = cLive.gospel / 22500;
   const st        = statusFor(gospelPct);
