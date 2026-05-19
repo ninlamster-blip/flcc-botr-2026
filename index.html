@@ -2482,34 +2482,20 @@ async function startApp() {
   document.getElementById('nav-chip').textContent = `${roleEmoji} ${chipLabel} · ${APP.church}`;
   document.getElementById('refresh-btn').style.display = 'inline-flex';
   document.getElementById('tabbar').style.display = 'flex';
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display   = 'block';
 
-  // CRITICAL: Force fresh data fetch from Google Sheets BEFORE rendering anything
-  // This ensures every device shows the latest synced state
-  showLoading('Loading latest data from Google Sheets…');
-  await loadLiveData();
-  if (APP.loggedIn && APP.name && APP.actions.length) {
-    applyCurrentUserToLive();
-  }
-  hideLoading();
-
-  // Update sync badge
-  const syncEl = document.getElementById('pp-sync');
-  if (syncEl) {
-    syncEl.className = SHEETS_ON ? 'sync-ok' : 'sync-fail';
-    syncEl.textContent = SHEETS_ON ? '✓ Synced to Google Sheets' : '⚠ Connect Google Sheets to save data';
-  }
-
+  // BUILD TABS AND RENDER IMMEDIATELY — don't wait for Sheets
   if (!isLeader()) {
     buildTabs([
       { id:'home',        label:'Home',    icon:'🏠' },
       { id:'log',         label:'Log',     icon:'✏️' },
       { id:'mem-profile', label:'Profile', icon:'👤' },
     ]);
-    renderMemberHome();
-    renderLogScreen();
+    try { renderMemberHome();    } catch(e) { console.error('renderMemberHome:', e); }
+    try { renderLogScreen();     } catch(e) { console.error('renderLogScreen:', e); }
     showTab('home');
   } else {
-    // Command tab — users with commandAccess:true in KNOWN_USERS
     const leaderTabs = [
       { id:'church',         label:'My Church', icon:'⛪' },
       { id:'sector',         label:'Sector',    icon:'🌐' },
@@ -2518,12 +2504,18 @@ async function startApp() {
       { id:'leader-profile', label:'Profile',   icon:'👤' },
     ];
     buildTabs(leaderTabs);
-    renderChurchScreen();
-    renderLogScreen();
+    try { renderChurchScreen();  } catch(e) { console.error('renderChurchScreen:', e); }
+    try { renderLogScreen();     } catch(e) { console.error('renderLogScreen:', e); }
     showTab('church');
   }
 
   showToast(`Welcome, ${APP.name.split(' ')[0]}! 🙏`);
+
+  // THEN load from Sheets silently in background
+  loadLiveData().then(() => {
+    if (APP.loggedIn && APP.name && APP.actions.length) applyCurrentUserToLive();
+    try { if (!isLeader()) renderMemberHome(); else renderChurchScreen(); } catch(e) {}
+  }).catch(() => {});
 }
 
 // 
@@ -2545,24 +2537,34 @@ function showTab(id) {
   if (scr) scr.classList.add('active');
   document.getElementById('content').scrollTop = 0;
   document.querySelectorAll('.tbbtn').forEach(btn => {
-    const m = btn.getAttribute('onclick').match(/'(.+?)'/);
+    const m = btn.getAttribute('onclick')?.match(/'(.+?)'/);
     if (m) btn.classList.toggle('active', m[1] === id);
   });
   const titles = {
     home:'Home', log:'Log Action', 'mem-profile':'Profile',
     church:'My Church', sector:'Sector', command:'Command', 'leader-profile':'Profile'
   };
-  document.getElementById('nav-title').textContent = titles[id] || 'FLCC BOTR';
+  document.getElementById('nav-title').textContent = titles[id] || 'FLCC';
 
-  // Always refresh live data from Sheets when switching to a data screen
+  // RENDER IMMEDIATELY from whatever data exists in LIVE (no waiting)
+  if (id === 'home')            { try { renderMemberHome();    } catch(e) { console.error('Home error:',e); } }
+  if (id === 'church')          { try { renderChurchScreen();  } catch(e) { console.error('Church error:',e); } }
+  if (id === 'sector')          { try { renderSectorScreen();  } catch(e) { console.error('Sector error:',e); } }
+  if (id === 'command')         { try { renderCommandScreen(); } catch(e) { console.error('Command error:',e); } }
+  if (id === 'log')             { try { renderLogScreen();     } catch(e) { console.error('Log error:',e); } }
+  if (id === 'mem-profile')     { try { renderMemberProfile(); } catch(e) { console.error('Profile error:',e); } }
+  if (id === 'leader-profile')  { try { renderLeaderProfile(); } catch(e) { console.error('LProfile error:',e); } }
+
+  // THEN silently refresh from Sheets in background (no loading spinner)
   const dataScreens = ['home','church','sector','command'];
   if (dataScreens.includes(id)) {
-    refreshLiveData(id);
-  } else {
-    // Non-data screens render immediately without a network call
-    if (id === 'log')            renderLogScreen();
-    if (id === 'mem-profile')    renderMemberProfile();
-    if (id === 'leader-profile') renderLeaderProfile();
+    loadLiveData().then(() => {
+      if (APP.loggedIn && APP.name && APP.actions.length) applyCurrentUserToLive();
+      if (currentTab === 'home')    try { renderMemberHome();    } catch(e) {}
+      if (currentTab === 'church')  try { renderChurchScreen();  } catch(e) {}
+      if (currentTab === 'sector')  try { renderSectorScreen();  } catch(e) {}
+      if (currentTab === 'command') try { renderCommandScreen(); } catch(e) {}
+    }).catch(() => {});
   }
 }
 
