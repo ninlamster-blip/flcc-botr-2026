@@ -1038,14 +1038,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
           <button class="toggle on" id="tog1" onclick="toggleSw('tog1')"><div class="tthumb"></div></button>
         </div>
       </div>
+      <div class="card" id="pp-pin-card" style="display:none">
+        <div class="srow" style="cursor:pointer" onclick="startPinChange()">
+          <div class="sleft"><div class="sicon" style="background:#EEF3FF">🔐</div><div class="slabel2">Change PIN</div></div>
+          <span style="font-size:18px;color:var(--ter)">›</span>
+        </div>
+      </div>
       <div class="card">
         <div class="srow" style="cursor:pointer" onclick="signOut()">
           <div class="sleft"><div class="sicon" style="background:#FFECEB">🚪</div><div class="slabel2" style="color:var(--red)">Sign Out</div></div>
           <span style="font-size:18px;color:var(--ter)">›</span>
         </div>
       </div>
-      <div style="height:8px"></div>
-    </div>
 
     <!-- ══════════════════════════════════════
          LEADER: MY CHURCH
@@ -1438,6 +1442,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
         <div class="srow">
           <div class="sleft"><div class="sicon" style="background:#EBF5FF">🌍</div><div class="slabel2">Network</div></div>
           <div class="sval">N.E.C.K. Kuwait</div>
+        </div>
+        <div class="ld"></div>
+        <div class="srow" style="cursor:pointer" onclick="startPinChange()">
+          <div class="sleft"><div class="sicon" style="background:#EEF3FF">🔐</div><div class="slabel2">Change PIN</div></div>
+          <span style="font-size:18px;color:var(--ter)">›</span>
         </div>
         <div class="ld"></div>
         <div class="srow" style="cursor:pointer" onclick="signOut()">
@@ -2948,6 +2957,10 @@ function renderMemberProfile() {
   sync.className   = SHEETS_ON ? 'sync-ok' : 'sync-fail';
   sync.textContent = SHEETS_ON ? '✓ Synced to Google Sheets' : '⚠ Connect Google Sheets to save data';
 
+  // Show Change PIN button only for users who have a PIN assigned
+  const pinCard = document.getElementById('pp-pin-card');
+  if (pinCard) pinCard.style.display = getUserPin(APP.name) ? 'block' : 'none';
+
   // Action type breakdown counts
   const ct = { Evangelism:0, Discipleship:0, Leadership:0, Multiplying:0 };
   APP.actions.forEach(a => { if (ct[a.type] !== undefined) ct[a.type]++; });
@@ -4091,14 +4104,34 @@ function showToast(msg) { const el = document.getElementById('toast'); el.textCo
 // ══════════════════════════════════════════════════════════
 // PIN PROTECTION
 // ══════════════════════════════════════════════════════════
+
+// Get current PIN for a user — checks localStorage first, falls back to default
+function getUserPin(name) {
+  try {
+    const saved = localStorage.getItem('flcc_pin_' + name.replace(/\s+/g,'_'));
+    if (saved) return saved;
+  } catch(e) {}
+  const known = KNOWN_USERS[name];
+  return known ? known.pin : null;
+}
+
+// Save updated PIN to localStorage
+function saveUserPin(name, newPin) {
+  try {
+    localStorage.setItem('flcc_pin_' + name.replace(/\s+/g,'_'), newPin);
+    return true;
+  } catch(e) { return false; }
+}
+
 let pinBuffer    = '';
 let pinCallback  = null;
 
 function requirePin(name, onSuccess) {
-  const known = KNOWN_USERS[name];
-  if (!known || !known.pin) { onSuccess(); return; }
-  pinBuffer  = '';
-  pinCallback= onSuccess;
+  const pin = getUserPin(name);
+  if (!pin) { onSuccess(); return; }
+  pinBuffer   = '';
+  pinCallback = onSuccess;
+  pinChangeStep = '';
   document.getElementById('pin-name').textContent = '🔐 ' + name;
   document.getElementById('pin-error').textContent = '';
   updatePinDots();
@@ -4109,35 +4142,26 @@ function pinPress(digit) {
   if (pinBuffer.length >= 4) return;
   pinBuffer += digit;
   updatePinDots();
-  if (pinBuffer.length === 4) {
-    setTimeout(checkPin, 100);
-  }
+  if (pinBuffer.length === 4) setTimeout(checkPin, 150);
 }
 
 function checkPin() {
-  // Find matching known user by name from pin-name display
+  if (pinChangeStep) { checkPinChange(); return; }
   const displayName = document.getElementById('pin-name').textContent.replace('🔐 ','');
-  const known = KNOWN_USERS[displayName];
-  if (known && pinBuffer === known.pin) {
+  const correctPin  = getUserPin(displayName);
+  if (pinBuffer === correctPin) {
     document.getElementById('pin-overlay').style.display = 'none';
     pinBuffer = '';
     if (pinCallback) { pinCallback(); pinCallback = null; }
   } else {
-    document.getElementById('pin-error').textContent = '❌ Wrong PIN — try again';
-    document.querySelectorAll('.pin-dot').forEach(d => { d.classList.add('error'); d.classList.remove('filled'); });
-    setTimeout(() => {
-      pinBuffer = '';
-      updatePinDots();
-      document.querySelectorAll('.pin-dot').forEach(d => d.classList.remove('error'));
-      document.getElementById('pin-error').textContent = '';
-    }, 800);
+    showPinError('❌ Wrong PIN — try again');
   }
 }
 
 function updatePinDots() {
   for (let i = 0; i < 4; i++) {
     const dot = document.getElementById('pd' + i);
-    dot.classList.toggle('filled', i < pinBuffer.length);
+    if (dot) dot.classList.toggle('filled', i < pinBuffer.length);
   }
 }
 
@@ -4147,10 +4171,81 @@ function pinDelete() {
 }
 
 function pinCancel() {
-  pinBuffer  = '';
+  pinBuffer = '';
   pinCallback = null;
+  pinChangeStep = '';
+  pinChangeNew  = '';
   document.getElementById('pin-overlay').style.display = 'none';
 }
+
+function showPinError(msg) {
+  document.getElementById('pin-error').textContent = msg;
+  document.querySelectorAll('.pin-dot').forEach(d => { d.classList.add('error'); d.classList.remove('filled'); });
+  setTimeout(() => {
+    pinBuffer = '';
+    updatePinDots();
+    document.querySelectorAll('.pin-dot').forEach(d => d.classList.remove('error'));
+    document.getElementById('pin-error').textContent = '';
+  }, 800);
+}
+
+// ── PIN CHANGE FLOW ───────────────────────────────────────
+let pinChangeStep = '';
+let pinChangeNew  = '';
+
+function startPinChange() {
+  const known = findKnownUser(APP.name);
+  if (!known) { showToast('PIN change only available for registered leaders'); return; }
+  pinBuffer     = '';
+  pinChangeStep = 'current';
+  pinChangeNew  = '';
+  pinCallback   = null;
+  document.getElementById('pin-name').textContent  = '🔐 Verify Current PIN';
+  document.getElementById('pin-error').textContent = '';
+  updatePinDots();
+  document.getElementById('pin-overlay').style.display = 'flex';
+}
+
+function checkPinChange() {
+  if (pinChangeStep === 'current') {
+    if (pinBuffer === getUserPin(APP.name)) {
+      pinBuffer = '';
+      pinChangeStep = 'new';
+      document.getElementById('pin-name').textContent  = '🆕 Enter New 4-Digit PIN';
+      document.getElementById('pin-error').textContent = '';
+      updatePinDots();
+    } else {
+      showPinError('❌ Wrong current PIN');
+    }
+  } else if (pinChangeStep === 'new') {
+    pinChangeNew  = pinBuffer;
+    pinBuffer     = '';
+    pinChangeStep = 'confirm';
+    document.getElementById('pin-name').textContent  = '✅ Confirm New PIN';
+    document.getElementById('pin-error').textContent = '';
+    updatePinDots();
+  } else if (pinChangeStep === 'confirm') {
+    if (pinBuffer === pinChangeNew) {
+      saveUserPin(APP.name, pinChangeNew);
+      pinChangeStep = '';
+      pinChangeNew  = '';
+      pinBuffer     = '';
+      document.getElementById('pin-overlay').style.display = 'none';
+      showToast('✓ PIN updated! Use your new PIN next time you sign in.');
+    } else {
+      pinBuffer     = '';
+      pinChangeStep = 'new';
+      pinChangeNew  = '';
+      updatePinDots();
+      setTimeout(() => {
+        document.getElementById('pin-name').textContent  = '🆕 Enter New 4-Digit PIN';
+        document.getElementById('pin-error').textContent = '';
+      }, 900);
+      showPinError('❌ PINs don\'t match — enter new PIN again');
+    }
+  }
+}
+
 
 // ══════════════════════════════════════════════════════════
 // PHOTO UPLOAD TO GOOGLE DRIVE
