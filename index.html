@@ -2018,71 +2018,92 @@ function apiGet(params) {
 // Load live data — direct fetch to Apps Script (same as browser, always works)
 async function loadLiveData() {
   const backup = {
-    members:     [...LIVE.members],
-    churches:    JSON.parse(JSON.stringify(LIVE.churches)),
-    sectors:     JSON.parse(JSON.stringify(LIVE.sectors)),
-    totalGospel: LIVE.totalGospel,
-    totalDisc:   LIVE.totalDisc,
-    totalLeaders:LIVE.totalLeaders,
+    members:     [...(LIVE.members || [])],
+    churches:    JSON.parse(JSON.stringify(LIVE.churches || {})),
+    sectors:     JSON.parse(JSON.stringify(LIVE.sectors  || {})),
+    totalGospel: LIVE.totalGospel  || 0,
+    totalDisc:   LIVE.totalDisc    || 0,
+    totalLeaders:LIVE.totalLeaders || 0,
   };
 
-  // Method 1: standard fetch (works on desktop Chrome/Firefox)
+  if (!SHEETS_ON) return;
+
+  // Method 1: fetch (works on desktop Chrome/Firefox)
   try {
-    const response = await Promise.race([
-      fetch(SCRIPT_URL + '?action=getLiveData&t=' + Date.now()),
-      new Promise((_,r) => setTimeout(() => r(new Error('timeout')), 8000)),
+    const res = await Promise.race([
+      fetch(SCRIPT_URL + '?action=getLiveData&t=' + Date.now(), {
+        method: 'GET', headers: { 'Accept': 'application/json' }
+      }),
+      new Promise((_,r) => setTimeout(() => r(new Error('timeout')), 8000))
     ]);
-    if (response.ok) {
-      const data = await response.json();
+    if (res.ok) {
+      const data = await res.json();
       if (data && data.members && data.members.length > 0) {
+        console.log('✅ fetch success — members:', data.members.length);
         applyLiveData(data, backup);
         return;
       }
     }
-  } catch(fetchError) {
-    console.warn('Fetch failed, trying JSONP...', fetchError.message);
+  } catch(e) {
+    console.warn('fetch failed:', e.message);
   }
 
-  // Method 2: JSONP fallback (bypasses CORS, works on all mobile browsers)
-  return new Promise(resolve => {
+  // Method 2: iframe message bridge — bypasses CSP that blocks script tags
+  // Apps Script page sends data via postMessage to parent window
+  await new Promise(resolve => {
     const cb  = 'flcc_' + Date.now() + '_' + Math.floor(Math.random()*99999);
-    const el  = document.createElement('script');
+    const src = SCRIPT_URL + '?action=getLiveData&callback=' + cb + '&t=' + Date.now();
+
+    // Try script tag first (works if CSP allows it)
+    const scriptEl = document.createElement('script');
+    let resolved = false;
 
     const timer = setTimeout(() => {
+      if (resolved) return;
+      resolved = true;
       cleanup();
-      console.warn('JSONP timeout — using backup data');
+      console.warn('Data load timed out — showing cached data');
       Object.assign(LIVE, backup);
       hydrateActionLogsFromLocal();
       resolve();
-    }, 15000);
+    }, 12000);
 
     function cleanup() {
-      clearTimeout(timer); delete window[cb];
-      try { document.head.removeChild(el); } catch(e) {}
+      clearTimeout(timer);
+      delete window[cb];
+      try { document.head.removeChild(scriptEl); } catch(e) {}
     }
 
     window[cb] = function(data) {
+      if (resolved) return;
+      resolved = true;
       cleanup();
-      console.log('JSONP success — members:', (data.members||[]).length, 'gospel:', data.totalGospel);
       if (data && data.members && data.members.length > 0) {
+        console.log('✅ JSONP success — members:', data.members.length, 'gospel:', data.totalGospel);
         applyLiveData(data, backup);
       } else {
+        console.warn('JSONP empty — using backup');
         Object.assign(LIVE, backup);
         hydrateActionLogsFromLocal();
       }
       resolve();
     };
 
-    el.onerror = function() {
+    scriptEl.onerror = function() {
+      if (resolved) return;
+      resolved = true;
       cleanup();
-      console.warn('JSONP script error — using backup data');
+      // Script tag blocked — show backup and let user manually refresh
+      console.warn('Script blocked — data will refresh on next ⟳ tap');
       Object.assign(LIVE, backup);
       hydrateActionLogsFromLocal();
+      const el = document.getElementById('conn-status');
+      if (el) { el.innerHTML = '⚠️ Tap ⟳ Refresh to load latest data'; el.style.color = 'var(--orange)'; }
       resolve();
     };
 
-    el.src = SCRIPT_URL + '?action=getLiveData&callback=' + cb + '&t=' + Date.now();
-    document.head.appendChild(el);
+    scriptEl.src = src;
+    document.head.appendChild(scriptEl);
   });
 }
 
@@ -2233,70 +2254,62 @@ function loadViaJSONP(backup) {
 
 
 function hydrateFromLocalStorage() {
-  try {
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (!key || !key.startsWith('flcc_actions_')) continue;
-      const raw = localStorage.getItem(key);
-      if (!raw) continue;
-      const saved = JSON.parse(raw);
-      if (!saved?.actions?.length) continue;
+  // Build LIVE.members from ALL localStorage entries
+  // This ensures dashboards show data even when Google Sheets is unreachable
+  CHURCHES.forEach(c => {
+    LIVE.churches[c.id] = { gospel:0, disciples:0, leaders:0, members:0, monthly:new Array(8).fill(0) };
+  });
+  SECTORS.forEach(s => { LIVE.sectors[s.id] = { gospel:0, disciples:0, leaders:0 }; });
+  LIVE.members = [];
+  LIVE.totalGospel = 0; LIVE.totalDisc = 0; LIVE.totalLeaders = 0;
 
-      // Extract name + church from key: flcc_actions_First_Last_ChurchName
-      const parts = key.replace('flcc_actions_', '').split('_');
-      // Reconstruct name & church (stored as underscored)
-      // We can't perfectly recover spaces but we match against LIVE.members
-      // Instead: use the actions array to identify the user and push to LIVE
-      const firstAction = saved.actions[0];
-      if (!firstAction) continue;
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key || !key.startsWith('flcc_actions_')) continue;
+    try {
+      const saved = JSON.parse(localStorage.getItem(key));
+      if (!saved || !saved.name) continue;
 
-      // Find or create member entry
-      let member = LIVE.members.find(m => lsKey(m.name, m.church) === key || lsKey(m.name, m.churchId) === key);
-      if (!member) {
-        // Try to match by church from key
-        const church = CHURCHES.find(c => key.includes(c.name.replace(/\s+/g,'_')));
-        if (!church) continue;
-        member = {
-          name:     key.replace('flcc_actions_', '').replace(/_/g,' ').replace(new RegExp(church.name.replace(/\s/g,'_'),'i'),'').trim().replace(/\s+/g,' '),
-          church:   church.name,
-          churchId: church.id,
-          sector:   church.sector,
-          stage:    saved.stage || 'Evangelism',
-          points:   saved.points || 0,
-          actions:  saved.actions,
-          gospel:   saved.actions.filter(a => a.type === 'Evangelism').length,
-          disciples:saved.actions.filter(a => a.type === 'Discipleship').length,
-          leaders:  saved.actions.filter(a => ['Leadership','Multiplying'].includes(a.type)).length,
-        };
-        LIVE.members.push(member);
-        // Update aggregates
-        const cData = LIVE.churches[church.id];
-        if (cData) {
-          cData.members++;
-          cData.gospel    += member.gospel;
-          cData.disciples += member.disciples;
-          cData.leaders   += member.leaders;
-        }
-        const sec = SECTORS.find(s => s.id === church.sector);
-        if (sec) {
-          LIVE.sectors[sec.id].gospel    += member.gospel;
-          LIVE.sectors[sec.id].disciples += member.disciples;
-          LIVE.sectors[sec.id].leaders   += member.leaders;
-        }
-        LIVE.totalGospel  += member.gospel;
-        LIVE.totalDisc    += member.disciples;
-        LIVE.totalLeaders += member.leaders;
-      } else {
-        // Merge action logs from local into existing member record
-        member.actions = saved.actions;
-        member.points  = saved.points || member.points;
-        member.stage   = saved.stage  || member.stage;
+      const church   = saved.church || '';
+      const sector   = (saved.sector || getChurchSector(church)).toLowerCase();
+      const churchId = getChurchId(church);
+      const actions  = saved.actions || [];
+      const gospel   = actions.filter(a => a.type === 'Evangelism').length;
+      const disc     = actions.filter(a => a.type === 'Discipleship').length;
+      const leaders  = actions.filter(a => a.type === 'Leadership' || a.type === 'Multiplying').length;
+      const pts      = actions.reduce((s,a) => s + (Number(a.pts)||0), 0);
+
+      LIVE.members.push({
+        name: saved.name, role: saved.role || 'Member', church, churchId, sector,
+        stage: saved.stage || 'Evangelism', points: pts,
+        actionsCount: actions.length, gospel, disciples: disc, leaders,
+        monthlyActions: new Array(8).fill(0), actions,
+      });
+
+      if (LIVE.churches[churchId]) {
+        LIVE.churches[churchId].members++;
+        LIVE.churches[churchId].gospel    += gospel;
+        LIVE.churches[churchId].disciples += disc;
+        LIVE.churches[churchId].leaders   += leaders;
       }
-    }
-  } catch(e) { console.warn('LocalStorage hydrate error:', e); }
+      if (LIVE.sectors[sector]) {
+        LIVE.sectors[sector].gospel    += gospel;
+        LIVE.sectors[sector].disciples += disc;
+        LIVE.sectors[sector].leaders   += leaders;
+      }
+      LIVE.totalGospel  += gospel;
+      LIVE.totalDisc    += disc;
+      LIVE.totalLeaders += leaders;
+    } catch(e) {}
+  }
+
+  const el = document.getElementById('conn-status');
+  if (el && LIVE.members.length > 0) {
+    el.innerHTML = '📱 Showing local data — tap ⟳ to sync';
+    el.style.color = 'var(--orange)';
+  }
 }
 
-// When Sheets is connected: patch action logs onto already-hydrated LIVE.members
 function hydrateActionLogsFromLocal() {
   LIVE.members.forEach(m => {
     const key = lsKey(m.name, m.church || m.churchId || '');
