@@ -1051,6 +1051,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
           <span style="font-size:18px;color:var(--ter)">›</span>
         </div>
       </div>
+    </div><!-- /screen-mem-profile — this closing tag was missing, which nested every leader screen inside this hidden screen -->
 
     <!-- ══════════════════════════════════════
          LEADER: MY CHURCH
@@ -2482,8 +2483,9 @@ async function startApp() {
   document.getElementById('nav-chip').textContent = `${roleEmoji} ${chipLabel} · ${APP.church}`;
   document.getElementById('refresh-btn').style.display = 'inline-flex';
   document.getElementById('tabbar').style.display = 'flex';
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('app-screen').style.display   = 'block';
+  // Hide the login screen — screens are toggled via the 'active' class.
+  // (showTab() below activates the correct app screen.)
+  document.getElementById('screen-login').classList.remove('active');
 
   // BUILD TABS AND RENDER IMMEDIATELY — don't wait for Sheets
   if (!isLeader()) {
