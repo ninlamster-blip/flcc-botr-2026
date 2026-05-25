@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>FLCC – BOTR · Announcements</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:      #F2F2F7;
+    --surface: #FFFFFF;
+    --text:    #1C1C1E;
+    --label3:  #8E8E93;
+    --sep:     #E5E5EA;
+    --orange:  #FF9500;
+    --blue:    #007AFF;
+    --purple:  #AF52DE;
+    --green:   #28CD41;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .screen {
+    width: 100vw; height: 100vh;
+    display: flex; flex-direction: column;
+    padding: 2.2vh 3vw 1.4vh;
+    gap: 1.6vh;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    flex-shrink: 0;
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 1.8vh 2.4vw;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.05);
+    animation: slideDown 0.45s cubic-bezier(0.16,1,0.3,1) both;
+  }
+
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .logo {
+    font-size: clamp(15px, 2.2vh, 26px);
+    font-weight: 800; color: var(--text);
+    letter-spacing: -0.025em;
+  }
+  .logo-sep { color: var(--label3); font-weight: 400; margin: 0 0.25em; }
+
+  .header-label {
+    font-size: clamp(9px, 1.1vh, 13px);
+    font-weight: 500; color: var(--label3);
+    letter-spacing: 0.2em; text-transform: uppercase;
+  }
+
+  .today-chip {
+    display: flex; align-items: center; gap: 0.5vw;
+    background: var(--blue); color: #fff;
+    border-radius: 100px; padding: 0.4vh 1vw;
+    font-size: clamp(10px, 1.3vh, 15px); font-weight: 600;
+  }
+  .today-dot {
+    width: 6px; height: 6px;
+    background: rgba(255,255,255,0.7); border-radius: 50%;
+    animation: blink 1.8s ease-in-out infinite;
+  }
+
+  /* ── DECK STAGE ── */
+  .deck-stage {
+    flex: 1;
+    position: relative;
+    min-height: 0;
+    /* perspective for subtle 3-D depth on rear cards */
+    perspective: 1200px;
+  }
+
+  /* ── SINGLE CARD ── */
+  .deck-card {
+    position: absolute;
+    inset: 0;
+    border-radius: 22px;
+    padding: 2.6vh 2.8vw 2.2vh;
+    display: flex; flex-direction: column;
+    gap: 1.4vh;
+    overflow: hidden;
+    will-change: transform, opacity;
+    /* default: hidden behind active */
+    transform: translateX(100%) scale(0.92);
+    opacity: 0;
+    transition: none; /* JS drives all transitions */
+    box-shadow: 0 8px 40px rgba(0,0,0,0.18), 0 2px 10px rgba(0,0,0,0.10);
+  }
+
+  /* Colored top stripe */
+  .deck-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 6px;
+    border-radius: 22px 22px 0 0;
+  }
+
+  /* Card tints */
+  .d1 { background: #FFFDF7; }
+  .d2 { background: #F5F9FF; }
+  .d3 { background: #FBF6FF; }
+  .d4 { background: #F5FFF8; }
+
+  /* Stripe colors */
+  .d1::before { background: var(--orange); }
+  .d2::before { background: var(--blue);   }
+  .d3::before { background: var(--purple); }
+  .d4::before { background: var(--green);  }
+
+  /* ── STATES ── */
+
+  /* The card currently shown */
+  .deck-card.state-active {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+    z-index: 10;
+  }
+
+  /* Cards waiting in queue — stacked behind with slight offset */
+  .deck-card.state-behind-1 {
+    transform: translateX(5%) scale(0.96);
+    opacity: 0.7;
+    z-index: 9;
+  }
+  .deck-card.state-behind-2 {
+    transform: translateX(10%) scale(0.92);
+    opacity: 0.4;
+    z-index: 8;
+  }
+  .deck-card.state-behind-3 {
+    transform: translateX(15%) scale(0.88);
+    opacity: 0.2;
+    z-index: 7;
+  }
+
+  /* Card that is leaving (slides out to the left) */
+  .deck-card.state-exit {
+    transform: translateX(-110%) scale(0.94);
+    opacity: 0;
+    z-index: 11;
+  }
+
+  /* Card entering from the right */
+  .deck-card.state-enter {
+    transform: translateX(110%) scale(0.94);
+    opacity: 0;
+    z-index: 12;
+  }
+
+  /* Apply smooth transitions when animating */
+  .deck-card.animating {
+    transition: transform 0.65s cubic-bezier(0.16,1,0.3,1),
+                opacity  0.55s cubic-bezier(0.16,1,0.3,1);
+  }
+
+  /* ── CARD HEADER ── */
+  .card-head {
+    display: flex; align-items: center; gap: 1vw;
+    flex-shrink: 0; padding-top: 0.6vh;
+  }
+
+  /* PULSING DOT */
+  .cdot {
+    width: clamp(12px, 1.8vh, 20px);
+    height: clamp(12px, 1.8vh, 20px);
+    border-radius: 50%; flex-shrink: 0;
+    position: relative;
+  }
+  .cdot::after {
+    content: '';
+    position: absolute; inset: -4px;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+    opacity: 0;
+    animation: dotRipple 1s ease-out infinite;
+  }
+  .deck-card.state-active .cdot {
+    animation: dotPulse 0.9s ease-in-out infinite;
+  }
+
+  @keyframes dotPulse {
+    0%,100% { transform: scale(1);   opacity: 1; }
+    50%      { transform: scale(1.4); opacity: 0.65; }
+  }
+  @keyframes dotRipple {
+    0%   { transform: scale(0.8); opacity: 0.55; }
+    100% { transform: scale(2.4); opacity: 0; }
+  }
+
+  .o { background: var(--orange); color: var(--orange); }
+  .b { background: var(--blue);   color: var(--blue);   }
+  .p { background: var(--purple); color: var(--purple); }
+  .g { background: var(--green);  color: var(--green);  }
+
+  .head-info { display: flex; flex-direction: column; gap: 0.15vh; }
+
+  .card-name {
+    font-size: clamp(14px, 2.4vh, 30px);
+    font-weight: 800; color: var(--text);
+    letter-spacing: -0.03em; line-height: 1.1;
+  }
+  .card-freq {
+    font-size: clamp(9px, 1.15vh, 14px);
+    font-weight: 500; color: var(--label3);
+  }
+
+  /* ── EVENT LIST ── */
+  .event-list {
+    flex: 1;
+    display: flex; flex-direction: column;
+    gap: 1vh;
+    min-height: 0;
+  }
+
+  .eitem {
+    flex: 1;
+    border-radius: 14px;
+    padding: 1.2vh 1.6vw;
+    display: flex; flex-direction: column;
+    justify-content: center; gap: 0.3vh;
+    min-height: 0; overflow: hidden;
+  }
+
+  .ei-date {
+    font-size: clamp(16px, 2.6vh, 32px);
+    font-weight: 700; color: #fff;
+    line-height: 1; letter-spacing: -0.015em;
+    white-space: nowrap;
+  }
+  .ei-venue {
+    font-size: clamp(10px, 1.5vh, 18px);
+    font-weight: 500; color: rgba(255,255,255,0.88);
+    line-height: 1.2;
+  }
+
+  .eitem.o   { background: var(--orange); }
+  .eitem.b   { background: var(--blue);   }
+  .eitem.p   { background: var(--purple); }
+  .eitem.g   { background: var(--green);  }
+  .eitem.dim { opacity: 0.78; }
+
+  /* MEET BADGE */
+  .meet-badge {
+    display: inline-flex; align-items: center; gap: 0.4vw;
+    background: rgba(255,255,255,0.22); border-radius: 100px;
+    padding: 0.25vh 0.7vw;
+    font-size: clamp(8px, 1.05vh, 13px); font-weight: 600;
+    color: #fff; align-self: flex-start; margin-top: 0.4vh;
+  }
+  .live-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%; background: rgba(255,255,255,0.9);
+    animation: blink 1.8s ease-in-out infinite;
+  }
+  @keyframes blink {
+    0%,100% { opacity: 1; }
+    50%      { opacity: 0.25; }
+  }
+
+  /* ── PROGRESS PIPS ── */
+  .deck-pips {
+    flex-shrink: 0;
+    display: flex; justify-content: center; align-items: center;
+    gap: 0.7vw;
+    padding-bottom: 0.4vh;
+  }
+  .pip {
+    width: clamp(6px, 0.9vh, 10px);
+    height: clamp(6px, 0.9vh, 10px);
+    border-radius: 50%;
+    background: rgba(0,0,0,0.15);
+    transition: background 0.4s, transform 0.4s;
+    cursor: pointer;
+  }
+  .pip.active {
+    background: var(--text);
+    transform: scale(1.3);
+  }
+
+  /* ── FOOTER ── */
+  .footer {
+    flex-shrink: 0;
+    text-align: center;
+    font-size: clamp(7px, 0.85vh, 10px);
+    color: var(--label3); letter-spacing: 0.2em;
+    text-transform: uppercase; opacity: 0.45;
+  }
+</style>
+</head>
+<body>
+<div class="screen">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="logo">FLCC <span class="logo-sep">—</span> BOTR</div>
+    <div class="header-label">Announcements</div>
+    <div class="today-chip">
+      <div class="today-dot"></div>
+      May 22, 2026
+    </div>
+  </header>
+
+  <!-- DECK STAGE -->
+  <div class="deck-stage" id="deckStage">
+
+    <!-- CARD 1 · SPORTS ACTIVITIES -->
+    <div class="deck-card d1" data-index="0">
+      <div class="card-head">
+        <div class="cdot o"></div>
+        <div class="head-info">
+          <div class="card-name">Sports Activities</div>
+          <div class="card-freq">Every Saturday</div>
+        </div>
+      </div>
+      <div class="event-list">
+        <div class="eitem o">
+          <div class="ei-date">3:15 – 5 PM</div>
+          <div class="ei-venue">Heirs of the Kingdom</div>
+        </div>
+        <div class="eitem o dim">
+          <div class="ei-date">5 – 10 PM</div>
+          <div class="ei-venue">Men's</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CARD 2 · INTERCESSORY PRAYER -->
+    <div class="deck-card d2" data-index="1">
+      <div class="card-head">
+        <div class="cdot b"></div>
+        <div class="head-info">
+          <div class="card-name">Intercessory Prayer</div>
+          <div class="card-freq">Every Friday</div>
+        </div>
+      </div>
+      <div class="event-list">
+        <div class="eitem b">
+          <div class="ei-date">May 29</div>
+          <div class="ei-venue">FB</div>
+        </div>
+        <div class="eitem b dim">
+          <div class="ei-date">Jun 5</div>
+          <div class="ei-venue">GIL</div>
+        </div>
+        <div class="eitem b">
+          <div class="ei-date">Jun 12</div>
+          <div class="ei-venue">Harvesters</div>
+        </div>
+        <div class="eitem b dim">
+          <div class="ei-date">Jun 19</div>
+          <div class="ei-venue">JAOC</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CARD 3 · CORPORATE PRAYER MEETING -->
+    <div class="deck-card d3" data-index="2">
+      <div class="card-head">
+        <div class="cdot p"></div>
+        <div class="head-info">
+          <div class="card-name">Corporate Prayer Meeting</div>
+        </div>
+      </div>
+      <div class="event-list">
+        <div class="eitem p">
+          <div class="ei-date">Jun 10</div>
+          <div class="ei-venue">Faithful &amp; True</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CARD 4 · MEN'S VIRTUAL BIBLE STUDY -->
+    <div class="deck-card d4" data-index="3">
+      <div class="card-head">
+        <div class="cdot g"></div>
+        <div class="head-info">
+          <div class="card-name">Men's Virtual Bible Study</div>
+          <div class="card-freq">Every Wednesday</div>
+        </div>
+      </div>
+      <div class="event-list">
+        <div class="eitem g">
+          <div class="ei-date">8:30 PM</div>
+          <div class="ei-venue">Google Meet</div>
+          <div class="meet-badge"><div class="live-dot"></div> Live Online</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /deck-stage -->
+
+  <!-- PROGRESS PIPS -->
+  <div class="deck-pips" id="deckPips"></div>
+
+  <!-- FOOTER -->
+  <footer class="footer">FLCC – BOTR &nbsp;·&nbsp; Press F11 for fullscreen</footer>
+
+</div>
+
+<script>
+(function () {
+  const TOTAL       = 4;
+  const INTERVAL_MS = 3000;
+  const BEHIND      = ['state-behind-1', 'state-behind-2', 'state-behind-3'];
+
+  const stage = document.getElementById('deckStage');
+  const cards = Array.from(stage.querySelectorAll('.deck-card'));
+  const pipsEl = document.getElementById('deckPips');
+
+  let current   = 0;
+  let animating = false;
+  let timer;
+
+  /* ── Build pips ── */
+  cards.forEach((_, i) => {
+    const pip = document.createElement('div');
+    pip.className = 'pip' + (i === 0 ? ' active' : '');
+    pip.addEventListener('click', () => goTo(i));
+    pipsEl.appendChild(pip);
+  });
+
+  function updatePips(idx) {
+    pipsEl.querySelectorAll('.pip').forEach((p, i) =>
+      p.classList.toggle('active', i === idx));
+  }
+
+  /* ── Apply initial layout (no transition) ── */
+  function applyState(card, state, animate) {
+    // Remove all state classes
+    card.classList.remove(
+      'state-active', 'state-exit', 'state-enter',
+      'state-behind-1', 'state-behind-2', 'state-behind-3', 'animating'
+    );
+    if (animate) card.classList.add('animating');
+    // Small rAF gap ensures remove + add triggers transition
+    requestAnimationFrame(() => card.classList.add(state));
+  }
+
+  /* ── Initial layout: first card active, rest stacked behind ── */
+  function init() {
+    cards.forEach((card, i) => {
+      card.classList.remove('animating');
+      if (i === 0) {
+        card.classList.add('state-active');
+      } else {
+        const behindIdx = i - 1; // 0,1,2
+        card.classList.add(BEHIND[Math.min(behindIdx, BEHIND.length - 1)]);
+      }
+    });
+    updatePips(0);
+  }
+
+  /* ── Advance to a specific card index ── */
+  function goTo(next) {
+    if (animating || next === current) return;
+    animating = true;
+
+    resetTimer();
+
+    const prev = current;
+    current = next;
+
+    /* 1. Mark outgoing card → will slide left */
+    applyState(cards[prev], 'state-exit', true);
+
+    /* 2. Place incoming card off-screen right first (no transition) */
+    cards[next].classList.remove(
+      'state-active', 'state-exit', 'state-enter',
+      'state-behind-1', 'state-behind-2', 'state-behind-3', 'animating'
+    );
+    cards[next].classList.add('state-enter');
+
+    /* 3. After one frame, animate incoming → active */
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        cards[next].classList.add('animating');
+        cards[next].classList.remove('state-enter');
+        cards[next].classList.add('state-active');
+
+        /* 4. Reposition all remaining cards into behind slots */
+        const queue = cards.filter((_, i) => i !== prev && i !== next);
+        queue.forEach((card, qi) => {
+          applyState(card, BEHIND[Math.min(qi, BEHIND.length - 1)], true);
+        });
+
+        updatePips(next);
+      });
+    });
+
+    /* 5. Unlock after animation completes */
+    setTimeout(() => {
+      /* Clean up exit card: push it to the back of the queue */
+      cards[prev].classList.remove('animating', 'state-exit');
+      cards[prev].classList.add(BEHIND[Math.min(BEHIND.length - 1, BEHIND.length - 1)]);
+      animating = false;
+    }, 700);
+  }
+
+  /* ── Auto-advance ── */
+  function advance() {
+    goTo((current + 1) % TOTAL);
+  }
+
+  function startTimer() {
+    timer = setInterval(advance, INTERVAL_MS);
+  }
+
+  function resetTimer() {
+    clearInterval(timer);
+    startTimer();
+  }
+
+  /* ── Swipe / drag support ── */
+  let touchStartX = null;
+
+  stage.addEventListener('touchstart', e => {
+    touchStartX = e.touches[0].clientX;
+  }, { passive: true });
+
+  stage.addEventListener('touchend', e => {
+    if (touchStartX === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    touchStartX = null;
+    if (Math.abs(dx) < 40) return;
+    if (dx < 0) goTo((current + 1) % TOTAL);
+    else        goTo((current - 1 + TOTAL) % TOTAL);
+  }, { passive: true });
+
+  /* Mouse drag support for desktop */
+  let mouseStartX = null;
+  stage.addEventListener('mousedown', e => { mouseStartX = e.clientX; });
+  stage.addEventListener('mouseup',   e => {
+    if (mouseStartX === null) return;
+    const dx = e.clientX - mouseStartX;
+    mouseStartX = null;
+    if (Math.abs(dx) < 40) return;
+    if (dx < 0) goTo((current + 1) % TOTAL);
+    else        goTo((current - 1 + TOTAL) % TOTAL);
+  });
+
+  /* Keyboard arrow support */
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight') goTo((current + 1) % TOTAL);
+    if (e.key === 'ArrowLeft')  goTo((current - 1 + TOTAL) % TOTAL);
+  });
+
+  /* ── Pause on hover ── */
+  stage.addEventListener('mouseenter', () => clearInterval(timer));
+  stage.addEventListener('mouseleave', startTimer);
+
+  /* ── Boot ── */
+  init();
+  startTimer();
+})();
+</script>
+</body>
+</html>
