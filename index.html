@@ -1681,10 +1681,10 @@ function renderRecentSessions() {
           ${s.name[0].toUpperCase()}
         </div>
         <div class="session-info">
-          <div class="session-name">${s.name}</div>
-          <div class="session-meta">${s.church} · ${sect ? sect.name : ''} Sector</div>
+          <div class="session-name">${esc(s.name)}</div>
+          <div class="session-meta">${esc(s.church)} · ${sect ? esc(sect.name) : ''} Sector</div>
         </div>
-        <span class="session-role-chip">${emoji} ${s.role}</span>
+        <span class="session-role-chip">${emoji} ${esc(s.role)}</span>
         <button class="session-del"
           onclick="event.stopPropagation(); removeSession('${s.name.replace(/'/g,"\\'")}','${s.church.replace(/'/g,"\\'")}')">
           ✕
@@ -1795,7 +1795,11 @@ function saveActionsToLocal() {
       points:  APP.points,
       stage:   APP.stage,
     }));
-  } catch(e) {}
+  } catch(e) {
+    if (e && e.name === 'QuotaExceededError') {
+      showToast('⚠️ Device storage full — data saved to server only');
+    }
+  }
 }
 function loadActionsFromLocal(name, church) {
   try {
@@ -1804,9 +1808,15 @@ function loadActionsFromLocal(name, church) {
   } catch(e) { return null; }
 }
 
-// 
+//
 // HELPERS
-// 
+//
+function esc(s) {
+  return (s == null ? '' : String(s))
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 const LEADER_ROLES = ['Church Leader','Sector Leader','Pastor','Ministry Head','Ministry Leader'];
 const isLeader = () => LEADER_ROLES.includes(APP.role);
 const _stageNumHelper = s => STAGES.indexOf(s) + 1 || 1;
@@ -2335,32 +2345,35 @@ function applyActionToLive(actionType, churchId, sectorId, actionObj) {
 
   const cData = LIVE.churches[churchId];
   if (!cData) return;
+  const sData = LIVE.sectors[sectorId];
+  if (!sData) return;
 
   if (gospelTypes.includes(actionType)) {
     cData.gospel++;
-    LIVE.sectors[sectorId].gospel++;
+    sData.gospel++;
     LIVE.totalGospel++;
-    const mIdx = Math.max(0, Math.min(7, new Date().getMonth() - 4));
+    const now  = new Date();
+    const mIdx = now.getMonth() >= 4 ? Math.min(7, now.getMonth() - 4) : 0;
     cData.monthly[mIdx]++;
   }
   if (discTypes.includes(actionType)) {
     cData.disciples++;
-    LIVE.sectors[sectorId].disciples++;
+    sData.disciples++;
     LIVE.totalDisc++;
   }
   if (leadTypes.includes(actionType)) {
     cData.leaders++;
-    LIVE.sectors[sectorId].leaders++;
+    sData.leaders++;
     LIVE.totalLeaders++;
   }
 
   // Add or update member record in LIVE store
-  let member = LIVE.members.find(m => m.name === APP.name && (m.churchId === APP.church || m.churchId === churchId));
+  let member = LIVE.members.find(m => m.name === APP.name && m.churchId === churchId);
   if (!member) {
     member = {
       name:     APP.name,
       church:   APP.church,
-      churchId: APP.church,
+      churchId: churchId,
       sector:   APP.sector,
       stage:    APP.stage,
       points:   0,
@@ -2691,10 +2704,10 @@ function renderMemberHome() {
     <div class="lr">
       <div class="ibox" style="${typeStyle(a.type)}">${typeIcon(a.type)}</div>
       <div class="rm">
-        <div class="rt">${a.label}</div>
-        <div class="rs">${a.type} · ${a.date}</div>
+        <div class="rt">${esc(a.label)}</div>
+        <div class="rs">${esc(a.type)} · ${esc(a.date)}</div>
       </div>
-      <div style="font-size:14px;font-weight:800;color:#FF9500">+${a.pts}</div>
+      <div style="font-size:14px;font-weight:800;color:#FF9500">+${esc(a.pts)}</div>
     </div>
     ${i < arr.length - 1 ? '<div class="ldi"></div>' : ''}
   `).join('');
@@ -2895,9 +2908,15 @@ async function submitAction() {
   // Collect outreach person/location details
   let outreachData = null;
   if (a.needsPerson) {
+    const _pName = (document.getElementById('out-person-name')?.value || '').trim();
+    const _pLoc  = (document.getElementById('out-location')?.value || '').trim();
+    if (!_pName || !_pLoc) {
+      showToast('❌ Please enter the person\'s name and location');
+      return;
+    }
     outreachData = {
-      personName:   (document.getElementById('out-person-name')?.value || '').trim(),
-      location:     (document.getElementById('out-location')?.value || '').trim(),
+      personName:   _pName,
+      location:     _pLoc,
       contactDate:  document.getElementById('out-contact-date')?.value || date,
       status:       document.getElementById('out-status')?.value || '',
     };
@@ -2932,7 +2951,7 @@ async function submitAction() {
   saveActionsToLocal();
 
   // Update live data store  pass full action so leader logs are populated
-  applyActionToLive(a.type, APP.church, APP.sector, actionWithDate);
+  applyActionToLive(a.type, getChurchId(APP.church), APP.sector, actionWithDate);
 
   // Save to Google Sheets
   showLoading('Saving action…');
@@ -3049,24 +3068,24 @@ function renderActionLogHTML(actions) {
         <div class="alr">
           <div class="al-dot" style="${typeStyle(a.type)}">${typeIcon(a.type)}</div>
           <div class="al-body">
-            <div class="al-title">${a.label}</div>
-            <div class="al-meta">${a.type} · ${a.date}</div>
-            ${a.reflection ? `<div class="al-refl" id="al-refl-${realIdx}">"${a.reflection}"</div>` : `<div class="al-refl" id="al-refl-${realIdx}" style="display:none"></div>`}
-            ${a.evidence   ? `<div class="al-evid" id="al-evid-${realIdx}" style="font-size:11px;color:var(--ter);margin-top:3px">📋 ${a.evidence}</div>` : `<div class="al-evid" id="al-evid-${realIdx}" style="display:none"></div>`}
+            <div class="al-title">${esc(a.label)}</div>
+            <div class="al-meta">${esc(a.type)} · ${esc(a.date)}</div>
+            ${a.reflection ? `<div class="al-refl" id="al-refl-${realIdx}">"${esc(a.reflection)}"</div>` : `<div class="al-refl" id="al-refl-${realIdx}" style="display:none"></div>`}
+            ${a.evidence   ? `<div class="al-evid" id="al-evid-${realIdx}" style="font-size:11px;color:var(--ter);margin-top:3px">📋 ${esc(a.evidence)}</div>` : `<div class="al-evid" id="al-evid-${realIdx}" style="display:none"></div>`}
             ${attachLine.length ? `<div style="font-size:11px;color:var(--blue);margin-top:3px">${attachLine.join(' · ')}</div>` : ''}
             <div class="al-actions">
               <button class="al-edit-btn" onclick="editAction(${realIdx})">✏️ Edit</button>
               <button class="al-del-btn"  onclick="showDeleteConfirm(${realIdx})">🗑️ Delete</button>
             </div>
           </div>
-          <div class="al-pts">+${a.pts}</div>
+          <div class="al-pts">+${esc(a.pts)}</div>
         </div>
         <!-- Inline edit form (hidden by default) -->
         <div class="al-edit-form" id="al-edit-${realIdx}" style="display:none">
           <label class="al-edit-label">Reflection</label>
-          <textarea class="al-edit-ta" id="al-edit-refl-${realIdx}" rows="3">${a.reflection || ''}</textarea>
+          <textarea class="al-edit-ta" id="al-edit-refl-${realIdx}" rows="3">${esc(a.reflection || '')}</textarea>
           <label class="al-edit-label">Evidence / Notes</label>
-          <input  class="al-edit-inp" id="al-edit-evid-${realIdx}" type="text" value="${(a.evidence || '').replace(/"/g,'&quot;')}" placeholder="e.g. Name of person, scripture studied…" />
+          <input  class="al-edit-inp" id="al-edit-evid-${realIdx}" type="text" value="${esc(a.evidence || '')}" placeholder="e.g. Name of person, scripture studied…" />
           <div class="al-edit-row">
             <button class="al-save-btn"   onclick="saveEditAction(${realIdx})">Save Changes</button>
             <button class="al-cancel-btn" onclick="cancelEditAction(${realIdx})">Cancel</button>
@@ -3158,9 +3177,10 @@ function deleteAction(realIdx) {
   showLoading('Updating dashboard…');
   loadLiveData().then(function() {
     hideLoading();
-    calculateAndRenderAll();
+    if (APP.loggedIn && APP.name && APP.actions.length) applyCurrentUserToLive();
+    try { if (isLeader()) renderLeaderProfile(); else renderMemberProfile(); } catch(e) {}
     showToast('✓ Dashboard updated');
-  });
+  }).catch(function() { hideLoading(); });
 }
 
 // ══════════════════════════════════════════════════════════
@@ -3784,10 +3804,10 @@ function buildMemberLogCard(m) {
             <div class="alr" style="padding:11px 16px">
               <div class="al-dot" style="${typeStyle(a.type)};width:34px;height:34px">${typeIcon(a.type)}</div>
               <div class="al-body">
-                <div class="al-title" style="font-size:13.5px">${a.label}</div>
-                <div class="al-meta">${a.type} · ${a.date}</div>
-                ${a.reflection ? `<div class="al-refl">"${a.reflection}"</div>` : ''}
-                ${a.evidence   ? `<div style="font-size:11px;color:var(--ter);margin-top:2px">📋 ${a.evidence}</div>` : ''}
+                <div class="al-title" style="font-size:13.5px">${esc(a.label)}</div>
+                <div class="al-meta">${esc(a.type)} · ${esc(a.date)}</div>
+                ${a.reflection ? `<div class="al-refl">"${esc(a.reflection)}"</div>` : ''}
+                ${a.evidence   ? `<div style="font-size:11px;color:var(--ter);margin-top:2px">📋 ${esc(a.evidence)}</div>` : ''}
                 ${al.length    ? `<div style="font-size:11px;color:var(--blue);margin-top:2px">${al.join(' · ')}</div>` : ''}
               </div>
               <div class="al-pts" style="font-size:13px">+${a.pts}</div>
@@ -4192,9 +4212,48 @@ function saveUserPin(name, newPin) {
 let pinBuffer    = '';
 let pinCallback  = null;
 
+// PIN lockout: 5 failed attempts → 5-minute lockout stored in localStorage
+function _pinLockKey(name) { return 'flcc_pinlock_' + name.replace(/\s+/g,'_'); }
+function _getPinLock(name) {
+  try { return JSON.parse(localStorage.getItem(_pinLockKey(name)) || 'null'); } catch(e) { return null; }
+}
+function _setPinLock(name, data) {
+  try { localStorage.setItem(_pinLockKey(name), JSON.stringify(data)); } catch(e) {}
+}
+function isPinLocked(name) {
+  const lock = _getPinLock(name);
+  if (!lock) return false;
+  if (lock.until && Date.now() < lock.until) return true;
+  // Lockout expired — clear it
+  try { localStorage.removeItem(_pinLockKey(name)); } catch(e) {}
+  return false;
+}
+function pinLockRemaining(name) {
+  const lock = _getPinLock(name);
+  if (!lock || !lock.until) return 0;
+  return Math.max(0, Math.ceil((lock.until - Date.now()) / 60000));
+}
+function recordPinFailure(name) {
+  const lock = _getPinLock(name) || { attempts: 0 };
+  lock.attempts = (lock.attempts || 0) + 1;
+  if (lock.attempts >= 5) {
+    lock.until    = Date.now() + 5 * 60 * 1000;
+    lock.attempts = 0;
+  }
+  _setPinLock(name, lock);
+}
+function clearPinFailures(name) {
+  try { localStorage.removeItem(_pinLockKey(name)); } catch(e) {}
+}
+
 function requirePin(name, onSuccess) {
   const pin = getUserPin(name);
   if (!pin) { onSuccess(); return; }
+  if (isPinLocked(name)) {
+    const mins = pinLockRemaining(name);
+    showToast(`🔒 Too many failed attempts. Try again in ${mins} minute${mins !== 1 ? 's' : ''}.`);
+    return;
+  }
   pinBuffer   = '';
   pinCallback = onSuccess;
   pinChangeStep = '';
@@ -4216,11 +4275,21 @@ function checkPin() {
   const displayName = document.getElementById('pin-name').textContent.replace('🔐 ','');
   const correctPin  = getUserPin(displayName);
   if (pinBuffer === correctPin) {
+    clearPinFailures(displayName);
     document.getElementById('pin-overlay').style.display = 'none';
     pinBuffer = '';
     if (pinCallback) { pinCallback(); pinCallback = null; }
   } else {
-    showPinError('❌ Wrong PIN — try again');
+    recordPinFailure(displayName);
+    if (isPinLocked(displayName)) {
+      document.getElementById('pin-overlay').style.display = 'none';
+      pinBuffer = ''; pinCallback = null;
+      showToast('🔒 Account locked for 5 minutes after too many failed attempts.');
+    } else {
+      const lock = _getPinLock(displayName) || {};
+      const left = 5 - (lock.attempts || 0);
+      showPinError(`❌ Wrong PIN — ${left} attempt${left !== 1 ? 's' : ''} left`);
+    }
   }
 }
 
