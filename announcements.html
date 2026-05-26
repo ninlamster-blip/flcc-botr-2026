@@ -180,13 +180,13 @@
   }
 
   /*
-   * EXIT: the active card performs the 90-degree deal-off-the-top.
-   * transform-origin is the left edge so the right side swings
-   * away from the viewer — exactly like flipping the top card of
-   * a deck face-down to the left.
+   * EXIT: the active card performs a full 180-degree flip to the left.
+   * transform-origin at the left edge makes the card rotate like a book
+   * page turning — the right side swings toward the viewer, goes edge-on
+   * at 90°, then continues past to face-down at 180°.
    */
   .deck-card.s-exit {
-    transform: translateX(-4vw) rotateY(-90deg) scale(0.92);
+    transform: translateX(-4vw) rotateY(-180deg) scale(0.88);
     transform-origin: left center;
     opacity: 0;
     z-index: 11;
@@ -199,11 +199,11 @@
       opacity   3.8s      ease;
   }
 
-  /* Faster transition for the exit card so it clears quickly */
+  /* Exit card gets a slightly longer ease-in to sell the full 180° flip */
   .deck-card.s-exit.animating {
     transition:
-      transform 2.2s cubic-bezier(0.55, 0, 1, 0.45),
-      opacity   1.8s ease-in;
+      transform 3.5s cubic-bezier(0.55, 0, 1, 0.45),
+      opacity   2.8s ease-in;
   }
 
   /* ────────────────────────────────────
@@ -305,6 +305,27 @@
   .eg { background: var(--green);  }
   .eitem.dim { opacity: 0.75; }
 
+  /* Single-line row variant: date on left, venue on right, same big font */
+  .eitem.erow {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2vw;
+  }
+  .eitem.erow .ei-date,
+  .eitem.erow .ei-venue {
+    font-size: clamp(20px, 3.4vw, 58px);
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .eitem.erow .ei-sep {
+    flex: 1;
+    height: 2px;
+    background: rgba(255,255,255,0.35);
+    border-radius: 2px;
+    min-width: 1vw;
+  }
+
   /* Google Meet badge */
   .meet-badge {
     display: inline-flex; align-items: center; gap: 0.5vw;
@@ -375,7 +396,7 @@
     <div class="header-label">Announcements</div>
     <div class="today-chip">
       <div class="today-dot"></div>
-      May 22, 2026
+      <span id="today-date"></span>
     </div>
   </header>
 
@@ -413,21 +434,25 @@
         </div>
       </div>
       <div class="event-list">
-        <div class="eitem eb">
-          <div class="ei-date">May 29</div>
-          <div class="ei-venue">FB</div>
+        <div class="eitem eb erow">
+          <span class="ei-date">May 29</span>
+          <span class="ei-sep"></span>
+          <span class="ei-venue">FB</span>
         </div>
-        <div class="eitem eb dim">
-          <div class="ei-date">Jun 5</div>
-          <div class="ei-venue">GIL</div>
+        <div class="eitem eb erow dim">
+          <span class="ei-date">Jun 5</span>
+          <span class="ei-sep"></span>
+          <span class="ei-venue">GIL</span>
         </div>
-        <div class="eitem eb">
-          <div class="ei-date">Jun 12</div>
-          <div class="ei-venue">Harvesters</div>
+        <div class="eitem eb erow">
+          <span class="ei-date">Jun 12</span>
+          <span class="ei-sep"></span>
+          <span class="ei-venue">Harvesters</span>
         </div>
-        <div class="eitem eb dim">
-          <div class="ei-date">Jun 19</div>
-          <div class="ei-venue">JAOC</div>
+        <div class="eitem eb erow dim">
+          <span class="ei-date">Jun 19</span>
+          <span class="ei-sep"></span>
+          <span class="ei-venue">JAOC</span>
         </div>
       </div>
     </div>
@@ -482,8 +507,8 @@
 <script>
 (function () {
   const TOTAL   = 4;
-  const TICK_MS = 5000;   // time between advances (animation is 4.5 s)
-  const ANIM_MS = 4600;   // must match --dur + a little buffer
+  const TICK_MS = 7000;   // 7 seconds between advances
+  const ANIM_MS = 4700;   // wait for enter animation (4.5 s) before resetting exit card
 
   const BEHIND = ['s-b1', 's-b2', 's-b3'];
 
@@ -544,8 +569,7 @@
 
     /*
      * 1. Exit the active card:
-     *    rotates -90° around its left edge (the 90-degree card-flip deal).
-     *    Uses a faster ease-in so it clears the stage quickly.
+     *    rotates -180° around its left edge — a full card-flip deal.
      */
     setState(cards[prev], 's-exit', true);
 
@@ -622,6 +646,16 @@
   /* ── Pause on hover ── */
   stage.addEventListener('mouseenter', () => clearInterval(timer));
   stage.addEventListener('mouseleave', startTimer);
+
+  /* ── Set header date to the current/upcoming Friday ── */
+  (function setFridayDate() {
+    const now  = new Date();
+    const diff = (5 - now.getDay() + 7) % 7;   // 0 if today is Friday
+    const fri  = new Date(now);
+    fri.setDate(now.getDate() + diff);
+    document.getElementById('today-date').textContent =
+      fri.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  }());
 
   /* ── Boot ── */
   init();
