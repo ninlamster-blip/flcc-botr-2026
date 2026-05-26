@@ -4,18 +4,27 @@
 <meta charset="UTF-8">
 <title>FLCC – BOTR · Announcements</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800;900&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg:      #F2F2F7;
+    --bg:      #E8E8EF;
     --surface: #FFFFFF;
     --text:    #1C1C1E;
-    --label3:  #8E8E93;
-    --sep:     #E5E5EA;
+    --muted:   #8E8E93;
     --orange:  #FF9500;
     --blue:    #007AFF;
     --purple:  #AF52DE;
     --green:   #28CD41;
+
+    /* card width — active card takes 62% of screen, leaving 38% for the stacked peek */
+    --cw: 62vw;
+    /* behind-1 starts at 50% of card width (halfway hidden under active) */
+    --b1: 31vw;
+    --b2: 47vw;
+    --b3: 60vw;
+
+    --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
+    --dur: 4.5s;
   }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -31,75 +40,91 @@
   .screen {
     width: 100vw; height: 100vh;
     display: flex; flex-direction: column;
-    padding: 2.2vh 3vw 1.4vh;
-    gap: 1.6vh;
+    padding: 2vh 2.5vw 1.5vh;
+    gap: 1.8vh;
   }
 
-  /* ── HEADER ── */
+  /* ────────────────────────────────────
+     HEADER
+  ──────────────────────────────────── */
   .header {
     flex-shrink: 0;
     background: var(--surface);
-    border-radius: 16px;
-    padding: 1.8vh 2.4vw;
+    border-radius: 18px;
+    padding: 1.8vh 2.5vw;
     display: flex; align-items: center; justify-content: space-between;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.05);
-    animation: slideDown 0.45s cubic-bezier(0.16,1,0.3,1) both;
-  }
-
-  @keyframes slideDown {
-    from { opacity: 0; transform: translateY(-10px); }
-    to   { opacity: 1; transform: translateY(0); }
+    box-shadow: 0 4px 20px rgba(0,0,0,0.10);
   }
 
   .logo {
-    font-size: clamp(15px, 2.2vh, 26px);
-    font-weight: 800; color: var(--text);
-    letter-spacing: -0.025em;
+    font-size: clamp(22px, 3.4vw, 60px);
+    font-weight: 900;
+    color: var(--text);
+    letter-spacing: -0.03em;
   }
-  .logo-sep { color: var(--label3); font-weight: 400; margin: 0 0.25em; }
+  .logo-sep { color: var(--muted); font-weight: 700; margin: 0 0.3em; }
 
   .header-label {
-    font-size: clamp(9px, 1.1vh, 13px);
-    font-weight: 500; color: var(--label3);
-    letter-spacing: 0.2em; text-transform: uppercase;
+    font-size: clamp(12px, 1.6vw, 28px);
+    font-weight: 800;
+    color: var(--muted);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
   }
 
   .today-chip {
-    display: flex; align-items: center; gap: 0.5vw;
+    display: flex; align-items: center; gap: 0.6vw;
     background: var(--blue); color: #fff;
-    border-radius: 100px; padding: 0.4vh 1vw;
-    font-size: clamp(10px, 1.3vh, 15px); font-weight: 600;
+    border-radius: 100px;
+    padding: 0.6vh 1.4vw;
+    font-size: clamp(12px, 1.8vw, 30px);
+    font-weight: 800;
+    letter-spacing: -0.01em;
   }
   .today-dot {
-    width: 6px; height: 6px;
-    background: rgba(255,255,255,0.7); border-radius: 50%;
+    width: 10px; height: 10px;
+    background: rgba(255,255,255,0.75);
+    border-radius: 50%;
     animation: blink 1.8s ease-in-out infinite;
+    flex-shrink: 0;
   }
 
-  /* ── DECK STAGE ── */
+  /* ────────────────────────────────────
+     DECK STAGE
+     perspective creates the 3-D card-flip space
+  ──────────────────────────────────── */
   .deck-stage {
     flex: 1;
     position: relative;
     min-height: 0;
-    /* perspective for subtle 3-D depth on rear cards */
-    perspective: 1200px;
+    overflow: hidden;                   /* clips behind-cards past right edge */
+    perspective: 2800px;
+    perspective-origin: 30% 50%;        /* viewer sits toward the left */
   }
 
-  /* ── SINGLE CARD ── */
+  /* ────────────────────────────────────
+     BASE CARD
+  ──────────────────────────────────── */
   .deck-card {
     position: absolute;
-    inset: 0;
-    border-radius: 22px;
-    padding: 2.6vh 2.8vw 2.2vh;
+    top: 0; bottom: 0;
+    left: 0;
+    width: var(--cw);
+    border-radius: 26px;
+    padding: 3vh 2.8vw 2.4vh;
     display: flex; flex-direction: column;
-    gap: 1.4vh;
+    gap: 1.6vh;
     overflow: hidden;
     will-change: transform, opacity;
-    /* default: hidden behind active */
-    transform: translateX(100%) scale(0.92);
+    transform-style: preserve-3d;
+    /* default: off-screen right, invisible */
+    transform: translateX(110vw) rotateY(-25deg) scale(0.85);
     opacity: 0;
-    transition: none; /* JS drives all transitions */
-    box-shadow: 0 8px 40px rgba(0,0,0,0.18), 0 2px 10px rgba(0,0,0,0.10);
+    /* shadow gives physical depth to the stack */
+    box-shadow:
+      6px 0 48px rgba(0,0,0,0.22),
+      0 8px 28px rgba(0,0,0,0.14),
+      inset 0 1px 0 rgba(255,255,255,0.8);
   }
 
   /* Colored top stripe */
@@ -107,199 +132,237 @@
     content: '';
     position: absolute;
     top: 0; left: 0; right: 0;
-    height: 6px;
-    border-radius: 22px 22px 0 0;
+    height: 8px;
+    border-radius: 26px 26px 0 0;
   }
 
   /* Card tints */
-  .d1 { background: #FFFDF7; }
-  .d2 { background: #F5F9FF; }
-  .d3 { background: #FBF6FF; }
-  .d4 { background: #F5FFF8; }
+  .d1 { background: #FFFCF2; }
+  .d2 { background: #F2F7FF; }
+  .d3 { background: #FAF3FF; }
+  .d4 { background: #F2FFF5; }
 
-  /* Stripe colors */
   .d1::before { background: var(--orange); }
   .d2::before { background: var(--blue);   }
   .d3::before { background: var(--purple); }
   .d4::before { background: var(--green);  }
 
-  /* ── STATES ── */
+  /* ─── CARD STATE CLASSES ───────────────
+     JS applies these + .animating to trigger transitions
+  ──────────────────────────────────── */
 
-  /* The card currently shown */
-  .deck-card.state-active {
-    transform: translateX(0) scale(1);
+  /* Fully visible, front of deck */
+  .deck-card.s-active {
+    transform: translateX(0) rotateY(0deg) scale(1);
     opacity: 1;
     z-index: 10;
   }
 
-  /* Cards waiting in queue — stacked behind with slight offset */
-  .deck-card.state-behind-1 {
-    transform: translateX(5%) scale(0.96);
-    opacity: 0.7;
+  /* 1st card behind — halfway hidden under active, angled */
+  .deck-card.s-b1 {
+    transform: translateX(var(--b1)) rotateY(-12deg) scale(0.96);
+    opacity: 1;
     z-index: 9;
   }
-  .deck-card.state-behind-2 {
-    transform: translateX(10%) scale(0.92);
-    opacity: 0.4;
+
+  /* 2nd card behind */
+  .deck-card.s-b2 {
+    transform: translateX(var(--b2)) rotateY(-18deg) scale(0.92);
+    opacity: 0.80;
     z-index: 8;
   }
-  .deck-card.state-behind-3 {
-    transform: translateX(15%) scale(0.88);
-    opacity: 0.2;
+
+  /* 3rd card behind — barely peeking */
+  .deck-card.s-b3 {
+    transform: translateX(var(--b3)) rotateY(-22deg) scale(0.88);
+    opacity: 0.55;
     z-index: 7;
   }
 
-  /* Card that is leaving (slides out to the left) */
-  .deck-card.state-exit {
-    transform: translateX(-110%) scale(0.94);
+  /*
+   * EXIT: the active card performs the 90-degree deal-off-the-top.
+   * transform-origin is the left edge so the right side swings
+   * away from the viewer — exactly like flipping the top card of
+   * a deck face-down to the left.
+   */
+  .deck-card.s-exit {
+    transform: translateX(-4vw) rotateY(-90deg) scale(0.92);
+    transform-origin: left center;
     opacity: 0;
     z-index: 11;
   }
 
-  /* Card entering from the right */
-  .deck-card.state-enter {
-    transform: translateX(110%) scale(0.94);
-    opacity: 0;
-    z-index: 12;
-  }
-
-  /* Apply smooth transitions when animating */
+  /* While animating, enable the spring transition */
   .deck-card.animating {
-    transition: transform 0.65s cubic-bezier(0.16,1,0.3,1),
-                opacity  0.55s cubic-bezier(0.16,1,0.3,1);
+    transition:
+      transform var(--dur) var(--ease-spring),
+      opacity   3.8s      ease;
   }
 
-  /* ── CARD HEADER ── */
+  /* Faster transition for the exit card so it clears quickly */
+  .deck-card.s-exit.animating {
+    transition:
+      transform 2.2s cubic-bezier(0.55, 0, 1, 0.45),
+      opacity   1.8s ease-in;
+  }
+
+  /* ────────────────────────────────────
+     CARD HEAD
+  ──────────────────────────────────── */
   .card-head {
-    display: flex; align-items: center; gap: 1vw;
-    flex-shrink: 0; padding-top: 0.6vh;
+    display: flex; align-items: center; gap: 1.2vw;
+    flex-shrink: 0;
+    padding-top: 0.6vh;
   }
 
-  /* PULSING DOT */
   .cdot {
-    width: clamp(12px, 1.8vh, 20px);
-    height: clamp(12px, 1.8vh, 20px);
-    border-radius: 50%; flex-shrink: 0;
+    width: clamp(18px, 2.6vh, 34px);
+    height: clamp(18px, 2.6vh, 34px);
+    border-radius: 50%;
+    flex-shrink: 0;
     position: relative;
   }
-  .cdot::after {
+  /* ripple pulse only on active card */
+  .deck-card.s-active .cdot { animation: dotPulse 1s ease-in-out infinite; }
+  .deck-card.s-active .cdot::after {
     content: '';
-    position: absolute; inset: -4px;
+    position: absolute; inset: -5px;
     border-radius: 50%;
-    border: 2px solid currentColor;
+    border: 2.5px solid currentColor;
     opacity: 0;
     animation: dotRipple 1s ease-out infinite;
   }
-  .deck-card.state-active .cdot {
-    animation: dotPulse 0.9s ease-in-out infinite;
-  }
 
   @keyframes dotPulse {
-    0%,100% { transform: scale(1);   opacity: 1; }
-    50%      { transform: scale(1.4); opacity: 0.65; }
+    0%,100% { transform: scale(1);    opacity: 1; }
+    50%      { transform: scale(1.45); opacity: 0.6; }
   }
   @keyframes dotRipple {
-    0%   { transform: scale(0.8); opacity: 0.55; }
-    100% { transform: scale(2.4); opacity: 0; }
+    0%   { transform: scale(0.7); opacity: 0.6; }
+    100% { transform: scale(2.6); opacity: 0;   }
   }
 
-  .o { background: var(--orange); color: var(--orange); }
-  .b { background: var(--blue);   color: var(--blue);   }
-  .p { background: var(--purple); color: var(--purple); }
-  .g { background: var(--green);  color: var(--green);  }
+  .co { background: var(--orange); color: var(--orange); }
+  .cb { background: var(--blue);   color: var(--blue);   }
+  .cp { background: var(--purple); color: var(--purple); }
+  .cg { background: var(--green);  color: var(--green);  }
 
-  .head-info { display: flex; flex-direction: column; gap: 0.15vh; }
+  .head-info { display: flex; flex-direction: column; gap: 0.2vh; min-width: 0; }
 
   .card-name {
-    font-size: clamp(14px, 2.4vh, 30px);
-    font-weight: 800; color: var(--text);
-    letter-spacing: -0.03em; line-height: 1.1;
+    font-size: clamp(28px, 5vw, 82px);
+    font-weight: 900;
+    color: var(--text);
+    letter-spacing: -0.035em;
+    line-height: 1.05;
   }
   .card-freq {
-    font-size: clamp(9px, 1.15vh, 14px);
-    font-weight: 500; color: var(--label3);
+    font-size: clamp(14px, 2vw, 34px);
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: -0.01em;
   }
 
-  /* ── EVENT LIST ── */
+  /* ────────────────────────────────────
+     EVENT ITEMS
+  ──────────────────────────────────── */
   .event-list {
     flex: 1;
     display: flex; flex-direction: column;
-    gap: 1vh;
+    gap: 1.2vh;
     min-height: 0;
   }
 
   .eitem {
     flex: 1;
-    border-radius: 14px;
-    padding: 1.2vh 1.6vw;
+    border-radius: 16px;
+    padding: 1.4vh 1.8vw;
     display: flex; flex-direction: column;
-    justify-content: center; gap: 0.3vh;
-    min-height: 0; overflow: hidden;
+    justify-content: center;
+    gap: 0.4vh;
+    min-height: 0;
+    overflow: hidden;
   }
 
   .ei-date {
-    font-size: clamp(16px, 2.6vh, 32px);
-    font-weight: 700; color: #fff;
-    line-height: 1; letter-spacing: -0.015em;
-    white-space: nowrap;
+    font-size: clamp(26px, 4.8vw, 78px);
+    font-weight: 900;
+    color: #fff;
+    line-height: 1;
+    letter-spacing: -0.03em;
   }
   .ei-venue {
-    font-size: clamp(10px, 1.5vh, 18px);
-    font-weight: 500; color: rgba(255,255,255,0.88);
+    font-size: clamp(16px, 2.8vw, 46px);
+    font-weight: 700;
+    color: rgba(255,255,255,0.9);
     line-height: 1.2;
+    letter-spacing: -0.01em;
   }
 
-  .eitem.o   { background: var(--orange); }
-  .eitem.b   { background: var(--blue);   }
-  .eitem.p   { background: var(--purple); }
-  .eitem.g   { background: var(--green);  }
-  .eitem.dim { opacity: 0.78; }
+  .eo { background: var(--orange); }
+  .eb { background: var(--blue);   }
+  .ep { background: var(--purple); }
+  .eg { background: var(--green);  }
+  .eitem.dim { opacity: 0.75; }
 
-  /* MEET BADGE */
+  /* Google Meet badge */
   .meet-badge {
-    display: inline-flex; align-items: center; gap: 0.4vw;
-    background: rgba(255,255,255,0.22); border-radius: 100px;
-    padding: 0.25vh 0.7vw;
-    font-size: clamp(8px, 1.05vh, 13px); font-weight: 600;
-    color: #fff; align-self: flex-start; margin-top: 0.4vh;
+    display: inline-flex; align-items: center; gap: 0.5vw;
+    background: rgba(255,255,255,0.2);
+    border-radius: 100px;
+    padding: 0.3vh 0.9vw;
+    font-size: clamp(10px, 1.6vw, 26px);
+    font-weight: 700;
+    color: #fff;
+    align-self: flex-start;
+    margin-top: 0.5vh;
   }
   .live-dot {
-    width: 5px; height: 5px;
-    border-radius: 50%; background: rgba(255,255,255,0.9);
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.9);
+    flex-shrink: 0;
     animation: blink 1.8s ease-in-out infinite;
   }
+
   @keyframes blink {
     0%,100% { opacity: 1; }
-    50%      { opacity: 0.25; }
+    50%      { opacity: 0.2; }
   }
 
-  /* ── PROGRESS PIPS ── */
+  /* ────────────────────────────────────
+     PROGRESS PIPS
+  ──────────────────────────────────── */
   .deck-pips {
     flex-shrink: 0;
     display: flex; justify-content: center; align-items: center;
-    gap: 0.7vw;
-    padding-bottom: 0.4vh;
+    gap: 1vw;
   }
   .pip {
-    width: clamp(6px, 0.9vh, 10px);
-    height: clamp(6px, 0.9vh, 10px);
+    width: clamp(10px, 1.4vh, 18px);
+    height: clamp(10px, 1.4vh, 18px);
     border-radius: 50%;
-    background: rgba(0,0,0,0.15);
-    transition: background 0.4s, transform 0.4s;
+    background: rgba(0,0,0,0.18);
     cursor: pointer;
+    transition: background 0.4s, transform 0.4s;
   }
   .pip.active {
     background: var(--text);
-    transform: scale(1.3);
+    transform: scale(1.4);
   }
 
-  /* ── FOOTER ── */
+  /* ────────────────────────────────────
+     FOOTER
+  ──────────────────────────────────── */
   .footer {
     flex-shrink: 0;
     text-align: center;
-    font-size: clamp(7px, 0.85vh, 10px);
-    color: var(--label3); letter-spacing: 0.2em;
-    text-transform: uppercase; opacity: 0.45;
+    font-size: clamp(9px, 1.1vw, 18px);
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    opacity: 0.4;
   }
 </style>
 </head>
@@ -322,18 +385,18 @@
     <!-- CARD 1 · SPORTS ACTIVITIES -->
     <div class="deck-card d1" data-index="0">
       <div class="card-head">
-        <div class="cdot o"></div>
+        <div class="cdot co"></div>
         <div class="head-info">
           <div class="card-name">Sports Activities</div>
           <div class="card-freq">Every Saturday</div>
         </div>
       </div>
       <div class="event-list">
-        <div class="eitem o">
+        <div class="eitem eo">
           <div class="ei-date">3:15 – 5 PM</div>
           <div class="ei-venue">Heirs of the Kingdom</div>
         </div>
-        <div class="eitem o dim">
+        <div class="eitem eo dim">
           <div class="ei-date">5 – 10 PM</div>
           <div class="ei-venue">Men's</div>
         </div>
@@ -343,26 +406,26 @@
     <!-- CARD 2 · INTERCESSORY PRAYER -->
     <div class="deck-card d2" data-index="1">
       <div class="card-head">
-        <div class="cdot b"></div>
+        <div class="cdot cb"></div>
         <div class="head-info">
           <div class="card-name">Intercessory Prayer</div>
           <div class="card-freq">Every Friday</div>
         </div>
       </div>
       <div class="event-list">
-        <div class="eitem b">
+        <div class="eitem eb">
           <div class="ei-date">May 29</div>
           <div class="ei-venue">FB</div>
         </div>
-        <div class="eitem b dim">
+        <div class="eitem eb dim">
           <div class="ei-date">Jun 5</div>
           <div class="ei-venue">GIL</div>
         </div>
-        <div class="eitem b">
+        <div class="eitem eb">
           <div class="ei-date">Jun 12</div>
           <div class="ei-venue">Harvesters</div>
         </div>
-        <div class="eitem b dim">
+        <div class="eitem eb dim">
           <div class="ei-date">Jun 19</div>
           <div class="ei-venue">JAOC</div>
         </div>
@@ -372,13 +435,13 @@
     <!-- CARD 3 · CORPORATE PRAYER MEETING -->
     <div class="deck-card d3" data-index="2">
       <div class="card-head">
-        <div class="cdot p"></div>
+        <div class="cdot cp"></div>
         <div class="head-info">
           <div class="card-name">Corporate Prayer Meeting</div>
         </div>
       </div>
       <div class="event-list">
-        <div class="eitem p">
+        <div class="eitem ep">
           <div class="ei-date">Jun 10</div>
           <div class="ei-venue">Faithful &amp; True</div>
         </div>
@@ -388,51 +451,56 @@
     <!-- CARD 4 · MEN'S VIRTUAL BIBLE STUDY -->
     <div class="deck-card d4" data-index="3">
       <div class="card-head">
-        <div class="cdot g"></div>
+        <div class="cdot cg"></div>
         <div class="head-info">
           <div class="card-name">Men's Virtual Bible Study</div>
           <div class="card-freq">Every Wednesday</div>
         </div>
       </div>
       <div class="event-list">
-        <div class="eitem g">
+        <div class="eitem eg">
           <div class="ei-date">8:30 PM</div>
           <div class="ei-venue">Google Meet</div>
-          <div class="meet-badge"><div class="live-dot"></div> Live Online</div>
+          <div class="meet-badge">
+            <div class="live-dot"></div>
+            Live Online
+          </div>
         </div>
       </div>
     </div>
 
   </div><!-- /deck-stage -->
 
-  <!-- PROGRESS PIPS -->
+  <!-- PIPS -->
   <div class="deck-pips" id="deckPips"></div>
 
   <!-- FOOTER -->
-  <footer class="footer">FLCC – BOTR &nbsp;·&nbsp; Press F11 for fullscreen</footer>
+  <footer class="footer">FLCC – BOTR &nbsp;·&nbsp; F11 for fullscreen</footer>
 
-</div>
+</div><!-- /screen -->
 
 <script>
 (function () {
-  const TOTAL       = 4;
-  const INTERVAL_MS = 3000;
-  const BEHIND      = ['state-behind-1', 'state-behind-2', 'state-behind-3'];
+  const TOTAL   = 4;
+  const TICK_MS = 5000;   // time between advances (animation is 4.5 s)
+  const ANIM_MS = 4600;   // must match --dur + a little buffer
 
-  const stage = document.getElementById('deckStage');
-  const cards = Array.from(stage.querySelectorAll('.deck-card'));
+  const BEHIND = ['s-b1', 's-b2', 's-b3'];
+
+  const stage  = document.getElementById('deckStage');
+  const cards  = Array.from(stage.querySelectorAll('.deck-card'));
   const pipsEl = document.getElementById('deckPips');
 
   let current   = 0;
   let animating = false;
   let timer;
 
-  /* ── Build pips ── */
+  /* ── Pips ── */
   cards.forEach((_, i) => {
-    const pip = document.createElement('div');
-    pip.className = 'pip' + (i === 0 ? ' active' : '');
-    pip.addEventListener('click', () => goTo(i));
-    pipsEl.appendChild(pip);
+    const p = document.createElement('div');
+    p.className = 'pip' + (i === 0 ? ' active' : '');
+    p.addEventListener('click', () => manualGoTo(i));
+    pipsEl.appendChild(p);
   });
 
   function updatePips(idx) {
@@ -440,124 +508,115 @@
       p.classList.toggle('active', i === idx));
   }
 
-  /* ── Apply initial layout (no transition) ── */
-  function applyState(card, state, animate) {
-    // Remove all state classes
-    card.classList.remove(
-      'state-active', 'state-exit', 'state-enter',
-      'state-behind-1', 'state-behind-2', 'state-behind-3', 'animating'
-    );
-    if (animate) card.classList.add('animating');
-    // Small rAF gap ensures remove + add triggers transition
-    requestAnimationFrame(() => card.classList.add(state));
+  /* ── Low-level state setter ── */
+  function setState(card, state, animate) {
+    card.classList.remove('s-active', 's-b1', 's-b2', 's-b3', 's-exit', 'animating');
+    if (animate) {
+      /* Force a reflow so the browser registers the removed classes
+         before we add the new state + animating. This ensures the
+         CSS transition fires correctly. */
+      void card.offsetWidth;
+      card.classList.add('animating');
+    }
+    card.classList.add(state);
   }
 
-  /* ── Initial layout: first card active, rest stacked behind ── */
+  /* ── Initial layout (no animation) ── */
   function init() {
     cards.forEach((card, i) => {
-      card.classList.remove('animating');
+      card.classList.remove('s-active', 's-b1', 's-b2', 's-b3', 's-exit', 'animating');
       if (i === 0) {
-        card.classList.add('state-active');
+        card.classList.add('s-active');
       } else {
-        const behindIdx = i - 1; // 0,1,2
-        card.classList.add(BEHIND[Math.min(behindIdx, BEHIND.length - 1)]);
+        card.classList.add(BEHIND[Math.min(i - 1, BEHIND.length - 1)]);
       }
     });
     updatePips(0);
   }
 
-  /* ── Advance to a specific card index ── */
+  /* ── Advance to card `next` ── */
   function goTo(next) {
     if (animating || next === current) return;
     animating = true;
 
-    resetTimer();
-
     const prev = current;
-    current = next;
+    current    = next;
 
-    /* 1. Mark outgoing card → will slide left */
-    applyState(cards[prev], 'state-exit', true);
+    /*
+     * 1. Exit the active card:
+     *    rotates -90° around its left edge (the 90-degree card-flip deal).
+     *    Uses a faster ease-in so it clears the stage quickly.
+     */
+    setState(cards[prev], 's-exit', true);
 
-    /* 2. Place incoming card off-screen right first (no transition) */
-    cards[next].classList.remove(
-      'state-active', 'state-exit', 'state-enter',
-      'state-behind-1', 'state-behind-2', 'state-behind-3', 'animating'
-    );
-    cards[next].classList.add('state-enter');
+    /*
+     * 2. Bring the next card to the active (front) position.
+     *    It smoothly slides left from its behind-1 stack position
+     *    and de-tilts as it arrives — the full 4.5 s spring.
+     */
+    setState(cards[next], 's-active', true);
 
-    /* 3. After one frame, animate incoming → active */
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        cards[next].classList.add('animating');
-        cards[next].classList.remove('state-enter');
-        cards[next].classList.add('state-active');
-
-        /* 4. Reposition all remaining cards into behind slots */
-        const queue = cards.filter((_, i) => i !== prev && i !== next);
-        queue.forEach((card, qi) => {
-          applyState(card, BEHIND[Math.min(qi, BEHIND.length - 1)], true);
-        });
-
-        updatePips(next);
-      });
+    /*
+     * 3. Reposition every other card into the new behind slots.
+     *    Build a queue of card indices in cyclic order after `next`.
+     */
+    const queue = [];
+    for (let step = 1; step < TOTAL; step++) {
+      const idx = (next + step) % TOTAL;
+      if (idx !== prev) queue.push(idx);  // prev is being exited, skip
+    }
+    queue.forEach((idx, qi) => {
+      setState(cards[idx], BEHIND[Math.min(qi, BEHIND.length - 1)], true);
     });
 
-    /* 5. Unlock after animation completes */
+    updatePips(next);
+
+    /*
+     * 4. Once everything settles, tuck the exited card back into
+     *    the deepest behind slot so it's ready for the next cycle.
+     *    No transition — it snaps invisibly.
+     */
     setTimeout(() => {
-      /* Clean up exit card: push it to the back of the queue */
-      cards[prev].classList.remove('animating', 'state-exit');
-      cards[prev].classList.add(BEHIND[Math.min(BEHIND.length - 1, BEHIND.length - 1)]);
+      setState(cards[prev], BEHIND[BEHIND.length - 1], false);
       animating = false;
-    }, 700);
+    }, ANIM_MS);
   }
 
-  /* ── Auto-advance ── */
-  function advance() {
-    goTo((current + 1) % TOTAL);
+  /* ── Timer management ── */
+  function advance()    { goTo((current + 1) % TOTAL); }
+  function startTimer() { timer = setInterval(advance, TICK_MS); }
+  function resetTimer() { clearInterval(timer); startTimer(); }
+
+  function manualGoTo(idx) {
+    goTo(idx);
+    resetTimer();
   }
 
-  function startTimer() {
-    timer = setInterval(advance, INTERVAL_MS);
-  }
+  /* ── Touch / mouse swipe ── */
+  let startX = null;
 
-  function resetTimer() {
-    clearInterval(timer);
-    startTimer();
-  }
-
-  /* ── Swipe / drag support ── */
-  let touchStartX = null;
-
-  stage.addEventListener('touchstart', e => {
-    touchStartX = e.touches[0].clientX;
+  stage.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, { passive: true });
+  stage.addEventListener('touchend',   e => {
+    if (startX === null) return;
+    const dx = e.changedTouches[0].clientX - startX;
+    startX = null;
+    if (Math.abs(dx) < 50) return;
+    manualGoTo(dx < 0 ? (current + 1) % TOTAL : (current - 1 + TOTAL) % TOTAL);
   }, { passive: true });
 
-  stage.addEventListener('touchend', e => {
-    if (touchStartX === null) return;
-    const dx = e.changedTouches[0].clientX - touchStartX;
-    touchStartX = null;
-    if (Math.abs(dx) < 40) return;
-    if (dx < 0) goTo((current + 1) % TOTAL);
-    else        goTo((current - 1 + TOTAL) % TOTAL);
-  }, { passive: true });
-
-  /* Mouse drag support for desktop */
-  let mouseStartX = null;
-  stage.addEventListener('mousedown', e => { mouseStartX = e.clientX; });
-  stage.addEventListener('mouseup',   e => {
-    if (mouseStartX === null) return;
-    const dx = e.clientX - mouseStartX;
-    mouseStartX = null;
-    if (Math.abs(dx) < 40) return;
-    if (dx < 0) goTo((current + 1) % TOTAL);
-    else        goTo((current - 1 + TOTAL) % TOTAL);
+  stage.addEventListener('mousedown', e => { startX = e.clientX; });
+  window.addEventListener('mouseup',  e => {
+    if (startX === null) return;
+    const dx = e.clientX - startX;
+    startX = null;
+    if (Math.abs(dx) < 50) return;
+    manualGoTo(dx < 0 ? (current + 1) % TOTAL : (current - 1 + TOTAL) % TOTAL);
   });
 
-  /* Keyboard arrow support */
+  /* ── Keyboard ── */
   document.addEventListener('keydown', e => {
-    if (e.key === 'ArrowRight') goTo((current + 1) % TOTAL);
-    if (e.key === 'ArrowLeft')  goTo((current - 1 + TOTAL) % TOTAL);
+    if (e.key === 'ArrowRight') manualGoTo((current + 1) % TOTAL);
+    if (e.key === 'ArrowLeft')  manualGoTo((current - 1 + TOTAL) % TOTAL);
   });
 
   /* ── Pause on hover ── */
@@ -567,7 +626,7 @@
   /* ── Boot ── */
   init();
   startTimer();
-})();
+}());
 </script>
 </body>
 </html>
