@@ -6,391 +6,342 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800;900&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg:      #E8E8EF;
-    --surface: #FFFFFF;
-    --text:    #1C1C1E;
-    --muted:   #8E8E93;
-    --orange:  #FF9500;
-    --blue:    #007AFF;
-    --purple:  #AF52DE;
-    --green:   #28CD41;
+:root {
+  --orange: #FF9500;
+  --blue:   #007AFF;
+  --purple: #AF52DE;
+  --green:  #34C759;
+}
 
-    /* card width — active card takes 62% of screen, leaving 38% for the stacked peek */
-    --cw: 62vw;
-    /* behind-1 starts at 50% of card width (halfway hidden under active) */
-    --b1: 31vw;
-    --b2: 47vw;
-    --b3: 60vw;
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
-    --dur: 4.5s;
-  }
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: #111114;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── SCREEN SHELL ── */
+.screen {
+  width: 100vw; height: 100vh;
+  display: flex; flex-direction: column;
+  padding: 2.2vh 2.8vw 1.6vh;
+  gap: 1.8vh;
+}
 
-  html, body {
-    width: 100%; height: 100%;
-    overflow: hidden;
-    background: var(--bg);
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-    -webkit-font-smoothing: antialiased;
-  }
+/* ── HEADER ── */
+.header {
+  flex-shrink: 0;
+  background: #1E1E22;
+  border-radius: 16px;
+  padding: 1.6vh 2.4vw;
+  display: flex; align-items: center; justify-content: space-between;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 2px 16px rgba(0,0,0,0.4);
+}
 
-  .screen {
-    width: 100vw; height: 100vh;
-    display: flex; flex-direction: column;
-    padding: 2vh 2.5vw 1.5vh;
-    gap: 1.8vh;
-  }
+.logo {
+  font-size: clamp(20px, 3vw, 54px);
+  font-weight: 900;
+  color: #F5F5F7;
+  letter-spacing: -0.03em;
+}
+.logo-sep { color: rgba(255,255,255,0.25); font-weight: 700; margin: 0 0.3em; }
 
-  /* ────────────────────────────────────
-     HEADER
-  ──────────────────────────────────── */
-  .header {
-    flex-shrink: 0;
-    background: var(--surface);
-    border-radius: 18px;
-    padding: 1.8vh 2.5vw;
-    display: flex; align-items: center; justify-content: space-between;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.10);
-  }
+.header-label {
+  font-size: clamp(10px, 1.5vw, 26px);
+  font-weight: 800;
+  color: rgba(255,255,255,0.3);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
 
-  .logo {
-    font-size: clamp(22px, 3.4vw, 60px);
-    font-weight: 900;
-    color: var(--text);
-    letter-spacing: -0.03em;
-  }
-  .logo-sep { color: var(--muted); font-weight: 700; margin: 0 0.3em; }
+.today-chip {
+  display: flex; align-items: center; gap: 0.7vw;
+  background: var(--blue); color: #fff;
+  border-radius: 100px;
+  padding: 0.55vh 1.4vw;
+  font-size: clamp(12px, 1.7vw, 30px);
+  font-weight: 800;
+}
+.today-dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.8);
+  flex-shrink: 0;
+  animation: blink 2s ease-in-out infinite;
+}
 
-  .header-label {
-    font-size: clamp(12px, 1.6vw, 28px);
-    font-weight: 800;
-    color: var(--muted);
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-  }
+/* ═══════════════════════════════════════
+   FLIP BOARD SCENE
+   ─────────────────────────────────────
+   Layout (z-order, bottom → top):
+     1. scene-back  — incoming card, always fully rendered beneath
+     2. flap-bot    — bottom half of the CURRENT card (flips upward)
+     3. flap-top    — top half of the CURRENT card (flips downward)
+     4. flap-crease — thin dark line at the midpoint (decorative)
+   ═══════════════════════════════════════ */
+.scene {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+}
 
-  .today-chip {
-    display: flex; align-items: center; gap: 0.6vw;
-    background: var(--blue); color: #fff;
-    border-radius: 100px;
-    padding: 0.6vh 1.4vw;
-    font-size: clamp(12px, 1.8vw, 30px);
-    font-weight: 800;
-    letter-spacing: -0.01em;
-  }
-  .today-dot {
-    width: 10px; height: 10px;
-    background: rgba(255,255,255,0.75);
-    border-radius: 50%;
-    animation: blink 1.8s ease-in-out infinite;
-    flex-shrink: 0;
-  }
+/* BACK — incoming card sits here, revealed as flaps fold away */
+.scene-back {
+  position: absolute;
+  inset: 0;
+  border-radius: 24px;
+  overflow: hidden;
+  z-index: 1;
+}
 
-  /* ────────────────────────────────────
-     DECK STAGE
-     perspective creates the 3-D card-flip space
-  ──────────────────────────────────── */
-  .deck-stage {
-    flex: 1;
-    position: relative;
-    min-height: 0;
-    overflow: hidden;                   /* clips behind-cards past right edge */
-    perspective: 2800px;
-    perspective-origin: 30% 50%;        /* viewer sits toward the left */
-  }
+/*
+ * TOP FLAP
+ * Clips to the top 50% of the scene via overflow:hidden.
+ * The inner is 200% tall (= full scene height) so the card
+ * renders completely — only the top half is visible.
+ * Pivot: bottom edge of the flap (= the center crease line).
+ * Rotation: 0 → -90° (folds DOWN toward the viewer).
+ */
+.flap-top {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 50%;
+  overflow: hidden;
+  z-index: 3;
+  /* perspective here so overflow:hidden doesn't flatten it */
+  perspective: 2800px;
+  perspective-origin: 50% 100%;   /* eye is at the crease */
+}
+.flap-top-inner {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 200%;
+  transform-origin: 50% 100%;     /* pivot at bottom (crease) */
+  border-radius: 24px 24px 0 0;
+  backface-visibility: hidden;
+}
 
-  /* ────────────────────────────────────
-     BASE CARD
-  ──────────────────────────────────── */
-  .deck-card {
-    position: absolute;
-    top: 0; bottom: 0;
-    left: 0;
-    width: var(--cw);
-    border-radius: 26px;
-    padding: 3vh 2.8vw 2.4vh;
-    display: flex; flex-direction: column;
-    gap: 1.6vh;
-    overflow: hidden;
-    will-change: transform, opacity;
-    transform-style: preserve-3d;
-    /* default: off-screen right, invisible */
-    transform: translateX(110vw) rotateY(-25deg) scale(0.85);
-    opacity: 0;
-    /* shadow gives physical depth to the stack */
-    box-shadow:
-      6px 0 48px rgba(0,0,0,0.22),
-      0 8px 28px rgba(0,0,0,0.14),
-      inset 0 1px 0 rgba(255,255,255,0.8);
-  }
+/*
+ * BOTTOM FLAP
+ * Clips to the bottom 50%.
+ * Inner is 200% tall with bottom:0 so the same full card renders,
+ * and only the bottom half is visible.
+ * Pivot: top edge of the flap (= the center crease line).
+ * Rotation: 0 → 90° (folds UP toward the viewer).
+ */
+.flap-bot {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 50%;
+  overflow: hidden;
+  z-index: 2;
+  perspective: 2800px;
+  perspective-origin: 50% 0%;    /* eye is at the crease */
+}
+.flap-bot-inner {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 200%;
+  transform-origin: 50% 0%;      /* pivot at top (crease) */
+  border-radius: 0 0 24px 24px;
+  backface-visibility: hidden;
+}
 
-  /* Colored top stripe */
-  .deck-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 8px;
-    border-radius: 26px 26px 0 0;
-  }
+/* Thin dark crease — the mechanical split line */
+.flap-crease {
+  position: absolute;
+  left: 0; right: 0;
+  top: calc(50% - 1px);
+  height: 2px;
+  background: rgba(0,0,0,0.35);
+  z-index: 10;
+  pointer-events: none;
+}
 
-  /* Card tints */
-  .d1 { background: #FFFCF2; }
-  .d2 { background: #F2F7FF; }
-  .d3 { background: #FAF3FF; }
-  .d4 { background: #F2FFF5; }
+/* ── FLIP ANIMATIONS ── */
+@keyframes foldTopDown {
+  0%   { transform: rotateX(0deg); }
+  100% { transform: rotateX(-90deg); }
+}
+@keyframes foldBotUp {
+  0%   { transform: rotateX(0deg); }
+  100% { transform: rotateX(90deg); }
+}
 
-  .d1::before { background: var(--orange); }
-  .d2::before { background: var(--blue);   }
-  .d3::before { background: var(--purple); }
-  .d4::before { background: var(--green);  }
+.flap-top-inner.flipping {
+  animation: foldTopDown 0.42s cubic-bezier(0.55, 0, 1, 0.45) forwards;
+}
+.flap-bot-inner.flipping {
+  animation: foldBotUp  0.42s cubic-bezier(0.55, 0, 1, 0.45) forwards;
+}
 
-  /* ─── CARD STATE CLASSES ───────────────
-     JS applies these + .animating to trigger transitions
-  ──────────────────────────────────── */
+/* ── CARD BODY (rendered inside every flap and back panel) ── */
+.card-body {
+  position: absolute;
+  inset: 0;
+  border-radius: 24px;
+  padding: 3.2vh 3.2vw 2.6vh;
+  display: flex; flex-direction: column;
+  gap: 1.8vh;
+  overflow: hidden;
+}
 
-  /* Fully visible, front of deck */
-  .deck-card.s-active {
-    transform: translateX(0) rotateY(0deg) scale(1);
-    opacity: 1;
-    z-index: 10;
-  }
+/* Top accent stripe */
+.stripe {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 8px;
+  border-radius: 24px 24px 0 0;
+}
 
-  /* 1st card behind — halfway hidden under active, angled */
-  .deck-card.s-b1 {
-    transform: translateX(var(--b1)) rotateY(-12deg) scale(0.96);
-    opacity: 1;
-    z-index: 9;
-  }
+/* Card header row */
+.card-head {
+  display: flex; align-items: center;
+  gap: 1.3vw;
+  flex-shrink: 0;
+  padding-top: 0.6vh;
+}
 
-  /* 2nd card behind */
-  .deck-card.s-b2 {
-    transform: translateX(var(--b2)) rotateY(-18deg) scale(0.92);
-    opacity: 0.80;
-    z-index: 8;
-  }
+.cdot {
+  width: clamp(16px, 2.4vh, 32px);
+  height: clamp(16px, 2.4vh, 32px);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
 
-  /* 3rd card behind — barely peeking */
-  .deck-card.s-b3 {
-    transform: translateX(var(--b3)) rotateY(-22deg) scale(0.88);
-    opacity: 0.55;
-    z-index: 7;
-  }
+.head-info { display: flex; flex-direction: column; gap: 0.2vh; min-width: 0; }
 
-  /*
-   * EXIT: the active card performs a full 180-degree flip to the left.
-   * transform-origin at the left edge makes the card rotate like a book
-   * page turning — the right side swings toward the viewer, goes edge-on
-   * at 90°, then continues past to face-down at 180°.
-   */
-  .deck-card.s-exit {
-    transform: translateX(-4vw) rotateY(-180deg) scale(0.88);
-    transform-origin: left center;
-    opacity: 0;
-    z-index: 11;
-  }
+.card-name {
+  font-size: clamp(30px, 5.4vw, 92px);
+  font-weight: 900;
+  color: #1C1C1E;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+}
+.card-freq {
+  font-size: clamp(14px, 2vw, 34px);
+  font-weight: 700;
+  color: #8E8E93;
+  letter-spacing: -0.01em;
+}
 
-  /* While animating, enable the spring transition */
-  .deck-card.animating {
-    transition:
-      transform var(--dur) var(--ease-spring),
-      opacity   3.8s      ease;
-  }
+/* Event list */
+.event-list {
+  flex: 1;
+  display: flex; flex-direction: column;
+  gap: 1.2vh;
+  min-height: 0;
+}
 
-  /* Exit card gets a slightly longer ease-in to sell the full 180° flip */
-  .deck-card.s-exit.animating {
-    transition:
-      transform 3.5s cubic-bezier(0.55, 0, 1, 0.45),
-      opacity   2.8s ease-in;
-  }
+.eitem {
+  flex: 1;
+  border-radius: 14px;
+  padding: 1.2vh 1.8vw;
+  display: flex; flex-direction: column;
+  justify-content: center;
+  gap: 0.4vh;
+  min-height: 0; overflow: hidden;
+}
+.eitem.dim { opacity: 0.72; }
 
-  /* ────────────────────────────────────
-     CARD HEAD
-  ──────────────────────────────────── */
-  .card-head {
-    display: flex; align-items: center; gap: 1.2vw;
-    flex-shrink: 0;
-    padding-top: 0.6vh;
-  }
+/* Single-line row for Intercessory Prayer: date ——— venue */
+.eitem.erow {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.6vw;
+}
+.eitem.erow .ei-date,
+.eitem.erow .ei-venue {
+  font-size: clamp(18px, 3.4vw, 56px);
+  line-height: 1;
+  white-space: nowrap;
+}
+.eitem.erow .ei-sep {
+  flex: 1;
+  height: 2px;
+  background: rgba(255,255,255,0.28);
+  border-radius: 2px;
+  min-width: 1.5vw;
+}
 
-  .cdot {
-    width: clamp(18px, 2.6vh, 34px);
-    height: clamp(18px, 2.6vh, 34px);
-    border-radius: 50%;
-    flex-shrink: 0;
-    position: relative;
-  }
-  /* ripple pulse only on active card */
-  .deck-card.s-active .cdot { animation: dotPulse 1s ease-in-out infinite; }
-  .deck-card.s-active .cdot::after {
-    content: '';
-    position: absolute; inset: -5px;
-    border-radius: 50%;
-    border: 2.5px solid currentColor;
-    opacity: 0;
-    animation: dotRipple 1s ease-out infinite;
-  }
+.ei-date {
+  font-size: clamp(24px, 4.6vw, 78px);
+  font-weight: 900;
+  color: #fff;
+  line-height: 1;
+  letter-spacing: -0.025em;
+}
+.ei-venue {
+  font-size: clamp(16px, 2.6vw, 44px);
+  font-weight: 700;
+  color: rgba(255,255,255,0.88);
+  line-height: 1.2;
+}
 
-  @keyframes dotPulse {
-    0%,100% { transform: scale(1);    opacity: 1; }
-    50%      { transform: scale(1.45); opacity: 0.6; }
-  }
-  @keyframes dotRipple {
-    0%   { transform: scale(0.7); opacity: 0.6; }
-    100% { transform: scale(2.6); opacity: 0;   }
-  }
+/* Google Meet live badge */
+.meet-badge {
+  display: inline-flex; align-items: center; gap: 0.5vw;
+  background: rgba(255,255,255,0.2);
+  border-radius: 100px;
+  padding: 0.3vh 1vw;
+  font-size: clamp(10px, 1.6vw, 26px);
+  font-weight: 700;
+  color: #fff;
+  align-self: flex-start;
+  margin-top: 0.5vh;
+}
+.live-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.9);
+  flex-shrink: 0;
+  animation: blink 1.8s ease-in-out infinite;
+}
 
-  .co { background: var(--orange); color: var(--orange); }
-  .cb { background: var(--blue);   color: var(--blue);   }
-  .cp { background: var(--purple); color: var(--purple); }
-  .cg { background: var(--green);  color: var(--green);  }
+/* ── PIPS ── */
+.deck-pips {
+  flex-shrink: 0;
+  display: flex; justify-content: center; align-items: center;
+  gap: 1.2vw;
+}
+.pip {
+  width: clamp(9px, 1.4vh, 18px);
+  height: clamp(9px, 1.4vh, 18px);
+  border-radius: 50%;
+  background: rgba(255,255,255,0.18);
+  cursor: pointer;
+  transition: background 0.35s, transform 0.35s;
+}
+.pip.active {
+  background: #fff;
+  transform: scale(1.4);
+}
 
-  .head-info { display: flex; flex-direction: column; gap: 0.2vh; min-width: 0; }
+/* ── FOOTER ── */
+.footer {
+  flex-shrink: 0;
+  text-align: center;
+  font-size: clamp(8px, 1vw, 16px);
+  font-weight: 700;
+  color: rgba(255,255,255,0.18);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
 
-  .card-name {
-    font-size: clamp(28px, 5vw, 82px);
-    font-weight: 900;
-    color: var(--text);
-    letter-spacing: -0.035em;
-    line-height: 1.05;
-  }
-  .card-freq {
-    font-size: clamp(14px, 2vw, 34px);
-    font-weight: 700;
-    color: var(--muted);
-    letter-spacing: -0.01em;
-  }
-
-  /* ────────────────────────────────────
-     EVENT ITEMS
-  ──────────────────────────────────── */
-  .event-list {
-    flex: 1;
-    display: flex; flex-direction: column;
-    gap: 1.2vh;
-    min-height: 0;
-  }
-
-  .eitem {
-    flex: 1;
-    border-radius: 16px;
-    padding: 1.4vh 1.8vw;
-    display: flex; flex-direction: column;
-    justify-content: center;
-    gap: 0.4vh;
-    min-height: 0;
-    overflow: hidden;
-  }
-
-  .ei-date {
-    font-size: clamp(26px, 4.8vw, 78px);
-    font-weight: 900;
-    color: #fff;
-    line-height: 1;
-    letter-spacing: -0.03em;
-  }
-  .ei-venue {
-    font-size: clamp(16px, 2.8vw, 46px);
-    font-weight: 700;
-    color: rgba(255,255,255,0.9);
-    line-height: 1.2;
-    letter-spacing: -0.01em;
-  }
-
-  .eo { background: var(--orange); }
-  .eb { background: var(--blue);   }
-  .ep { background: var(--purple); }
-  .eg { background: var(--green);  }
-  .eitem.dim { opacity: 0.75; }
-
-  /* Single-line row variant: date on left, venue on right, same big font */
-  .eitem.erow {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    gap: 2vw;
-  }
-  .eitem.erow .ei-date,
-  .eitem.erow .ei-venue {
-    font-size: clamp(20px, 3.4vw, 58px);
-    line-height: 1;
-    white-space: nowrap;
-  }
-  .eitem.erow .ei-sep {
-    flex: 1;
-    height: 2px;
-    background: rgba(255,255,255,0.35);
-    border-radius: 2px;
-    min-width: 1vw;
-  }
-
-  /* Google Meet badge */
-  .meet-badge {
-    display: inline-flex; align-items: center; gap: 0.5vw;
-    background: rgba(255,255,255,0.2);
-    border-radius: 100px;
-    padding: 0.3vh 0.9vw;
-    font-size: clamp(10px, 1.6vw, 26px);
-    font-weight: 700;
-    color: #fff;
-    align-self: flex-start;
-    margin-top: 0.5vh;
-  }
-  .live-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.9);
-    flex-shrink: 0;
-    animation: blink 1.8s ease-in-out infinite;
-  }
-
-  @keyframes blink {
-    0%,100% { opacity: 1; }
-    50%      { opacity: 0.2; }
-  }
-
-  /* ────────────────────────────────────
-     PROGRESS PIPS
-  ──────────────────────────────────── */
-  .deck-pips {
-    flex-shrink: 0;
-    display: flex; justify-content: center; align-items: center;
-    gap: 1vw;
-  }
-  .pip {
-    width: clamp(10px, 1.4vh, 18px);
-    height: clamp(10px, 1.4vh, 18px);
-    border-radius: 50%;
-    background: rgba(0,0,0,0.18);
-    cursor: pointer;
-    transition: background 0.4s, transform 0.4s;
-  }
-  .pip.active {
-    background: var(--text);
-    transform: scale(1.4);
-  }
-
-  /* ────────────────────────────────────
-     FOOTER
-  ──────────────────────────────────── */
-  .footer {
-    flex-shrink: 0;
-    text-align: center;
-    font-size: clamp(9px, 1.1vw, 18px);
-    font-weight: 700;
-    color: var(--muted);
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    opacity: 0.4;
-  }
+@keyframes blink {
+  0%,100% { opacity: 1; }
+  50%      { opacity: 0.2; }
+}
 </style>
 </head>
 <body>
 <div class="screen">
 
-  <!-- HEADER -->
   <header class="header">
     <div class="logo">FLCC <span class="logo-sep">—</span> BOTR</div>
     <div class="header-label">Announcements</div>
@@ -400,266 +351,265 @@
     </div>
   </header>
 
-  <!-- DECK STAGE -->
-  <div class="deck-stage" id="deckStage">
+  <div class="scene" id="scene">
+    <!-- Incoming card — always fully rendered, revealed as flaps fold away -->
+    <div class="scene-back" id="scene-back"></div>
 
-    <!-- CARD 1 · SPORTS ACTIVITIES -->
-    <div class="deck-card d1" data-index="0">
-      <div class="card-head">
-        <div class="cdot co"></div>
-        <div class="head-info">
-          <div class="card-name">Sports Activities</div>
-          <div class="card-freq">Every Saturday</div>
-        </div>
-      </div>
-      <div class="event-list">
-        <div class="eitem eo">
-          <div class="ei-date">3:15 – 5 PM</div>
-          <div class="ei-venue">Heirs of the Kingdom</div>
-        </div>
-        <div class="eitem eo dim">
-          <div class="ei-date">5 – 10 PM</div>
-          <div class="ei-venue">Men's</div>
-        </div>
-      </div>
+    <!-- Bottom flap (z:2) — folds upward -->
+    <div class="flap-bot" id="flap-bot">
+      <div class="flap-bot-inner" id="fbi"></div>
     </div>
 
-    <!-- CARD 2 · INTERCESSORY PRAYER -->
-    <div class="deck-card d2" data-index="1">
-      <div class="card-head">
-        <div class="cdot cb"></div>
-        <div class="head-info">
-          <div class="card-name">Intercessory Prayer</div>
-          <div class="card-freq">Every Friday</div>
-        </div>
-      </div>
-      <div class="event-list">
-        <div class="eitem eb erow">
-          <span class="ei-date">May 29</span>
-          <span class="ei-sep"></span>
-          <span class="ei-venue">FB</span>
-        </div>
-        <div class="eitem eb erow dim">
-          <span class="ei-date">Jun 5</span>
-          <span class="ei-sep"></span>
-          <span class="ei-venue">GIL</span>
-        </div>
-        <div class="eitem eb erow">
-          <span class="ei-date">Jun 12</span>
-          <span class="ei-sep"></span>
-          <span class="ei-venue">Harvesters</span>
-        </div>
-        <div class="eitem eb erow dim">
-          <span class="ei-date">Jun 19</span>
-          <span class="ei-sep"></span>
-          <span class="ei-venue">JAOC</span>
-        </div>
-      </div>
+    <!-- Top flap (z:3) — folds downward, in front of bottom flap -->
+    <div class="flap-top" id="flap-top">
+      <div class="flap-top-inner" id="fti"></div>
     </div>
 
-    <!-- CARD 3 · CORPORATE PRAYER MEETING -->
-    <div class="deck-card d3" data-index="2">
-      <div class="card-head">
-        <div class="cdot cp"></div>
-        <div class="head-info">
-          <div class="card-name">Corporate Prayer Meeting</div>
-        </div>
-      </div>
-      <div class="event-list">
-        <div class="eitem ep">
-          <div class="ei-date">Jun 10</div>
-          <div class="ei-venue">Faithful &amp; True</div>
-        </div>
-      </div>
-    </div>
+    <!-- Decorative crease line at the split point -->
+    <div class="flap-crease"></div>
+  </div>
 
-    <!-- CARD 4 · MEN'S VIRTUAL BIBLE STUDY -->
-    <div class="deck-card d4" data-index="3">
-      <div class="card-head">
-        <div class="cdot cg"></div>
-        <div class="head-info">
-          <div class="card-name">Men's Virtual Bible Study</div>
-          <div class="card-freq">Every Wednesday</div>
-        </div>
-      </div>
-      <div class="event-list">
-        <div class="eitem eg">
-          <div class="ei-date">8:30 PM</div>
-          <div class="ei-venue">Google Meet</div>
-          <div class="meet-badge">
-            <div class="live-dot"></div>
-            Live Online
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div><!-- /deck-stage -->
-
-  <!-- PIPS -->
   <div class="deck-pips" id="deckPips"></div>
-
-  <!-- FOOTER -->
   <footer class="footer">FLCC – BOTR &nbsp;·&nbsp; F11 for fullscreen</footer>
 
 </div><!-- /screen -->
 
 <script>
 (function () {
-  const TOTAL   = 4;
-  const TICK_MS = 7000;   // 7 seconds between advances
-  const ANIM_MS = 4700;   // wait for enter animation (4.5 s) before resetting exit card
 
-  const BEHIND = ['s-b1', 's-b2', 's-b3'];
+/* ════════════════════════════════════
+   CARD DATA
+   ════════════════════════════════════ */
+const CARDS = [
+  {
+    accent: '#FF9500',
+    tint:   '#FFFCF2',
+    title:  'Sports Activities',
+    freq:   'Every Saturday',
+    events: [
+      { date: '3:15 – 5 PM', venue: 'Heirs of the Kingdom' },
+      { date: '5 – 10 PM',   venue: 'Men’s', dim: true },
+    ]
+  },
+  {
+    accent: '#007AFF',
+    tint:   '#F0F7FF',
+    title:  'Intercessory Prayer',
+    freq:   'Every Friday',
+    events: [
+      { date: 'May 29', venue: 'FB',         row: true },
+      { date: 'Jun 5',  venue: 'GIL',        row: true, dim: true },
+      { date: 'Jun 12', venue: 'Harvesters', row: true },
+      { date: 'Jun 19', venue: 'JAOC',       row: true, dim: true },
+    ]
+  },
+  {
+    accent: '#AF52DE',
+    tint:   '#FAF3FF',
+    title:  'Corporate Prayer Meeting',
+    freq:   '',
+    events: [
+      { date: 'Jun 10', venue: 'Faithful & True' },
+    ]
+  },
+  {
+    accent: '#34C759',
+    tint:   '#F0FFF4',
+    title:  'Men’s Virtual Bible Study',
+    freq:   'Every Wednesday',
+    events: [
+      { date: '8:30 PM', venue: 'Google Meet', badge: true },
+    ]
+  },
+];
 
-  const stage  = document.getElementById('deckStage');
-  const cards  = Array.from(stage.querySelectorAll('.deck-card'));
-  const pipsEl = document.getElementById('deckPips');
+/* ════════════════════════════════════
+   HTML RENDERER
+   ════════════════════════════════════ */
+function renderCard(c) {
+  const events = c.events.map(e => {
+    const cls = 'eitem' +
+      (e.row  ? ' erow' : '') +
+      (e.dim  ? ' dim'  : '');
 
-  let current   = 0;
-  let animating = false;
-  let timer;
+    const inner = e.row
+      ? `<span class="ei-date">${e.date}</span>
+         <span class="ei-sep"></span>
+         <span class="ei-venue">${e.venue}</span>`
+      : `<div class="ei-date">${e.date}</div>
+         <div class="ei-venue">${e.venue}</div>` +
+        (e.badge
+          ? `<div class="meet-badge"><div class="live-dot"></div> Live Online</div>`
+          : '');
 
-  /* ── Pips ── */
-  cards.forEach((_, i) => {
-    const p = document.createElement('div');
-    p.className = 'pip' + (i === 0 ? ' active' : '');
-    p.addEventListener('click', () => manualGoTo(i));
-    pipsEl.appendChild(p);
-  });
+    return `<div class="${cls}" style="background:${c.accent}">${inner}</div>`;
+  }).join('');
 
-  function updatePips(idx) {
-    pipsEl.querySelectorAll('.pip').forEach((p, i) =>
-      p.classList.toggle('active', i === idx));
-  }
+  return `
+    <div class="card-body" style="background:${c.tint}">
+      <div class="stripe" style="background:${c.accent}"></div>
+      <div class="card-head">
+        <div class="cdot" style="background:${c.accent}"></div>
+        <div class="head-info">
+          <div class="card-name">${c.title}</div>
+          ${c.freq ? `<div class="card-freq">${c.freq}</div>` : ''}
+        </div>
+      </div>
+      <div class="event-list">${events}</div>
+    </div>`;
+}
 
-  /* ── Low-level state setter ── */
-  function setState(card, state, animate) {
-    card.classList.remove('s-active', 's-b1', 's-b2', 's-b3', 's-exit', 'animating');
-    if (animate) {
-      /* Force a reflow so the browser registers the removed classes
-         before we add the new state + animating. This ensures the
-         CSS transition fires correctly. */
-      void card.offsetWidth;
-      card.classList.add('animating');
-    }
-    card.classList.add(state);
-  }
+/* ════════════════════════════════════
+   STATE
+   ════════════════════════════════════ */
+const TOTAL   = CARDS.length;
+const TICK_MS = 7000;     // 7 s between flips
+const TOP_MS  = 420;      // top-flap fold duration (ms) — matches CSS
+const BOT_DLY = 110;      // ms after top starts that bottom begins
+const BOT_MS  = 420;      // bottom-flap fold duration (ms)
+const DONE_MS = BOT_DLY + BOT_MS + 30; // total flip time + small buffer
 
-  /* ── Initial layout (no animation) ── */
-  function init() {
-    cards.forEach((card, i) => {
-      card.classList.remove('s-active', 's-b1', 's-b2', 's-b3', 's-exit', 'animating');
-      if (i === 0) {
-        card.classList.add('s-active');
-      } else {
-        card.classList.add(BEHIND[Math.min(i - 1, BEHIND.length - 1)]);
-      }
-    });
-    updatePips(0);
-  }
+let current   = 0;
+let animating = false;
+let timer;
 
-  /* ── Advance to card `next` ── */
-  function goTo(next) {
-    if (animating || next === current) return;
-    animating = true;
+const sceneBack = document.getElementById('scene-back');
+const fti       = document.getElementById('fti');   // flap-top-inner
+const fbi       = document.getElementById('fbi');   // flap-bot-inner
+const pipsEl    = document.getElementById('deckPips');
 
-    const prev = current;
-    current    = next;
+/* ════════════════════════════════════
+   PIPS
+   ════════════════════════════════════ */
+CARDS.forEach((_, i) => {
+  const p = document.createElement('div');
+  p.className = 'pip' + (i === 0 ? ' active' : '');
+  p.addEventListener('click', () => manualGoTo(i));
+  pipsEl.appendChild(p);
+});
 
-    /*
-     * 1. Exit the active card:
-     *    rotates -180° around its left edge — a full card-flip deal.
-     */
-    setState(cards[prev], 's-exit', true);
+function updatePips(idx) {
+  pipsEl.querySelectorAll('.pip').forEach((p, i) =>
+    p.classList.toggle('active', i === idx));
+}
 
-    /*
-     * 2. Bring the next card to the active (front) position.
-     *    It smoothly slides left from its behind-1 stack position
-     *    and de-tilts as it arrives — the full 4.5 s spring.
-     */
-    setState(cards[next], 's-active', true);
+/* ════════════════════════════════════
+   INIT
+   — Flaps show card[0] (current)
+   — Back shows card[1] (upcoming)
+   ════════════════════════════════════ */
+function init() {
+  fti.innerHTML = renderCard(CARDS[0]);
+  fbi.innerHTML = renderCard(CARDS[0]);
+  sceneBack.innerHTML = renderCard(CARDS[1 % TOTAL]);
+  updatePips(0);
+}
 
-    /*
-     * 3. Reposition every other card into the new behind slots.
-     *    Build a queue of card indices in cyclic order after `next`.
-     */
-    const queue = [];
-    for (let step = 1; step < TOTAL; step++) {
-      const idx = (next + step) % TOTAL;
-      if (idx !== prev) queue.push(idx);  // prev is being exited, skip
-    }
-    queue.forEach((idx, qi) => {
-      setState(cards[idx], BEHIND[Math.min(qi, BEHIND.length - 1)], true);
-    });
+/* ════════════════════════════════════
+   TRANSITION
+   ════════════════════════════════════ */
+function goTo(next) {
+  if (animating || next === current) return;
+  animating = true;
 
-    updatePips(next);
+  current = next;
+  updatePips(next);
 
-    /*
-     * 4. Once everything settles, tuck the exited card back into
-     *    the deepest behind slot so it's ready for the next cycle.
-     *    No transition — it snaps invisibly.
-     */
-    setTimeout(() => {
-      setState(cards[prev], BEHIND[BEHIND.length - 1], false);
-      animating = false;
-    }, ANIM_MS);
-  }
+  /*
+   * scene-back already holds `next` (preloaded at end of last transition).
+   * Fold the top flap down first, then the bottom flap up shortly after.
+   * Both reveal the back layer underneath.
+   */
 
-  /* ── Timer management ── */
-  function advance()    { goTo((current + 1) % TOTAL); }
-  function startTimer() { timer = setInterval(advance, TICK_MS); }
-  function resetTimer() { clearInterval(timer); startTimer(); }
+  /* Ensure no stale animation class */
+  fti.classList.remove('flipping');
+  fbi.classList.remove('flipping');
+  void fti.offsetWidth; /* force reflow so removal is committed */
 
-  function manualGoTo(idx) {
-    goTo(idx);
-    resetTimer();
-  }
+  fti.classList.add('flipping');
 
-  /* ── Touch / mouse swipe ── */
-  let startX = null;
+  setTimeout(() => {
+    fbi.classList.add('flipping');
+  }, BOT_DLY);
 
-  stage.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, { passive: true });
-  stage.addEventListener('touchend',   e => {
-    if (startX === null) return;
-    const dx = e.changedTouches[0].clientX - startX;
-    startX = null;
-    if (Math.abs(dx) < 50) return;
-    manualGoTo(dx < 0 ? (current + 1) % TOTAL : (current - 1 + TOTAL) % TOTAL);
-  }, { passive: true });
+  /*
+   * After both flaps have fully folded (= both invisible):
+   *   1. Snap flaps to show the new current card (no animation).
+   *   2. Remove the flipping class so they're flat again.
+   *   3. Preload the NEXT upcoming card into scene-back.
+   */
+  setTimeout(() => {
+    fti.classList.remove('flipping');
+    fbi.classList.remove('flipping');
 
-  stage.addEventListener('mousedown', e => { startX = e.clientX; });
-  window.addEventListener('mouseup',  e => {
-    if (startX === null) return;
-    const dx = e.clientX - startX;
-    startX = null;
-    if (Math.abs(dx) < 50) return;
-    manualGoTo(dx < 0 ? (current + 1) % TOTAL : (current - 1 + TOTAL) % TOTAL);
-  });
+    fti.innerHTML = renderCard(CARDS[next]);
+    fbi.innerHTML = renderCard(CARDS[next]);
 
-  /* ── Keyboard ── */
-  document.addEventListener('keydown', e => {
-    if (e.key === 'ArrowRight') manualGoTo((current + 1) % TOTAL);
-    if (e.key === 'ArrowLeft')  manualGoTo((current - 1 + TOTAL) % TOTAL);
-  });
+    sceneBack.innerHTML = renderCard(CARDS[(next + 1) % TOTAL]);
 
-  /* ── Pause on hover ── */
-  stage.addEventListener('mouseenter', () => clearInterval(timer));
-  stage.addEventListener('mouseleave', startTimer);
+    animating = false;
+  }, DONE_MS);
+}
 
-  /* ── Set header date to the current/upcoming Friday ── */
-  (function setFridayDate() {
-    const now  = new Date();
-    const diff = (5 - now.getDay() + 7) % 7;   // 0 if today is Friday
-    const fri  = new Date(now);
-    fri.setDate(now.getDate() + diff);
-    document.getElementById('today-date').textContent =
-      fri.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-  }());
+/* ════════════════════════════════════
+   TIMER
+   ════════════════════════════════════ */
+function advance()    { goTo((current + 1) % TOTAL); }
+function startTimer() { timer = setInterval(advance, TICK_MS); }
+function resetTimer() { clearInterval(timer); startTimer(); }
 
-  /* ── Boot ── */
-  init();
-  startTimer();
+function manualGoTo(idx) {
+  goTo(idx);
+  resetTimer();
+}
+
+/* ════════════════════════════════════
+   INPUT — touch, mouse drag, keyboard
+   ════════════════════════════════════ */
+let dragX = null;
+
+document.addEventListener('touchstart', e => { dragX = e.touches[0].clientX; },  { passive: true });
+document.addEventListener('touchend',   e => {
+  if (dragX === null) return;
+  const dx = e.changedTouches[0].clientX - dragX;
+  dragX = null;
+  if (Math.abs(dx) < 50) return;
+  manualGoTo(dx < 0 ? (current + 1) % TOTAL : (current - 1 + TOTAL) % TOTAL);
+});
+
+document.addEventListener('mousedown', e => { dragX = e.clientX; });
+document.addEventListener('mouseup',   e => {
+  if (dragX === null) return;
+  const dx = e.clientX - dragX;
+  dragX = null;
+  if (Math.abs(dx) < 50) return;
+  manualGoTo(dx < 0 ? (current + 1) % TOTAL : (current - 1 + TOTAL) % TOTAL);
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight') manualGoTo((current + 1) % TOTAL);
+  if (e.key === 'ArrowLeft')  manualGoTo((current - 1 + TOTAL) % TOTAL);
+});
+
+/* ════════════════════════════════════
+   DYNAMIC FRIDAY DATE
+   Shows the current or next upcoming Friday
+   ════════════════════════════════════ */
+(function () {
+  const now  = new Date();
+  const diff = (5 - now.getDay() + 7) % 7;   /* 0 if today is Friday */
+  const fri  = new Date(now);
+  fri.setDate(now.getDate() + diff);
+  document.getElementById('today-date').textContent =
+    fri.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+}());
+
+/* ════════════════════════════════════
+   BOOT
+   ════════════════════════════════════ */
+init();
+startTimer();
+
 }());
 </script>
 </body>
