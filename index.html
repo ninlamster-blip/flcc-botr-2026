@@ -1794,6 +1794,7 @@ function saveActionsToLocal() {
       actions: APP.actions,
       points:  APP.points,
       stage:   APP.stage,
+      savedAt: Date.now(),
     }));
   } catch(e) {}
 }
@@ -2445,8 +2446,12 @@ async function completeLogin(name, role, church, sectorId, churchVal, known, loc
   // Merge: Sheets has authoritative stage/points, localStorage has full action logs
   const sheetsActions = existing?.actions || [];
   const localActions  = local?.actions    || [];
-  // Use whichever has more actions (Sheets may have data from other devices)
-  const mergedActions = localActions.length >= sheetsActions.length ? localActions : sheetsActions;
+  // Prefer local if saved within the last 24h — covers deletions not yet synced to Sheets.
+  // Otherwise prefer whichever has more actions (Sheets may have data from other devices).
+  const localIsFresh  = local?.savedAt && (Date.now() - local.savedAt < 24 * 60 * 60 * 1000);
+  const mergedActions = (localIsFresh || localActions.length >= sheetsActions.length)
+    ? localActions
+    : sheetsActions;
   const mergedPoints  = Math.max(local?.points || 0, existing?.points || 0);
 
   Object.assign(APP, {
@@ -2515,7 +2520,7 @@ async function startApp() {
 
   // THEN load from Sheets silently in background
   loadLiveData().then(() => {
-    if (APP.loggedIn && APP.name && APP.actions.length) applyCurrentUserToLive();
+    if (APP.loggedIn && APP.name) applyCurrentUserToLive();
     try { if (!isLeader()) renderMemberHome(); else renderChurchScreen(); } catch(e) {}
   }).catch(() => {});
 }
@@ -2561,7 +2566,7 @@ function showTab(id) {
   const dataScreens = ['home','church','sector','command'];
   if (dataScreens.includes(id)) {
     loadLiveData().then(() => {
-      if (APP.loggedIn && APP.name && APP.actions.length) applyCurrentUserToLive();
+      if (APP.loggedIn && APP.name) applyCurrentUserToLive();
       if (currentTab === 'home')    try { renderMemberHome();    } catch(e) {}
       if (currentTab === 'church')  try { renderChurchScreen();  } catch(e) {}
       if (currentTab === 'sector')  try { renderSectorScreen();  } catch(e) {}
@@ -2593,7 +2598,7 @@ async function refreshLiveData(screenId) {
 // Merge the current signed-in user's session into LIVE store
 // Ensures their own actions are always visible even mid-refresh
 function applyCurrentUserToLive() {
-  if (!APP.actions.length) return;
+  if (!APP.name) return;
   const cId   = getChurchId(APP.church);
   const secId = APP.sector;
 
@@ -2602,12 +2607,10 @@ function applyCurrentUserToLive() {
   );
 
   if (existing) {
-    // Prefer whichever source has more complete action data
-    if (APP.actions.length > (existing.actions?.length || 0)) {
-      existing.actions = APP.actions;
-      existing.points  = APP.points;
-      existing.stage   = APP.stage;
-    }
+    // Always use APP state — it reflects the latest local changes including deletions
+    existing.actions = APP.actions;
+    existing.points  = APP.points;
+    existing.stage   = APP.stage;
   } else {
     // Not yet in Sheets — add to LIVE temporarily so dashboard shows their data
     const gospel    = APP.actions.filter(a => a.type === 'Evangelism').length;
@@ -3158,6 +3161,7 @@ function deleteAction(realIdx) {
   showLoading('Updating dashboard…');
   loadLiveData().then(function() {
     hideLoading();
+    if (APP.loggedIn && APP.name) applyCurrentUserToLive();
     calculateAndRenderAll();
     showToast('✓ Dashboard updated');
   });
@@ -4438,7 +4442,7 @@ document.addEventListener('visibilitychange', async () => {
   if (document.visibilityState === 'visible' && APP.loggedIn) {
     // Silent refresh — no loading overlay, just pull fresh data
     await loadLiveData();
-    if (APP.actions.length) applyCurrentUserToLive();
+    if (APP.loggedIn && APP.name) applyCurrentUserToLive();
     // Re-render whichever tab is currently visible
     if (currentTab === 'home')    renderMemberHome();
     if (currentTab === 'church')  renderChurchScreen();
