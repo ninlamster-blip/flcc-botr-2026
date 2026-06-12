@@ -522,6 +522,140 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .rep-empty{padding:24px;text-align:center;color:var(--ter);font-size:13px;font-style:italic}
 .rep-summary-row{padding:10px 14px;background:var(--bg);border-top:1px solid var(--fill4);display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--sec);border-radius:0 0 14px 14px}
 .rep-summary-count{font-weight:800;color:var(--label)}
+
+/* ═══════════════════════════════════════════════════════════════
+   GLASS THEME — Modern UI Overrides
+═══════════════════════════════════════════════════════════════ */
+:root {
+  --navy-deep:#071428;
+  --navy-mid:#0d2147;
+  --navy-bright:#0e3460;
+  --glass-light:rgba(255,255,255,0.88);
+  --glass-border:rgba(255,255,255,0.55);
+  --glass-shadow:0 8px 32px rgba(0,0,0,0.16),0 1px 0 rgba(255,255,255,0.75) inset;
+  --shadow:0 4px 20px rgba(0,0,0,0.1),0 1px 0 rgba(255,255,255,0.8);
+  --btn-gradient:linear-gradient(135deg,#007AFF 0%,#0051D0 100%);
+}
+html,body{
+  background:linear-gradient(160deg,#071428 0%,#0d2147 40%,#0a1e5e 70%,#0f2d6e 100%) fixed;
+}
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse at 15% 15%,rgba(90,200,250,0.13) 0%,transparent 55%),
+    radial-gradient(ellipse at 85% 75%,rgba(0,122,255,0.16) 0%,transparent 55%),
+    radial-gradient(ellipse at 50% 50%,rgba(52,199,89,0.05) 0%,transparent 60%);
+  animation:bgBreath 18s ease-in-out infinite alternate;
+}
+@keyframes bgBreath{0%{opacity:1}50%{opacity:0.65}100%{opacity:1}}
+#app{background:rgba(242,242,247,0.97);position:relative;z-index:1;box-shadow:0 0 80px rgba(0,0,0,0.4)}
+
+/* ── NAV / STATUS BAR ─────────────────────────────── */
+.sb{background:rgba(255,255,255,0.88)!important;backdrop-filter:blur(30px) saturate(180%)!important;-webkit-backdrop-filter:blur(30px) saturate(180%)!important}
+.nav{background:rgba(255,255,255,0.86)!important;backdrop-filter:blur(30px) saturate(180%)!important;-webkit-backdrop-filter:blur(30px) saturate(180%)!important;border-bottom:1px solid rgba(255,255,255,0.65)!important;box-shadow:0 2px 20px rgba(0,0,0,0.06)}
+
+/* ── TAB BAR ──────────────────────────────────────── */
+.tabbar{background:rgba(249,249,249,0.94)!important;backdrop-filter:blur(30px) saturate(180%)!important;-webkit-backdrop-filter:blur(30px) saturate(180%)!important;border-top:1px solid rgba(255,255,255,0.72)!important;box-shadow:0 -2px 20px rgba(0,0,0,0.07)}
+.tbicon{width:26px;height:26px;display:flex;align-items:center;justify-content:center;transition:transform .2s,color .2s;font-size:0!important}
+.tbicon svg{width:23px;height:23px;transition:filter .2s}
+.tbbtn.active .tbicon{transform:scale(1.13);color:var(--blue);filter:none!important}
+.tbbtn:not(.active) .tbicon{color:#AEAEB2;filter:none!important}
+.tbbtn.active .tbicon svg{filter:drop-shadow(0 0 5px rgba(0,122,255,.35))}
+
+/* ── CARDS ───────────────────────────────────────── */
+.card{background:rgba(255,255,255,0.91)!important;backdrop-filter:blur(20px)!important;-webkit-backdrop-filter:blur(20px)!important;border:1px solid rgba(255,255,255,0.68)!important;box-shadow:0 4px 24px rgba(0,0,0,0.09),0 1px 0 rgba(255,255,255,0.8) inset!important;transition:transform .2s,box-shadow .2s}
+.tile{background:rgba(255,255,255,0.91)!important;backdrop-filter:blur(20px)!important;-webkit-backdrop-filter:blur(20px)!important;border:1px solid rgba(255,255,255,0.68)!important;box-shadow:0 4px 20px rgba(0,0,0,0.08),0 1px 0 rgba(255,255,255,0.8) inset!important}
+.mlc{background:rgba(255,255,255,0.91)!important;border:1px solid rgba(255,255,255,0.6)!important;box-shadow:0 4px 20px rgba(0,0,0,0.08)!important}
+.session-card{background:rgba(255,255,255,0.91)!important;backdrop-filter:blur(20px)!important;border:1px solid rgba(255,255,255,0.7)!important;box-shadow:0 4px 20px rgba(0,0,0,0.08)!important;transition:all .2s!important}
+.session-card:hover{border-color:var(--blue)!important;box-shadow:0 6px 28px rgba(0,122,255,.14)!important;transform:translateY(-1px)!important}
+.ldr-card{background:rgba(255,255,255,0.88)!important;backdrop-filter:blur(20px)!important;border:1px solid rgba(255,255,255,0.65)!important;box-shadow:0 4px 20px rgba(0,0,0,0.07)!important;transition:transform .2s,box-shadow .2s!important}
+.action-grid{box-shadow:0 4px 20px rgba(0,0,0,0.08)!important}
+.arow{background:rgba(255,255,255,0.9)!important}
+.arow:hover,.arow.sel{background:rgba(0,122,255,0.07)!important}
+
+/* ── HERO SECTIONS ───────────────────────────────── */
+.mem-hero{background:linear-gradient(145deg,rgba(15,15,18,0.94) 0%,rgba(30,30,34,0.94) 100%)!important;backdrop-filter:blur(30px)!important;-webkit-backdrop-filter:blur(30px)!important;border:1px solid rgba(255,255,255,0.09)!important;box-shadow:0 14px 44px rgba(0,0,0,0.28),inset 0 1px 0 rgba(255,255,255,0.07)!important}
+.cmd-hero{background:linear-gradient(145deg,rgba(0,100,220,0.92) 0%,rgba(60,170,250,0.92) 100%)!important;backdrop-filter:blur(30px)!important;-webkit-backdrop-filter:blur(30px)!important;border:1px solid rgba(255,255,255,0.22)!important;box-shadow:0 14px 44px rgba(0,100,220,.28),inset 0 1px 0 rgba(255,255,255,0.14)!important}
+.prof-hero{background:linear-gradient(160deg,rgba(15,15,18,0.94) 0%,rgba(40,40,44,0.94) 100%)!important;backdrop-filter:blur(30px)!important;-webkit-backdrop-filter:blur(30px)!important;border:1px solid rgba(255,255,255,0.09)!important;box-shadow:0 14px 44px rgba(0,0,0,0.28)!important}
+
+/* ── LOGIN HERO ─────────────────────────────────── */
+.login-hero{
+  background:linear-gradient(150deg,rgba(7,20,50,0.88) 0%,rgba(13,33,71,0.92) 60%,rgba(10,30,94,0.88) 100%)!important;
+  backdrop-filter:blur(30px) saturate(150%)!important;-webkit-backdrop-filter:blur(30px) saturate(150%)!important;
+  border:1px solid rgba(90,200,250,0.22)!important;
+  box-shadow:0 24px 64px rgba(0,0,0,0.38),inset 0 1px 0 rgba(255,255,255,0.1)!important;
+}
+.login-hero::before{background:linear-gradient(90deg,#5AC8FA 0%,#007AFF 50%,#34C759 100%)!important}
+.login-title{color:white!important}
+.login-title span{color:#5AC8FA!important}
+.login-verse{color:rgba(255,255,255,0.68)!important}
+.login-logo{color:rgba(255,255,255,0.45)!important}
+.login-hero-stat-val{color:#5AC8FA!important}
+.login-hero-stat-lbl{color:rgba(255,255,255,0.4)!important}
+
+/* ── FLCC LOGO ──────────────────────────────────── */
+.flcc-logo-wrap{display:flex;justify-content:center;margin-bottom:18px}
+.flcc-logo-svg{width:96px;height:96px;filter:drop-shadow(0 6px 20px rgba(0,0,0,0.4));animation:logoFloat 4s ease-in-out infinite}
+@keyframes logoFloat{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-5px) rotate(0.5deg)}}
+
+/* ── LEADER CARDS ICON ──────────────────────────── */
+.ldr-icon{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;font-size:0!important}
+.ldr-icon svg{width:22px;height:22px}
+.ldr-icon.pastor{background:linear-gradient(135deg,#FF9500,#FF6B00);color:white}
+.ldr-icon.sector{background:linear-gradient(135deg,#007AFF,#5AC8FA);color:white}
+.ldr-icon.ministry{background:linear-gradient(135deg,#34C759,#28A04A);color:white}
+.ldr-icon.coord{background:linear-gradient(135deg,#5AC8FA,#32ADE6);color:white}
+
+/* ── BUTTONS ────────────────────────────────────── */
+.submit-btn{background:var(--btn-gradient)!important;box-shadow:0 6px 24px rgba(0,82,208,0.32)!important;transition:transform .1s,box-shadow .2s!important}
+.submit-btn:hover:not(:disabled){box-shadow:0 8px 32px rgba(0,82,208,0.48)!important}
+.submit-btn:active{transform:scale(.97)!important}
+.log-btn{background:var(--btn-gradient)!important;box-shadow:0 6px 24px rgba(0,82,208,0.32)!important}
+
+/* ── PROGRESS BARS ─────────────────────────────── */
+.pf{background:linear-gradient(90deg,#007AFF,#5AC8FA)!important}
+
+/* ── FORM INPUTS ────────────────────────────────── */
+.finput,.fselect{background:rgba(255,255,255,0.96)!important;border:1px solid rgba(0,0,0,0.07)!important;box-shadow:0 2px 8px rgba(0,0,0,0.05) inset!important;transition:border-color .2s,box-shadow .2s!important}
+.finput:focus,.fselect:focus{border-color:var(--blue)!important;box-shadow:0 0 0 3px rgba(0,122,255,.12)!important}
+
+/* ── LOADING / TOAST / PIN ──────────────────────── */
+.loading-overlay{background:rgba(5,15,40,.78)!important;backdrop-filter:blur(20px)!important;-webkit-backdrop-filter:blur(20px)!important}
+.loading-text{color:rgba(255,255,255,.75)!important}
+.spinner{border-color:rgba(255,255,255,.22)!important;border-top-color:var(--blue)!important}
+.toast{background:rgba(5,15,40,.92)!important;border:1px solid rgba(90,200,250,.28)!important;box-shadow:0 8px 32px rgba(0,0,0,.35)!important}
+.pin-card{background:rgba(255,255,255,.97)!important;backdrop-filter:blur(30px)!important;border:1px solid rgba(255,255,255,.6)!important;box-shadow:0 28px 72px rgba(0,0,0,.42)!important}
+
+/* ── NOTICE / OUTREACH ──────────────────────────── */
+.outreach-report-card{border:1px solid rgba(255,255,255,.5)!important;box-shadow:0 4px 20px rgba(0,0,0,.07)!important}
+
+/* ── ANIMATIONS ─────────────────────────────────── */
+.screen.active{animation:fadeInUp .32s cubic-bezier(.16,1,.3,1)}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.card{animation:cardIn .38s cubic-bezier(.16,1,.3,1) both}
+@keyframes cardIn{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+.tile{animation:cardIn .38s cubic-bezier(.16,1,.3,1) both}
+
+/* Stagger card animations */
+.card:nth-child(1){animation-delay:.04s}
+.card:nth-child(2){animation-delay:.08s}
+.card:nth-child(3){animation-delay:.12s}
+.card:nth-child(4){animation-delay:.16s}
+.card:nth-child(5){animation-delay:.20s}
+
+/* ── IBOX ICONS ──────────────────────────────────── */
+.ibox{font-size:0!important;align-items:center;justify-content:center}
+.ibox svg{width:20px;height:20px}
+.sicon{font-size:0!important}
+.sicon svg{width:18px;height:18px}
+.empty-icon{font-size:0!important;display:flex;align-items:center;justify-content:center;margin-bottom:10px}
+.empty-icon svg{width:36px;height:36px;opacity:0.35}
+.al-dot{font-size:0!important}
+.al-dot svg{width:20px;height:20px}
+.rh-icon{font-size:0!important;display:flex;align-items:center;justify-content:center}
+.rh-icon svg{width:24px;height:24px}
+.notice-icon{font-size:0!important;display:flex;flex-shrink:0;margin-top:1px}
+.notice-icon svg{width:16px;height:16px;color:var(--blue)}
 </style>
 </head>
 <body>
@@ -587,28 +721,89 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <div class="screen active" id="screen-login">
       <div style="padding:20px 0 40px">
 
-        <!-- Apple-minimal hero card -->
+        <!-- FLCC Hero Card -->
         <div class="login-hero">
-          <div class="login-logo">FLCC Evangelism</div>
+          <!-- Official FLCC BOTR Logo -->
+          <div class="flcc-logo-wrap">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 260" class="flcc-logo-svg">
+              <!-- Outer silver ring -->
+              <circle cx="130" cy="130" r="128" fill="#c8ccd0"/>
+              <circle cx="130" cy="130" r="124" fill="#f0f0f0"/>
+              <!-- Gray band -->
+              <circle cx="130" cy="130" r="109" fill="#b8bcc4"/>
+              <circle cx="130" cy="130" r="107" fill="#c0c4cc"/>
+              <!-- Blue inner circle -->
+              <circle cx="130" cy="130" r="97" fill="#a8cde8"/>
+              <circle cx="130" cy="130" r="95" fill="none" stroke="white" stroke-width="2.5"/>
+              <circle cx="130" cy="130" r="109" fill="none" stroke="#8a8e96" stroke-width="0.6"/>
+              <!-- Top arc text path -->
+              <path id="ltp" d="M 26,130 A 104,104 0 0,1 234,130" fill="none"/>
+              <!-- Bottom arc text path -->
+              <path id="lbp" d="M 234,130 A 104,104 0 0,1 26,130" fill="none"/>
+              <!-- Top text: NATIONAL EVANGELICAL CHURCH IN KUWAIT -->
+              <text font-family="Arial Narrow,Arial,sans-serif" font-size="10.2" font-weight="bold" letter-spacing="1.4" fill="#1a1a1a">
+                <textPath href="#ltp" startOffset="4%">NATIONAL EVANGELICAL CHURCH IN KUWAIT</textPath>
+              </text>
+              <!-- Bottom text: FILIPINO LANGUAGE CHRISTIAN CONGREGATION -->
+              <text font-family="Arial Narrow,Arial,sans-serif" font-size="9.2" font-weight="bold" letter-spacing="0.8" fill="#1a2e5a">
+                <textPath href="#lbp" startOffset="2.5%">• FILIPINO LANGUAGE CHRISTIAN CONGREGATION •</textPath>
+              </text>
+              <!-- Side bullets -->
+              <circle cx="27" cy="130" r="4.5" fill="#1a2e5a"/>
+              <circle cx="233" cy="130" r="4.5" fill="#1a2e5a"/>
+              <!-- Open Bible -->
+              <path d="M 72,148 Q 76,130 130,124 Q 184,130 188,148 L 188,170 Q 184,154 130,148 Q 76,154 72,170 Z" fill="white" stroke="#ccc" stroke-width="0.7"/>
+              <line x1="130" y1="124" x2="130" y2="170" stroke="#d0d0d0" stroke-width="1.5"/>
+              <path d="M 72,168 Q 88,162 104,166 Q 117,169 130,165 Q 143,161 156,165 Q 172,169 188,165" fill="none" stroke="#bbb" stroke-width="2" stroke-linecap="round"/>
+              <!-- Cross vertical -->
+              <rect x="122" y="80" width="16" height="68" rx="2.5" fill="white" stroke="#d4d4d4" stroke-width="0.7"/>
+              <!-- Cross horizontal -->
+              <rect x="101" y="99" width="58" height="14" rx="2.5" fill="white" stroke="#d4d4d4" stroke-width="0.7"/>
+              <!-- Dove body -->
+              <ellipse cx="130" cy="68" rx="13" ry="9" fill="white" stroke="#ddd" stroke-width="0.5"/>
+              <!-- Dove head -->
+              <circle cx="143" cy="63" r="8" fill="white" stroke="#ddd" stroke-width="0.5"/>
+              <!-- Dove eye -->
+              <circle cx="147" cy="61" r="2" fill="#333"/>
+              <!-- Dove beak -->
+              <path d="M 151,63 L 158,64 L 151,66" fill="#aaa" stroke="#999" stroke-width="0.4"/>
+              <!-- Dove left wing -->
+              <path d="M 117,70 Q 98,53 86,59 Q 94,74 117,74 Z" fill="white" stroke="#ddd" stroke-width="0.7"/>
+              <!-- Dove right wing -->
+              <path d="M 143,71 Q 162,53 174,60 Q 166,75 143,74 Z" fill="white" stroke="#ddd" stroke-width="0.7"/>
+              <!-- Dove tail -->
+              <path d="M 117,73 Q 109,83 113,91 Q 118,85 125,81 Z" fill="white" stroke="#ddd" stroke-width="0.5"/>
+              <!-- Left tent -->
+              <polygon points="82,165 97,148 112,165" fill="#1c1c1e"/>
+              <!-- Center tent (tallest) -->
+              <polygon points="109,165 130,136 151,165" fill="#111"/>
+              <!-- Right tent -->
+              <polygon points="148,165 163,148 178,165" fill="#1c1c1e"/>
+              <!-- Ground baseline -->
+              <line x1="78" y1="165" x2="182" y2="165" stroke="#1c1c1e" stroke-width="1.2"/>
+              <!-- EST. 1992 -->
+              <text x="130" y="184" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" font-weight="bold" letter-spacing="2.2" fill="#1a2e5a">•EST.1992•</text>
+            </svg>
+          </div>
           <div class="login-title">Strategic<br><span>Direction 2026</span></div>
-          <div style="height:1px;background:var(--fill4);margin:16px 0"></div>
+          <div style="height:1px;background:rgba(255,255,255,0.15);margin:16px 0"></div>
           <div class="login-verse">"Go and make disciples of all nations,<br>baptizing them in the name of the Father,<br>Son, and Holy Spirit."<br>
-            <span style="font-size:11px;font-style:normal;font-weight:700;color:var(--ter);letter-spacing:.05em">— Matthew 28:19</span>
+            <span style="font-size:11px;font-style:normal;font-weight:700;color:rgba(255,255,255,0.35);letter-spacing:.05em">— Matthew 28:19</span>
           </div>
           <div style="margin-top:16px;display:flex;justify-content:center">
             <div style="flex:1;text-align:center;padding:0 4px">
-              <div style="font-size:17px;font-weight:800;color:var(--blue)">270K</div>
-              <div style="font-size:9.5px;color:var(--ter);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-top:2px">Gospel Target</div>
+              <div class="login-hero-stat-val" style="font-size:17px;font-weight:800">270K</div>
+              <div class="login-hero-stat-lbl" style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-top:2px">Gospel Target</div>
             </div>
-            <div style="width:.5px;background:var(--fill4)"></div>
+            <div style="width:.5px;background:rgba(255,255,255,0.15)"></div>
             <div style="flex:1;text-align:center;padding:0 4px">
-              <div style="font-size:17px;font-weight:800;color:var(--blue)">12</div>
-              <div style="font-size:9.5px;color:var(--ter);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-top:2px">Churches</div>
+              <div class="login-hero-stat-val" style="font-size:17px;font-weight:800">12</div>
+              <div class="login-hero-stat-lbl" style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-top:2px">Churches</div>
             </div>
-            <div style="width:.5px;background:var(--fill4)"></div>
+            <div style="width:.5px;background:rgba(255,255,255,0.15)"></div>
             <div style="flex:1;text-align:center;padding:0 4px">
-              <div style="font-size:17px;font-weight:800;color:var(--blue)">2030</div>
-              <div style="font-size:9.5px;color:var(--ter);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-top:2px">Vision Year</div>
+              <div class="login-hero-stat-val" style="font-size:17px;font-weight:800">2030</div>
+              <div class="login-hero-stat-lbl" style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-top:2px">Vision Year</div>
             </div>
           </div>
         </div>
@@ -621,25 +816,25 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 
           <div class="ldr-card">
             <div class="ldr-badge">Lead Pastor</div>
-            <div class="ldr-icon">🎤</div>
+            <div class="ldr-icon pastor"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 10c-1.1 0-2-.9-2-2v-1.5l-2.5-1.4c-.3-.2-.5-.5-.5-.9V7c0-.6.4-1 1-1h8c.6 0 1 .4 1 1v.2c0 .4-.2.7-.5.9L14 9.5V11c0 1.1-.9 2-2 2zm-3 4v-2h6v2c0 .6-.4 1-1 1h-4c-.6 0-1-.4-1-1zm3 3v-2h2v2h-2z"/></svg></div>
             <div class="ldr-name">Jopet Alim</div>
             <div class="ldr-role">FLCC BOTR Network</div>
           </div>
 
           <button class="ldr-card" style="pointer-events:none">
-            <div class="ldr-icon">🌐</div>
+            <div class="ldr-icon sector"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg></div>
             <div class="ldr-name">Rodel Comayingking</div>
             <div class="ldr-role">Sector Leader / Pastor · F&amp;T</div>
           </button>
 
           <button class="ldr-card" style="pointer-events:none">
-            <div class="ldr-icon">🌐</div>
+            <div class="ldr-icon sector"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg></div>
             <div class="ldr-name">Virgilio Monastrial</div>
             <div class="ldr-role">Sector Leader / Pastor · BOTR</div>
           </button>
 
           <button class="ldr-card" style="pointer-events:none">
-            <div class="ldr-icon">🌐</div>
+            <div class="ldr-icon sector"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg></div>
             <div class="ldr-name">Oscar Tumambing</div>
             <div class="ldr-role">Sector Leader / Pastor · MTCC</div>
           </button>
@@ -654,7 +849,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
         <div class="leader-grid">
 
           <div class="ldr-card" style="grid-column:1/-1;display:flex;gap:12px;align-items:center;padding:14px 16px">
-            <div style="font-size:22px">🌟</div>
+            <div class="ldr-icon ministry" style="margin-bottom:0;flex-shrink:0"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></div>
             <div>
               <div class="ldr-name" style="font-size:14px">Lizel Ocenar</div>
               <div class="ldr-role">Evangelism Ministry Head</div>
@@ -663,25 +858,25 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
           </div>
 
           <div class="ldr-card">
-            <div class="ldr-icon">🌱</div>
+            <div class="ldr-icon coord"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 8C8 10 5.9 16.17 3.82 21H6c1-2 2-4 4-5.5V21h2v-7.5c1.5-.5 3-.5 4.5.5V21h2V8z"/></svg></div>
             <div class="ldr-name">Fretzie Guerzon</div>
             <div class="ldr-role">Evangelism Hope Sector Coordinator</div>
           </div>
 
           <div class="ldr-card">
-            <div class="ldr-icon">🌱</div>
+            <div class="ldr-icon coord"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 8C8 10 5.9 16.17 3.82 21H6c1-2 2-4 4-5.5V21h2v-7.5c1.5-.5 3-.5 4.5.5V21h2V8z"/></svg></div>
             <div class="ldr-name">Anne Sacueza</div>
             <div class="ldr-role">Evangelism Faith Sector Coordinator</div>
           </div>
 
           <div class="ldr-card">
-            <div class="ldr-icon">🌱</div>
+            <div class="ldr-icon coord"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 8C8 10 5.9 16.17 3.82 21H6c1-2 2-4 4-5.5V21h2v-7.5c1.5-.5 3-.5 4.5.5V21h2V8z"/></svg></div>
             <div class="ldr-name">Maricel De Grano</div>
             <div class="ldr-role">Evangelism Love Sector Coordinator</div>
           </div>
 
           <div class="ldr-card">
-            <div class="ldr-icon">🌱</div>
+            <div class="ldr-icon coord"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 8C8 10 5.9 16.17 3.82 21H6c1-2 2-4 4-5.5V21h2v-7.5c1.5-.5 3-.5 4.5.5V21h2V8z"/></svg></div>
             <div class="ldr-name">Elena Aboy</div>
             <div class="ldr-role">Evangelism Love Sector Coordinator</div>
           </div>
@@ -722,10 +917,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
           <label class="flabel">I am a</label>
           <select class="fselect" id="l-role" onchange="validateLogin()">
             <option value="">Select your role…</option>
-            <option value="Member">🙏 Member</option>
-            <option value="Church Leader">⛪ Church Leader</option>
-            <option value="Sector Leader">🌐 Sector Leader / Pastor</option>
-            <option value="Pastor">🎤 Pastor</option>
+            <option value="Member">Member</option>
+            <option value="Church Leader">Church Leader</option>
+            <option value="Sector Leader">Sector Leader / Pastor</option>
+            <option value="Pastor">Pastor</option>
           </select>
 
           <label class="flabel">Satellite Church</label>
@@ -812,12 +1007,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
         </div>
       </div>
 
-      <button class="log-btn" onclick="showTab('log')">✏️  Log an Action</button>
+      <button class="log-btn" onclick="showTab('log')">Log an Action</button>
 
       <div class="slabel">Network Gospel Progress</div>
       <div class="card cp">
         <div class="notice" style="margin-bottom:12px">
-          <span class="notice-icon">✝️</span>
+          <span class="notice-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg></span>
           <span class="notice-text">Our mission is to introduce <strong>270,000 people</strong> to Jesus Christ across the FLCC BOTR network by 2030. Every gospel conversation counts.</span>
         </div>
         <div style="display:flex;justify-content:space-between;margin-bottom:5px">
@@ -836,7 +1031,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       <div class="slabel">My Recent Actions</div>
       <div class="card" id="mem-recent">
         <div class="empty-state">
-          <div class="empty-icon">✏️</div>
+          <div class="empty-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></div>
           <div class="empty-title">No actions yet</div>
           <div class="empty-sub">Tap "Log an Action" above to record your first gospel activity and begin your discipleship journey.</div>
         </div>
@@ -870,13 +1065,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
         <!-- Attach action buttons -->
         <div class="attach-btn-row">
           <button class="attach-btn" id="attach-photo-btn" onclick="document.getElementById('attach-photo').click()">
-            <span style="font-size:17px">📷</span> Photo
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 15.2c1.77 0 3.2-1.43 3.2-3.2S13.77 8.8 12 8.8 8.8 10.23 8.8 12s1.43 3.2 3.2 3.2zm7-13H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg> Photo
           </button>
           <button class="attach-btn" id="attach-file-btn" onclick="document.getElementById('attach-file').click()">
-            <span style="font-size:17px">📎</span> File
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5a2.5 2.5 0 015 0v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5a2.5 2.5 0 005 0V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z"/></svg> File
           </button>
           <button class="attach-btn" id="attach-note-btn" onclick="toggleNoteField()">
-            <span style="font-size:17px">📝</span> Note
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg> Note
           </button>
         </div>
 
@@ -898,7 +1093,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       </div>
       <!-- Outreach Person Details (shown for evangelism actions that need it) -->
       <div id="outreach-form" style="display:none" class="outreach-form">
-        <div class="outreach-title">👤 Person Reached</div>
+        <div class="outreach-title"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:5px"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg> Person Reached</div>
         <input class="outreach-inp" id="out-person-name" type="text"
           placeholder="Full name of person reached…"
           autocomplete="off" />
@@ -911,16 +1106,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
         </div>
         <select class="outreach-sel" id="out-status">
           <option value="">Response status…</option>
-          <option value="Accepted">✅ Accepted the Gospel</option>
-          <option value="Interested">🙏 Interested / Open</option>
-          <option value="Follow-up">📌 Follow-up Needed</option>
-          <option value="Not Yet">⏳ Not Yet Ready</option>
+          <option value="Accepted">Accepted the Gospel</option>
+          <option value="Interested">Interested / Open</option>
+          <option value="Follow-up">Follow-up Needed</option>
+          <option value="Not Yet">Not Yet Ready</option>
         </select>
       </div>
 
       <!-- Location only (for Outreach Event) -->
       <div id="outreach-location-form" style="display:none" class="outreach-form">
-        <div class="outreach-title">📍 Outreach Event Details</div>
+        <div class="outreach-title"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:5px"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg> Outreach Event Details</div>
         <div class="outreach-row">
           <input class="outreach-inp" id="out-event-location" type="text"
             placeholder="Location (building, area, city…)"
@@ -940,38 +1135,38 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       <div class="prof-hero">
         <div class="prof-av" id="pp-av">—</div>
         <div class="prof-name" id="pp-name">—</div>
-        <div style="margin:6px 0 4px"><span class="prof-chip" id="pp-role-chip">🙏 Member</span></div>
+        <div style="margin:6px 0 4px"><span class="prof-chip" id="pp-role-chip">Member</span></div>
         <div class="prof-detail" id="pp-detail">—</div>
       </div>
 
       <div class="slabel">My Information</div>
       <div class="card">
         <div class="lr">
-          <div class="ibox" style="background:#FFECF0">⛪</div>
+          <div class="ibox" style="background:#FFECF0;color:#C0002A"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2h-2v2H9l-4 7H4v2h1v9h14v-9h1v-2h-1L15 4h-2V2zm1 18H10v-5h4v5zm2 0v-6H8v6H7V11h10v9h-1z"/></svg></div>
           <div class="rm"><div class="rt">Church</div></div>
           <div class="sval" id="pp-church">—</div>
         </div>
         <div class="ld"></div>
         <div class="lr">
-          <div class="ibox" style="background:#EBF8FE">🌐</div>
+          <div class="ibox" style="background:#EBF8FE;color:#0071A4"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg></div>
           <div class="rm"><div class="rt">Sector</div></div>
           <div class="sval" id="pp-sector">—</div>
         </div>
         <div class="ld"></div>
         <div class="lr">
-          <div class="ibox" style="background:#FFF4E0">🏆</div>
+          <div class="ibox" style="background:#FFF4E0;color:#A05A00"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></div>
           <div class="rm"><div class="rt">Stage</div></div>
           <div class="sval" id="pp-stage">—</div>
         </div>
         <div class="ld"></div>
         <div class="lr">
-          <div class="ibox" style="background:#E8F8ED">⭐</div>
+          <div class="ibox" style="background:#E8F8ED;color:#1C7A35"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm4.24 16L12 15.45 7.77 18l1.12-4.81-3.73-3.23 4.92-.42L12 5l1.92 4.53 4.92.42-3.73 3.23L16.23 18z"/></svg></div>
           <div class="rm"><div class="rt">Total Points</div></div>
           <div class="sval" id="pp-pts">0 pts</div>
         </div>
         <div class="ld"></div>
         <div class="lr">
-          <div class="ibox" style="background:#F0F0F5">📋</div>
+          <div class="ibox" style="background:#F0F0F5;color:#8E8E93"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg></div>
           <div class="rm"><div class="rt">Total Actions</div></div>
           <div class="sval" id="pp-action-count">0 logged</div>
         </div>
@@ -986,22 +1181,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       <div class="slabel">My Activity Breakdown</div>
       <div class="act-type-grid">
         <div class="act-type-tile att-evang">
-          <div class="att-label">🌱 Evangelism</div>
+          <div class="att-label">Evangelism</div>
           <div class="att-val" id="pp-ct-evang" style="color:var(--hope-dk)">0</div>
           <div class="att-sub">gospel actions</div>
         </div>
         <div class="act-type-tile att-disc">
-          <div class="att-label">📖 Discipleship</div>
+          <div class="att-label">Discipleship</div>
           <div class="att-val" id="pp-ct-disc" style="color:var(--blue)">0</div>
           <div class="att-sub">growth actions</div>
         </div>
         <div class="act-type-tile att-lead">
-          <div class="att-label">🏆 Leadership</div>
+          <div class="att-label">Leadership</div>
           <div class="att-val" id="pp-ct-lead" style="color:var(--orange)">0</div>
           <div class="att-sub">service actions</div>
         </div>
         <div class="act-type-tile att-mult">
-          <div class="att-label">⛪ Multiplying</div>
+          <div class="att-label">Multiplying</div>
           <div class="att-val" id="pp-ct-mult" style="color:var(--love-dk)">0</div>
           <div class="att-sub">church planting</div>
         </div>
@@ -1010,12 +1205,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       <!-- PRIVACY NOTICE -->
       <div class="slabel">My Action Log</div>
       <div class="priv-banner">
-        <span style="font-size:16px">🔒</span>
+        <span style="font-size:16px;display:flex;align-items:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="#8E8E93"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg></span>
         <div class="priv-banner-text"><strong>Private to you</strong> — Only you, Sector Leaders, and the Lead Pastor can view your personal action logs. Church Leaders see your totals only.</div>
       </div>
       <div class="card" id="pp-action-log">
         <div class="empty-state">
-          <div class="empty-icon">📋</div>
+          <div class="empty-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg></div>
           <div class="empty-title">No actions logged yet</div>
           <div class="empty-sub">Your full action history appears here each time you sign in. Tap "Log" to record your first gospel activity.</div>
         </div>
@@ -1025,29 +1220,29 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       <div class="card cp">
         <label class="flabel">Current Discipleship Stage</label>
         <select class="fselect" id="edit-stage" onchange="updateStage()" style="margin-bottom:0">
-          <option value="Evangelism">🌱 Evangelism — Sharing the Gospel</option>
-          <option value="Discipleship">📖 Discipleship — Growing in Christ</option>
-          <option value="Leadership Dev">🏆 Leadership Development</option>
-          <option value="Multiplying">⛪ Multiplying Churches</option>
+          <option value="Evangelism">Evangelism — Sharing the Gospel</option>
+          <option value="Discipleship">Discipleship — Growing in Christ</option>
+          <option value="Leadership Dev">Leadership Development</option>
+          <option value="Multiplying">Multiplying Churches</option>
         </select>
       </div>
 
       <div class="slabel">Notifications</div>
       <div class="card">
         <div class="srow">
-          <div class="sleft"><div class="sicon" style="background:#EBF5FF">🔔</div><div class="slabel2">Action Reminders</div></div>
+          <div class="sleft"><div class="sicon" style="background:#EBF5FF;color:#007AFF"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg></div><div class="slabel2">Action Reminders</div></div>
           <button class="toggle on" id="tog1" onclick="toggleSw('tog1')"><div class="tthumb"></div></button>
         </div>
       </div>
       <div class="card" id="pp-pin-card" style="display:none">
         <div class="srow" style="cursor:pointer" onclick="startPinChange()">
-          <div class="sleft"><div class="sicon" style="background:#EEF3FF">🔐</div><div class="slabel2">Change PIN</div></div>
+          <div class="sleft"><div class="sicon" style="background:#EEF3FF;color:#5856D6"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg></div><div class="slabel2">Change PIN</div></div>
           <span style="font-size:18px;color:var(--ter)">›</span>
         </div>
       </div>
       <div class="card">
         <div class="srow" style="cursor:pointer" onclick="signOut()">
-          <div class="sleft"><div class="sicon" style="background:#FFECEB">🚪</div><div class="slabel2" style="color:var(--red)">Sign Out</div></div>
+          <div class="sleft"><div class="sicon" style="background:#FFECEB;color:#FF3B30"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg></div><div class="slabel2" style="color:var(--red)">Sign Out</div></div>
           <span style="font-size:18px;color:var(--ter)">›</span>
         </div>
       </div>
@@ -1059,7 +1254,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
     <div class="screen" id="screen-church">
       <div style="padding:16px 0 4px">
         <div style="display:flex;align-items:center;gap:12px">
-          <div class="ibox" style="font-size:24px" id="ch-icon-box">⛪</div>
+          <div class="ibox" style="background:#FFECF0;color:#C0002A" id="ch-icon-box"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2h-2v2H9l-4 7H4v2h1v9h14v-9h1v-2h-1L15 4h-2V2zm1 18H10v-5h4v5zm2 0v-6H8v6H7V11h10v9h-1z"/></svg></div>
           <div style="flex:1">
             <div style="font-size:26px;font-weight:800;letter-spacing:-.5px" id="ch-name">—</div>
             <div style="font-size:13px;color:var(--sec)" id="ch-sector-label">—</div>
@@ -1100,7 +1295,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       <div class="slabel">Church Members</div>
       <div class="card" id="ch-member-list">
         <div class="empty-state">
-          <div class="empty-icon">🙏</div>
+          <div class="empty-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></div>
           <div class="empty-title">No members yet</div>
           <div class="empty-sub">Members will appear here once they sign in and log their first action. Share the app link to your congregation.</div>
         </div>
@@ -1134,7 +1329,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       <div class="slabel">Church Rankings</div>
       <div class="card" id="sec-rankings">
         <div class="empty-state">
-          <div class="empty-icon">📊</div>
+          <div class="empty-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 9.2h3V19H5V9.2zM10.6 5h2.8v14h-2.8V5zM16.2 13h2.8v6h-2.8v-6z"/></svg></div>
           <div class="empty-title">Rankings will appear here</div>
           <div class="empty-sub">As members log actions, church rankings will update automatically.</div>
         </div>
@@ -1144,7 +1339,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       <div id="sec-member-logs-section" style="display:none">
         <div class="slabel">Member Action Logs</div>
         <div class="access-banner">
-          <span style="font-size:16px">🔓</span>
+          <span style="display:flex;align-items:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="#1C7A35"><path d="M12 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6-9h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6h1.9c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1V8H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2z"/></svg></span>
           <div class="access-banner-text">As a <strong>Sector Leader / Pastor</strong>, you can view individual member action logs for accountability and spiritual guidance.</div>
         </div>
         <div id="sec-member-logs"></div>
@@ -1153,7 +1348,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       <!-- MULTIPLYING DISCIPLES TABLE — Sector view -->
       <div class="slabel">Multiplying Disciples Report</div>
       <div class="report-header-card" style="background:var(--blue-bg);border:1px solid rgba(0,122,255,.18)">
-        <div class="rh-icon">📖</div>
+        <div class="rh-icon" style="color:#007AFF"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg></div>
         <div class="rh-body">
           <div class="rh-title">Multiplying Disciples</div>
           <div class="rh-sub">Based on Evangelism · Discipleship · Leadership actions · Sector target: 500</div>
@@ -1167,13 +1362,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
         <div class="pf" id="sec-disc-bar" style="height:6px;background:var(--blue);width:0%"></div>
       </div>
       <div class="card" id="sec-disc-table">
-        <div class="empty-state"><div class="empty-icon">📖</div><div class="empty-title">No data yet</div><div class="empty-sub">Members logged as Evangelism, Discipleship, or Leadership actions appear here.</div></div>
+        <div class="empty-state"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg></div><div class="empty-title">No data yet</div><div class="empty-sub">Members logged as Evangelism, Discipleship, or Leadership actions appear here.</div></div>
       </div>
 
       <!-- SUSTAINABLE LEADERS TABLE — Sector view -->
       <div class="slabel">Sustainable Leaders Report</div>
       <div class="report-header-card" style="background:var(--orange-bg);border:1px solid rgba(255,149,0,.2)">
-        <div class="rh-icon">🏆</div>
+        <div class="rh-icon" style="color:#A05A00"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></div>
         <div class="rh-body">
           <div class="rh-title">Sustainable Leaders</div>
           <div class="rh-sub">Based on Discipleship · Leadership · Multiplying actions · Sector target: 580</div>
@@ -1187,7 +1382,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
         <div class="pf" id="sec-lead-bar" style="height:6px;background:var(--orange);width:0%"></div>
       </div>
       <div class="card" id="sec-lead-table">
-        <div class="empty-state"><div class="empty-icon">🏆</div><div class="empty-title">No data yet</div><div class="empty-sub">Members logged as Discipleship, Leadership, or Multiplying Churches actions appear here.</div></div>
+        <div class="empty-state"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></div><div class="empty-title">No data yet</div><div class="empty-sub">Members logged as Discipleship, Leadership, or Multiplying Churches actions appear here.</div></div>
       </div>
 
     </div>
@@ -1258,7 +1453,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       <div class="slabel">Church Leaderboard — All 12</div>
       <div class="card" id="cmd-board">
         <div class="empty-state">
-          <div class="empty-icon">🏆</div>
+          <div class="empty-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0011 15.9V18H9v2h6v-2h-2v-2.1a5.01 5.01 0 003.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z"/></svg></div>
           <div class="empty-title">Leaderboard starts at zero</div>
           <div class="empty-sub">Rankings update as members across all 12 churches log their gospel activities. Share the app link to get started.</div>
         </div>
@@ -1284,10 +1479,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       <div class="outreach-report-card">
         <div class="outreach-filter-bar" id="cmd-outreach-filters">
           <button class="outreach-filter-btn active" onclick="filterOutreach('all',this)">All</button>
-          <button class="outreach-filter-btn" onclick="filterOutreach('Accepted',this)">✅ Accepted</button>
-          <button class="outreach-filter-btn" onclick="filterOutreach('Interested',this)">🙏 Interested</button>
-          <button class="outreach-filter-btn" onclick="filterOutreach('Follow-up',this)">📌 Follow-up</button>
-          <button class="outreach-filter-btn" onclick="filterOutreach('Not Yet',this)">⏳ Not Yet</button>
+          <button class="outreach-filter-btn" onclick="filterOutreach('Accepted',this)">Accepted</button>
+          <button class="outreach-filter-btn" onclick="filterOutreach('Interested',this)">Interested</button>
+          <button class="outreach-filter-btn" onclick="filterOutreach('Follow-up',this)">Follow-up</button>
+          <button class="outreach-filter-btn" onclick="filterOutreach('Not Yet',this)">Not Yet</button>
         </div>
         <div class="outreach-table-wrap" id="cmd-outreach-table">
           <div class="rep-empty">No outreach contacts logged yet.</div>
@@ -1297,10 +1492,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       <!-- CHURCH HEALTH DASHBOARD -->
       <div class="slabel">Church Health Dashboard</div>
       <div class="report-header-card" style="background:var(--bg);border:1px solid var(--fill4);margin-bottom:12px">
-        <div class="rh-icon">🏥</div>
+        <div class="rh-icon" style="color:#007AFF"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg></div>
         <div class="rh-body">
           <div class="rh-title">Network Health Overview</div>
-          <div class="rh-sub">🟢 On Track ≥60% · 🟡 At Risk 30–59% · 🔴 Behind &lt;30%</div>
+          <div class="rh-sub">On Track ≥60% · At Risk 30–59% · Behind &lt;30%</div>
         </div>
       </div>
       <div id="cmd-health-cards"></div>
@@ -1308,12 +1503,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       <!-- ALL MEMBER LOGS — Pastor only -->
       <div class="slabel">All Member Action Logs</div>
       <div class="access-banner">
-        <span style="font-size:16px">🔓</span>
+        <span style="display:flex;align-items:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="#1C7A35"><path d="M12 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6-9h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6h1.9c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1V8H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2z"/></svg></span>
         <div class="access-banner-text">As <strong>Lead Pastor</strong>, you have full visibility into all member action logs across all 12 churches.</div>
       </div>
       <div id="cmd-member-logs">
         <div class="empty-state" style="padding:24px;text-align:center">
-          <div style="font-size:32px;margin-bottom:8px">📋</div>
+          <div style="font-size:32px;margin-bottom:8px;display:flex;align-items:center;justify-content:center"><svg width="32" height="32" viewBox="0 0 24 24" fill="#AEAEB2"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg></div>
           <div style="font-size:15px;font-weight:700;color:var(--label);margin-bottom:4px">No logs yet</div>
           <div style="font-size:13px;color:var(--ter)">Member action logs appear here as the congregation engages.</div>
         </div>
@@ -1322,7 +1517,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       <!-- MULTIPLYING DISCIPLES TABLE — Command view (all sectors) -->
       <div class="slabel">Multiplying Disciples — All Sectors</div>
       <div class="report-header-card" style="background:var(--blue-bg);border:1px solid rgba(0,122,255,.18)">
-        <div class="rh-icon">📖</div>
+        <div class="rh-icon" style="color:#007AFF"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg></div>
         <div class="rh-body">
           <div class="rh-title">Multiplying Disciples</div>
           <div class="rh-sub">Evangelism · Discipleship · Leadership · Network target: 1,500</div>
@@ -1342,7 +1537,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       <!-- SUSTAINABLE LEADERS TABLE — Command view (all sectors) -->
       <div class="slabel">Sustainable Leaders — All Sectors</div>
       <div class="report-header-card" style="background:var(--orange-bg);border:1px solid rgba(255,149,0,.2)">
-        <div class="rh-icon">🏆</div>
+        <div class="rh-icon" style="color:#A05A00"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></div>
         <div class="rh-body">
           <div class="rh-title">Sustainable Leaders</div>
           <div class="rh-sub">Discipleship · Leadership · Multiplying · Network target: 1,750</div>
@@ -1378,22 +1573,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       <div class="slabel">My Personal Activity</div>
       <div class="act-type-grid">
         <div class="act-type-tile att-evang">
-          <div class="att-label">🌱 Evangelism</div>
+          <div class="att-label">Evangelism</div>
           <div class="att-val" id="lp-ct-evang" style="color:var(--hope-dk)">0</div>
           <div class="att-sub">gospel actions</div>
         </div>
         <div class="act-type-tile att-disc">
-          <div class="att-label">📖 Discipleship</div>
+          <div class="att-label">Discipleship</div>
           <div class="att-val" id="lp-ct-disc" style="color:var(--blue)">0</div>
           <div class="att-sub">growth actions</div>
         </div>
         <div class="act-type-tile att-lead">
-          <div class="att-label">🏆 Leadership</div>
+          <div class="att-label">Leadership</div>
           <div class="att-val" id="lp-ct-lead" style="color:var(--orange)">0</div>
           <div class="att-sub">service actions</div>
         </div>
         <div class="act-type-tile att-mult">
-          <div class="att-label">⛪ Multiplying</div>
+          <div class="att-label">Multiplying</div>
           <div class="att-val" id="lp-ct-mult" style="color:var(--love-dk)">0</div>
           <div class="att-sub">church planting</div>
         </div>
@@ -1401,7 +1596,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 
       <div class="slabel">My Action Log</div>
       <div class="priv-banner">
-        <span style="font-size:16px">🔒</span>
+        <span style="display:flex;align-items:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="#8E8E93"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg></span>
         <div class="priv-banner-text"><strong>Your personal log</strong> — visible to you and the Lead Pastor only.</div>
       </div>
       <div class="card" id="lp-action-log">
@@ -1414,17 +1609,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       <div class="slabel">Notifications</div>
       <div class="card">
         <div class="srow">
-          <div class="sleft"><div class="sicon" style="background:#EBF5FF">🔔</div><div class="slabel2">Action Reminders</div></div>
+          <div class="sleft"><div class="sicon" style="background:#EBF5FF;color:#007AFF"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg></div><div class="slabel2">Action Reminders</div></div>
           <button class="toggle on" id="ltog1" onclick="toggleSw('ltog1')"><div class="tthumb"></div></button>
         </div>
         <div class="ld"></div>
         <div class="srow">
-          <div class="sleft"><div class="sicon" style="background:#E8F8ED">📊</div><div class="slabel2">Monthly Reports</div></div>
+          <div class="sleft"><div class="sicon" style="background:#E8F8ED;color:#1C7A35"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 9.2h3V19H5V9.2zM10.6 5h2.8v14h-2.8V5zM16.2 13h2.8v6h-2.8v-6z"/></svg></div><div class="slabel2">Monthly Reports</div></div>
           <button class="toggle on" id="ltog2" onclick="toggleSw('ltog2')"><div class="tthumb"></div></button>
         </div>
         <div class="ld"></div>
         <div class="srow">
-          <div class="sleft"><div class="sicon" style="background:#FFF4E0">🎯</div><div class="slabel2">Target Alerts</div></div>
+          <div class="sleft"><div class="sicon" style="background:#FFF4E0;color:#A05A00"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm0-13c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zm0 8c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/></svg></div><div class="slabel2">Target Alerts</div></div>
           <button class="toggle off" id="ltog3" onclick="toggleSw('ltog3')"><div class="tthumb"></div></button>
         </div>
       </div>
@@ -1432,27 +1627,27 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       <div class="slabel">About</div>
       <div class="card">
         <div class="srow">
-          <div class="sleft"><div class="sicon" style="background:#F0F0F5">📱</div><div class="slabel2">Version</div></div>
+          <div class="sleft"><div class="sicon" style="background:#F0F0F5;color:#8E8E93"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg></div><div class="slabel2">Version</div></div>
           <div class="sval">2026.4.0</div>
         </div>
         <div class="ld"></div>
         <div class="srow">
-          <div class="sleft"><div class="sicon" style="background:#FFF0F0">✝️</div><div class="slabel2">Mission Scripture</div></div>
+          <div class="sleft"><div class="sicon" style="background:#FFF0F0;color:#C0002A"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg></div><div class="slabel2">Mission Scripture</div></div>
           <div class="sval">Matthew 28:18–20</div>
         </div>
         <div class="ld"></div>
         <div class="srow">
-          <div class="sleft"><div class="sicon" style="background:#EBF5FF">🌍</div><div class="slabel2">Network</div></div>
+          <div class="sleft"><div class="sicon" style="background:#EBF5FF;color:#007AFF"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg></div><div class="slabel2">Network</div></div>
           <div class="sval">N.E.C.K. Kuwait</div>
         </div>
         <div class="ld"></div>
         <div class="srow" style="cursor:pointer" onclick="startPinChange()">
-          <div class="sleft"><div class="sicon" style="background:#EEF3FF">🔐</div><div class="slabel2">Change PIN</div></div>
+          <div class="sleft"><div class="sicon" style="background:#EEF3FF;color:#5856D6"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg></div><div class="slabel2">Change PIN</div></div>
           <span style="font-size:18px;color:var(--ter)">›</span>
         </div>
         <div class="ld"></div>
         <div class="srow" style="cursor:pointer" onclick="signOut()">
-          <div class="sleft"><div class="sicon" style="background:#FFECEB">🚪</div><div class="slabel2" style="color:var(--red)">Sign Out</div></div>
+          <div class="sleft"><div class="sicon" style="background:#FFECEB;color:#FF3B30"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg></div><div class="slabel2" style="color:var(--red)">Sign Out</div></div>
           <span style="font-size:18px;color:var(--ter)">›</span>
         </div>
       </div>
@@ -1669,11 +1864,9 @@ function renderRecentSessions() {
   }
 
   wrap.style.display = 'block';
-  const roleEmoji = { Member:'🙏', 'Church Leader':'⛪', 'Sector Leader':'🌐', Pastor:'🎤', 'Ministry Head':'🌟', 'Ministry Leader':'🌱' };
-
   list.innerHTML = sessions.map(s => {
     const sect   = SECTORS.find(x => x.id === s.sector);
-    const emoji  = roleEmoji[s.role] || '👤';
+    const emoji  = '';
     const scolor = sect ? sect.color : 'var(--blue)';
     return `
       <div class="session-card" onclick="fillFromSession(${JSON.stringify(s).replace(/"/g,'&quot;')})">
@@ -1741,14 +1934,13 @@ function onNameInput() {
   );
   if (!sessions.length) { hideSuggest(); return; }
 
-  const roleEmoji = { Member:'🙏', 'Church Leader':'⛪', 'Sector Leader':'🌐', Pastor:'🎤', 'Ministry Head':'🌟', 'Ministry Leader':'🌱' };
   const suggest = document.getElementById('name-suggest');
   suggest.style.display = 'block';
   document.getElementById('l-name').style.borderRadius = '12px 12px 0 0';
 
   suggest.innerHTML = sessions.map(s => {
     const sect  = SECTORS.find(x => x.id === s.sector);
-    const emoji = roleEmoji[s.role] || '👤';
+    const emoji = '';
     const scolor = sect ? sect.color : 'var(--blue)';
     return `
       <div class="name-suggest-row"
@@ -1772,7 +1964,7 @@ function showKnownBadge(title) {
     badge.style.cssText = 'display:flex;align-items:center;gap:6px;padding:7px 12px;background:var(--green-bg);border-radius:10px;margin-top:-8px;margin-bottom:10px;font-size:12px;font-weight:600;color:#1C7A35';
     document.getElementById('l-name').closest('.card').insertBefore(badge, document.getElementById('l-role').previousElementSibling);
   }
-  badge.innerHTML = `<span>✅</span> Recognized — <strong>${title}</strong>. Church & role auto-assigned.`;
+  badge.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="#1C7A35" style="flex-shrink:0"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14l-4-4 1.41-1.41L10 13.17l6.59-6.59L18 8l-8 8z"/></svg> Recognized — <strong>${title}</strong>. Church &amp; role auto-assigned.`;
   badge.style.display = 'flex';
 }
 
@@ -1813,7 +2005,22 @@ const _stageNumHelper = s => STAGES.indexOf(s) + 1 || 1;
 const avColor   = i  => ['#FF2D55','#007AFF','#34C759','#FF9500','#5AC8FA','#AF52DE'][i % 6];
 const stageColor= s  => ({ Evangelism:'#5AC8FA', Discipleship:'#007AFF', 'Leadership Dev':'#FF9500', Multiplying:'#FF2D55' }[s] || '#8E8E93');
 const typeStyle = t  => ({ Leadership:'background:#FFF4E0;color:#A05A00', Discipleship:'background:#E8F8ED;color:#1C7A35', Evangelism:'background:#EBF8FE;color:#0071A4', Multiplying:'background:#FFECF0;color:#C0002A' }[t] || '');
-const typeIcon  = t  => ({ Leadership:'🏆', Discipleship:'📖', Evangelism:'🌱', Multiplying:'⛪' }[t] || '✝️');
+const SVG_ICONS = {
+  home:`<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>`,
+  log:`<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>`,
+  'mem-profile':`<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`,
+  'leader-profile':`<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`,
+  church:`<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2h-2v2H9l-4 7H4v2h1v9h14v-9h1v-2h-1L15 4h-2V2zm1 18H10v-5h4v5zm2 0v-6H8v6H7V11h10v9h-1z"/></svg>`,
+  sector:`<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>`,
+  command:`<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M5 9.2h3V19H5V9.2zM10.6 5h2.8v14h-2.8V5zM16.2 13h2.8v6h-2.8v-6z"/></svg>`,
+};
+const TYPE_ICONS = {
+  Leadership:`<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>`,
+  Discipleship:`<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg>`,
+  Evangelism:`<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17 8C8 10 5.9 16.17 3.82 21H6c1-2 2-4 4-5.5V21h2v-7.5c1.5-.5 3-.5 4.5.5V21h2V8z"/></svg>`,
+  Multiplying:`<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2h-2v2H9l-4 7H4v2h1v9h14v-9h1v-2h-1L15 4h-2V2zm1 18H10v-5h4v5zm2 0v-6H8v6H7V11h10v9h-1z"/></svg>`,
+};
+const typeIcon  = t  => TYPE_ICONS[t] || `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>`;
 
 // Dynamic score: 0 when no data
 const score = cId => {
@@ -2474,13 +2681,9 @@ async function completeLogin(name, role, church, sectorId, churchVal, known, loc
 // 
 async function startApp() {
   const known     = findKnownUser(APP.name);
-  const roleEmoji = {
-    Member:'🙏', 'Church Leader':'⛪', 'Sector Leader':'🌐',
-    Pastor:'🎤', 'Ministry Head':'🌟', 'Ministry Leader':'🌱'
-  }[APP.role] || '👤';
   const chipLabel = known ? known.title : APP.role;
   document.getElementById('nav-role-row').style.display = 'block';
-  document.getElementById('nav-chip').textContent = `${roleEmoji} ${chipLabel} · ${APP.church}`;
+  document.getElementById('nav-chip').textContent = `${chipLabel} · ${APP.church}`;
   document.getElementById('refresh-btn').style.display = 'inline-flex';
   document.getElementById('tabbar').style.display = 'flex';
   // Hide the login screen — screens are toggled via the 'active' class.
@@ -2511,7 +2714,7 @@ async function startApp() {
     showTab('church');
   }
 
-  showToast(`Welcome, ${APP.name.split(' ')[0]}! 🙏`);
+  showToast(`Welcome, ${APP.name.split(' ')[0]}!`);
 
   // THEN load from Sheets silently in background
   loadLiveData().then(() => {
@@ -2526,7 +2729,7 @@ async function startApp() {
 function buildTabs(tabs) {
   document.getElementById('tabbar').innerHTML = tabs.map(t =>
     `<button class="tbbtn${t.id === currentTab ? ' active' : ''}" onclick="showTab('${t.id}')">
-      <span class="tbicon">${t.icon}</span>
+      <span class="tbicon">${SVG_ICONS[t.id] || t.icon}</span>
       <span class="tblabel">${t.label}</span>
     </button>`
   ).join('');
@@ -2681,7 +2884,7 @@ function renderMemberHome() {
   const el = document.getElementById('mem-recent');
   if (!APP.actions.length) {
     el.innerHTML = `<div class="empty-state">
-      <div class="empty-icon">✏️</div>
+      <div class="empty-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></div>
       <div class="empty-title">No actions yet</div>
       <div class="empty-sub">Tap "Log an Action" above to record your first gospel activity and begin your discipleship journey.</div>
     </div>`;
@@ -2984,12 +3187,11 @@ function renderMemberProfile() {
   const sn   = APP.name || 'Member';
   const sect = SECTORS.find(x => x.id === APP.sector) || SECTORS[2];
   const knownP      = findKnownUser(APP.name);
-  const roleEmoji   = { Member:'🙏', 'Church Leader':'⛪', 'Sector Leader':'🌐', Pastor:'🎤', 'Ministry Head':'🌟', 'Ministry Leader':'🌱' }[APP.role] || '🙏';
   const roleDisplay = knownP ? knownP.title : APP.role;
 
   document.getElementById('pp-av').textContent          = sn[0].toUpperCase();
   document.getElementById('pp-name').textContent        = sn;
-  document.getElementById('pp-role-chip').textContent   = `${roleEmoji} ${roleDisplay}`;
+  document.getElementById('pp-role-chip').textContent   = roleDisplay;
   document.getElementById('pp-detail').textContent      = `${APP.church} · ${sect.name} Sector`;
   document.getElementById('pp-church').textContent      = APP.church;
   document.getElementById('pp-sector').textContent      = sect.name;
@@ -3391,7 +3593,7 @@ function renderChurchScreen() {
   const memberEl = document.getElementById('ch-member-list');
   if (!churchMembers.length) {
     memberEl.innerHTML = `<div class="empty-state">
-      <div class="empty-icon">🙏</div>
+      <div class="empty-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></div>
       <div class="empty-title">No members yet</div>
       <div class="empty-sub">Members appear here once they sign in and log their first action.</div>
     </div>`;
@@ -3411,7 +3613,7 @@ function renderChurchScreen() {
       ${i < churchMembers.length - 1 ? '<div class="ldi"></div>' : ''}
     `).join('') + `<div style="padding:10px 16px;border-top:.5px solid var(--fill4)">
       <div class="priv-banner" style="margin:0">
-        <span style="font-size:14px">🔒</span>
+        <span style="display:flex;align-items:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="#8E8E93"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg></span>
         <div class="priv-banner-text" style="font-size:11px">Individual action logs are private. Only Sector Leaders and the Lead Pastor can view them.</div>
       </div>
     </div>`;
@@ -3538,7 +3740,7 @@ function renderSectorScreen() {
 
   // Church rankings  live scores
   const chs = CHURCHES.filter(c => c.sector === activeSector).sort((a, b) => score(b.id) - score(a.id));
-  const medals = ['🥇', '🥈', '🥉', '#4'];
+  const medals = ['1st', '2nd', '3rd', '#4'];
   const hasAny = chs.some(c => score(c.id) > 0);
 
   document.getElementById('sec-rankings').innerHTML = hasAny
@@ -3730,7 +3932,7 @@ function renderCommandScreen() {
         </div>${i < ranked.length - 1 ? '<div class="ldi"></div>' : ''}`;
       }).join('')
     : `<div class="empty-state">
-        <div class="empty-icon">🏆</div>
+        <div class="empty-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0011 15.9V18H9v2h6v-2h-2v-2.1a5.01 5.01 0 003.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z"/></svg></div>
         <div class="empty-title">Leaderboard starts at zero</div>
         <div class="empty-sub">Rankings will update as members across all 12 churches log their gospel activities.</div>
       </div>`;
@@ -3770,10 +3972,10 @@ function buildMemberLogCard(m) {
       ${!hasLogs
         ? `<div class="mlc-empty">No actions logged yet</div>`
         : `<div style="display:flex;gap:8px;padding:10px 16px;background:var(--bg);flex-wrap:wrap">
-            <span style="font-size:11px;padding:3px 9px;border-radius:20px;background:var(--hope-bg);color:var(--hope-dk);font-weight:600">🌱 ${ct.Evangelism}</span>
-            <span style="font-size:11px;padding:3px 9px;border-radius:20px;background:var(--blue-bg);color:#005AC0;font-weight:600">📖 ${ct.Discipleship}</span>
-            <span style="font-size:11px;padding:3px 9px;border-radius:20px;background:var(--orange-bg);color:#A05A00;font-weight:600">🏆 ${ct.Leadership}</span>
-            <span style="font-size:11px;padding:3px 9px;border-radius:20px;background:var(--love-bg);color:var(--love-dk);font-weight:600">⛪ ${ct.Multiplying}</span>
+            <span style="font-size:11px;padding:3px 9px;border-radius:20px;background:var(--hope-bg);color:var(--hope-dk);font-weight:600">Evang: ${ct.Evangelism}</span>
+            <span style="font-size:11px;padding:3px 9px;border-radius:20px;background:var(--blue-bg);color:#005AC0;font-weight:600">Disc: ${ct.Discipleship}</span>
+            <span style="font-size:11px;padding:3px 9px;border-radius:20px;background:var(--orange-bg);color:#A05A00;font-weight:600">Lead: ${ct.Leadership}</span>
+            <span style="font-size:11px;padding:3px 9px;border-radius:20px;background:var(--love-bg);color:var(--love-dk);font-weight:600">Multi: ${ct.Multiplying}</span>
           </div>
           ${[...logs].reverse().map((a, i, arr) => {
             const al = [];
@@ -3891,7 +4093,7 @@ function renderDiscReport(tableId, pctId, ofId, barId, members, sectorTarget) {
     return;
   }
 
-  const cols = ['Member','Church','Sector','🌱 Evang.','📖 Discip.','🏆 Leader.','Status'];
+  const cols = ['Member','Church','Sector','Evang.','Discip.','Leader.','Status'];
   el.innerHTML = `
     <div class="rep-wrap">
       <table class="rep-table">
@@ -3937,7 +4139,7 @@ function renderLeadReport(tableId, pctId, ofId, barId, members, sectorTarget) {
     return;
   }
 
-  const cols = ['Member','Church','Sector','📖 Discip.','🏆 Leader.','⛪ Multi.','Status'];
+  const cols = ['Member','Church','Sector','Discip.','Leader.','Multi.','Status'];
   el.innerHTML = `
     <div class="rep-wrap">
       <table class="rep-table">
@@ -4066,7 +4268,7 @@ function renderLeaderProfile() {
   const knownL    = findKnownUser(APP.name);
   const roleLabel = knownL
     ? knownL.title
-    : { 'Church Leader':'⛪ Church Leader', 'Sector Leader':'🌐 Sector Leader / Pastor', Pastor:'🎤 Pastor', 'Ministry Head':'🌟 Ministry Head', 'Ministry Leader':'🌱 Ministry Leader' }[APP.role] || APP.role;
+    : { 'Church Leader':'Church Leader', 'Sector Leader':'Sector Leader / Pastor', Pastor:'Pastor', 'Ministry Head':'Ministry Head', 'Ministry Leader':'Ministry Leader' }[APP.role] || APP.role;
   const sect      = SECTORS.find(x => x.id === APP.sector) || SECTORS[2];
 
   document.getElementById('lp-av').textContent     = APP.name[0].toUpperCase();
@@ -4146,7 +4348,7 @@ function signOut() {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-login').classList.add('active');
   renderRecentSessions(); // refresh the quick-login cards
-  showToast('Signed out. Your data is saved. 🙏');
+  showToast('Signed out. Your data is saved.');
 }
 
 // Manual refresh tap — re-reads Sheets and re-renders current screen
@@ -4379,9 +4581,9 @@ function getChurchHealth(churchId) {
   const score = (gospelPct * 0.5) + (activePct * 0.3) + (Math.min(ratio, 1) * 0.2);
 
   let status, color, icon;
-  if (score >= 0.6)      { status='On Track';  color='#1C7A35'; icon='🟢'; }
-  else if (score >= 0.3) { status='At Risk';   color='#FF9500'; icon='🟡'; }
-  else                   { status='Behind';    color='var(--red)'; icon='🔴'; }
+  if (score >= 0.6)      { status='On Track';  color='#1C7A35'; icon='●'; }
+  else if (score >= 0.3) { status='At Risk';   color='#FF9500'; icon='●'; }
+  else                   { status='Behind';    color='var(--red)'; icon='●'; }
 
   return { gospelPct, activePct, ratio, score, status, color, icon,
     gospel:c.gospel, disciples:disc, leaders, members:totalCount, activeCount };
