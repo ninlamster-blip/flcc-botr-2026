@@ -602,7 +602,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
             </div>
             <div style="width:.5px;background:var(--fill4)"></div>
             <div style="flex:1;text-align:center;padding:0 4px">
-              <div style="font-size:17px;font-weight:800;color:var(--blue)">12</div>
+              <div style="font-size:17px;font-weight:800;color:var(--blue)" id="hero-church-count">13</div>
               <div style="font-size:9.5px;color:var(--ter);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-top:2px">Churches</div>
             </div>
             <div style="width:.5px;background:var(--fill4)"></div>
@@ -726,7 +726,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
             <option value="Church Leader">⛪ Church Leader</option>
             <option value="Sector Leader">🌐 Sector Leader / Pastor</option>
             <option value="Pastor">🎤 Pastor</option>
+            <option value="Ministry Head">🌟 Ministry Head</option>
+            <option value="Ministry Leader">🌱 Ministry Leader</option>
           </select>
+          <div style="font-size:11px;color:var(--ter);margin:-6px 0 12px;line-height:1.45">
+            Leadership dashboards show sector-wide totals. Individual member action logs stay private to registered network leaders.
+          </div>
 
           <label class="flabel">Satellite Church</label>
           <select class="fselect" id="l-church" onchange="onChurchChange()">
@@ -1068,6 +1073,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
         </div>
       </div>
 
+      <!-- Shown when the signed-in church isn't one of the 13 known churches -->
+      <div id="ch-unknown" style="display:none;background:var(--orange-bg);border-radius:12px;padding:11px 14px;margin-top:10px;font-size:12.5px;font-weight:600;color:#A05A00;line-height:1.5">
+        ⚠️ This church isn't in the network list, so no targets or totals can be shown for it. Please sign in again with your correct satellite church.
+      </div>
+
       <div class="stats-row" style="margin-top:8px">
         <div class="tile">
           <div class="tlabel">Members</div>
@@ -1260,7 +1270,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
         <div class="empty-state">
           <div class="empty-icon">🏆</div>
           <div class="empty-title">Leaderboard starts at zero</div>
-          <div class="empty-sub">Rankings update as members across all 12 churches log their gospel activities. Share the app link to get started.</div>
+          <div class="empty-sub">Rankings update as members across all 13 churches log their gospel activities. Share the app link to get started.</div>
         </div>
       </div>
 
@@ -1309,7 +1319,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
       <div class="slabel">All Member Action Logs</div>
       <div class="access-banner">
         <span style="font-size:16px">🔓</span>
-        <div class="access-banner-text">As <strong>Lead Pastor</strong>, you have full visibility into all member action logs across all 12 churches.</div>
+        <div class="access-banner-text">As <strong>Lead Pastor</strong>, you have full visibility into all member action logs across all 13 churches.</div>
       </div>
       <div id="cmd-member-logs">
         <div class="empty-state" style="padding:24px;text-align:center">
@@ -1488,29 +1498,60 @@ const SHEETS_ON  = SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE';
 const SHEET_ID = '1Z-nY7P4GWuXKwEQNLwvry42bzYgXrsCFpaZ2PE-uE1c';
 
 // ── KNOWN USERS — auto-assigned on name match ─────────────────
-// Keys must match exactly how users type their name (case-sensitive)
+// Name matching is case-insensitive everywhere (see findKnownUser / canonicalName).
 // Google Drive folder for photo uploads
 const DRIVE_FOLDER_ID = '1gGZwP15Nx_hbKtYMgXpqUakSmOzkJl1D';
 
+// ⚠️ SECURITY NOTE — READ BEFORE CHANGING
+// `pinHash` is SHA-256 of `PIN_SALT + ':' + pin`. Hashing keeps the PIN out of
+// "View Source", but this is a SOFT LOCK, not authentication: the whole app runs
+// in the browser, so anyone willing to edit the JS can still get in, and a 4-digit
+// PIN can be brute-forced against these hashes offline.
+// Real access control has to live in the Apps Script (verify the PIN server-side
+// and refuse to return other members' data). Do not treat this as a security boundary.
+const PIN_SALT = 'flcc-botr-2026';
+
 const KNOWN_USERS = {
-  'Jopet Alim':         { role:'Pastor',         church:'FB',            sector:'hope',  title:'FLCC Lead Pastor',                    commandAccess:true,  pin:'7777' },
-  'Rodel Comayingking': { role:'Sector Leader',  church:'F&T',           sector:'hope',  title:'Hope Sector Leader',                  commandAccess:false, pin:'1111' },
-  'Virgilio Monastrial':{ role:'Sector Leader',  church:'BOTR Fri/Sun',  sector:'faith', title:'Faith Sector Leader',                 commandAccess:false, pin:'2222' },
-  'Oscar Tumambing':    { role:'Sector Leader',  church:'MTCC',          sector:'love',  title:'Love Sector Leader',                  commandAccess:false, pin:'3333' },
-  'Lizel Ocenar':       { role:'Ministry Head',  church:'Abundance',     sector:'hope',  title:'Evangelism Ministry Head',            commandAccess:true,  pin:'5555' },
-  'Fretzie Guerzon':    { role:'Ministry Leader',church:'Abundance',     sector:'hope',  title:'Evangelism Hope Sector Coordinator',  commandAccess:true,  pin:'1122' },
-  'Maricel De Grano':   { role:'Ministry Leader',church:'GIL',           sector:'love',  title:'Evangelism Love Sector Coordinator',  commandAccess:true,  pin:'3344' },
-  'Anne Sacueza':       { role:'Ministry Leader',church:'BOTR Fri/Sun',  sector:'faith', title:'Evangelism Faith Sector Coordinator', commandAccess:true,  pin:'2233' },
-  'Elena Aboy':         { role:'Ministry Leader',church:'Virtual Church',sector:'love',  title:'Evangelism Love Sector Coordinator',  commandAccess:true,  pin:'3355' },
+  'Jopet Alim':         { role:'Pastor',         church:'FB',            sector:'hope',  title:'FLCC Lead Pastor',                    commandAccess:true,  pinHash:'b6bfa63ce2d5629e78996fc2c8bdcdde68269083b37d63eaa31283635a4c1c51' },
+  'Rodel Comayingking': { role:'Sector Leader',  church:'F&T',           sector:'hope',  title:'Hope Sector Leader',                  commandAccess:false, pinHash:'51357a7b658ea87fcddde3b4b84d6ef5d42b7a22235da342ea179a0aec08446c' },
+  'Virgilio Monastrial':{ role:'Sector Leader',  church:'BOTR Fri/Sun',  sector:'faith', title:'Faith Sector Leader',                 commandAccess:false, pinHash:'91fca26b9d456656a83180f545a4e1d05bcf8434a288cd5f068296d1e2017dac' },
+  'Oscar Tumambing':    { role:'Sector Leader',  church:'MTCC',          sector:'love',  title:'Love Sector Leader',                  commandAccess:false, pinHash:'721384973949a52aca45d9b33fcc4b16c8a5c57e4d8bfaeaf310cc0acd38cc45' },
+  'Lizel Ocenar':       { role:'Ministry Head',  church:'Abundance',     sector:'hope',  title:'Evangelism Ministry Head',            commandAccess:true,  pinHash:'7661a2cfbcb471be9f4dc2fbfc7fd795b54a26bdb304703a182b9f4be15d9555' },
+  'Fretzie Guerzon':    { role:'Ministry Leader',church:'Abundance',     sector:'hope',  title:'Evangelism Hope Sector Coordinator',  commandAccess:true,  pinHash:'9186982a8ba67b64e513aa7e16a769fba41b93881eef2bb16545d8ad640199e8' },
+  'Maricel De Grano':   { role:'Ministry Leader',church:'GIL',           sector:'love',  title:'Evangelism Love Sector Coordinator',  commandAccess:true,  pinHash:'d747cd398183b32fd22f37807d9d27005930a6d1a1b04e214d9614c127ac518e' },
+  'Anne Sacueza':       { role:'Ministry Leader',church:'BOTR Fri/Sun',  sector:'faith', title:'Evangelism Faith Sector Coordinator', commandAccess:true,  pinHash:'3f6efba825769e00255bf6f25dabd47f962a6ecbd540ececa727d8409be5c1ae' },
+  'Elena Aboy':         { role:'Ministry Leader',church:'Virtual Church',sector:'love',  title:'Evangelism Love Sector Coordinator',  commandAccess:true,  pinHash:'86f92c8a3b982a595419db7bb81e0f22c3577e7fbab279f883bee72f2fa02f37' },
 };
 
 // Returns KNOWN_USERS entry if name matches (case-insensitive trim)
 function findKnownUser(name) {
   if (!name) return null;
-  const trimmed = name.trim();
+  const trimmed = String(name).trim();
   return KNOWN_USERS[trimmed] ||
     Object.entries(KNOWN_USERS).find(([k]) => k.toLowerCase() === trimmed.toLowerCase())?.[1] || null;
 }
+
+// The canonical KNOWN_USERS spelling for a typed name ("jopet alim" → "Jopet Alim").
+// Every PIN / storage lookup must go through this so casing can never split identities.
+function canonicalName(name) {
+  if (!name) return '';
+  const trimmed = String(name).trim();
+  const hit = Object.keys(KNOWN_USERS).find(k => k.toLowerCase() === trimmed.toLowerCase());
+  return hit || trimmed;
+}
+
+// Escape untrusted text before it goes anywhere near innerHTML.
+// Member names, reflections, evidence and outreach details all come from the shared
+// Sheet, so any of them can carry markup written by another user.
+function esc(v) {
+  if (v === null || v === undefined) return '';
+  return String(v)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// First letter of a name, safe for innerHTML
+const initial = n => esc(String(n || '?').trim().charAt(0).toUpperCase() || '?');
 
 // Whether the current signed-in user has Command tab access
 function hasCommandAccess() {
@@ -1617,13 +1658,22 @@ let selAction    = 0;
 let charts       = {};
 let currentTab   = 'home';
 
-//  ROLES THAT CAN VIEW MEMBER LOGS 
+//  ROLES THAT CAN VIEW MEMBER LOGS
+// The role dropdown is free choice — anyone can pick "Pastor". Member action logs
+// contain personal reflections, so viewing them additionally requires being a
+// KNOWN_USERS leader (i.e. someone who passed the PIN prompt at sign-in).
 const CAN_VIEW_LOGS = ['Sector Leader', 'Pastor', 'Ministry Head', 'Ministry Leader'];
-const canViewLogs   = () => CAN_VIEW_LOGS.includes(APP.role);
+const canViewLogs   = () => {
+  const known = findKnownUser(APP.name);
+  return !!known && CAN_VIEW_LOGS.includes(known.role);
+};
 
-//  LOCALSTORAGE HELPERS  persist actions across sign-in 
+//  LOCALSTORAGE HELPERS  persist actions across sign-in
+// Keys are lowercased so "Jopet Alim" and "jopet alim" resolve to one record.
 function lsKey(name, church) {
-  return `flcc_actions_${name.replace(/\s+/g,'_')}_${church.replace(/\s+/g,'_')}`;
+  const n = String(canonicalName(name) || '').toLowerCase().replace(/\s+/g,'_');
+  const c = String(church || '').toLowerCase().replace(/\s+/g,'_');
+  return `flcc_actions_${n}_${c}`;
 }
 
 // ── SESSION PROFILE STORE ─────────────────────────────────────
@@ -1671,26 +1721,37 @@ function renderRecentSessions() {
   wrap.style.display = 'block';
   const roleEmoji = { Member:'🙏', 'Church Leader':'⛪', 'Sector Leader':'🌐', Pastor:'🎤', 'Ministry Head':'🌟', 'Ministry Leader':'🌱' };
 
-  list.innerHTML = sessions.map(s => {
+  // Index-based handlers — a name containing a quote used to break the markup
+  list.innerHTML = sessions.map((s, idx) => {
     const sect   = SECTORS.find(x => x.id === s.sector);
     const emoji  = roleEmoji[s.role] || '👤';
     const scolor = sect ? sect.color : 'var(--blue)';
     return `
-      <div class="session-card" onclick="fillFromSession(${JSON.stringify(s).replace(/"/g,'&quot;')})">
-        <div class="session-av" style="background:linear-gradient(135deg,${scolor},${scolor}99)">
-          ${s.name[0].toUpperCase()}
+      <div class="session-card" onclick="fillFromSessionIdx(${idx})">
+        <div class="session-av" style="background:linear-gradient(135deg,${esc(scolor)},${esc(scolor)}99)">
+          ${initial(s.name)}
         </div>
         <div class="session-info">
-          <div class="session-name">${s.name}</div>
-          <div class="session-meta">${s.church} · ${sect ? sect.name : ''} Sector</div>
+          <div class="session-name">${esc(s.name)}</div>
+          <div class="session-meta">${esc(s.church)} · ${sect ? esc(sect.name) : ''} Sector</div>
         </div>
-        <span class="session-role-chip">${emoji} ${s.role}</span>
+        <span class="session-role-chip">${emoji} ${esc(s.role)}</span>
         <button class="session-del"
-          onclick="event.stopPropagation(); removeSession('${s.name.replace(/'/g,"\\'")}','${s.church.replace(/'/g,"\\'")}')">
+          onclick="event.stopPropagation(); removeSessionIdx(${idx})">
           ✕
         </button>
       </div>`;
   }).join('');
+}
+
+// Index-based wrappers so session data never has to be embedded in markup
+function fillFromSessionIdx(idx) {
+  const s = getSavedSessions()[idx];
+  if (s) fillFromSession(s);
+}
+function removeSessionIdx(idx) {
+  const s = getSavedSessions()[idx];
+  if (s) removeSession(s.name, s.church);
 }
 
 // ── FILL FORM FROM SAVED SESSION ─────────────────────────────
@@ -1734,31 +1795,31 @@ function onNameInput() {
 
   validateLogin();
 
-  // Autosuggest from sessions
+  // Autosuggest from sessions — keep the original index so the row can look the
+  // profile back up instead of carrying it inside an HTML attribute
   if (!val || val.length < 1) { hideSuggest(); return; }
-  const sessions = getSavedSessions().filter(s =>
-    s.name.toLowerCase().includes(val.toLowerCase())
-  );
-  if (!sessions.length) { hideSuggest(); return; }
+  const matches = getSavedSessions()
+    .map((s, idx) => ({ s, idx }))
+    .filter(({ s }) => String(s.name || '').toLowerCase().includes(val.toLowerCase()));
+  if (!matches.length) { hideSuggest(); return; }
 
   const roleEmoji = { Member:'🙏', 'Church Leader':'⛪', 'Sector Leader':'🌐', Pastor:'🎤', 'Ministry Head':'🌟', 'Ministry Leader':'🌱' };
   const suggest = document.getElementById('name-suggest');
   suggest.style.display = 'block';
   document.getElementById('l-name').style.borderRadius = '12px 12px 0 0';
 
-  suggest.innerHTML = sessions.map(s => {
+  suggest.innerHTML = matches.map(({ s, idx }) => {
     const sect  = SECTORS.find(x => x.id === s.sector);
     const emoji = roleEmoji[s.role] || '👤';
     const scolor = sect ? sect.color : 'var(--blue)';
     return `
-      <div class="name-suggest-row"
-        onmousedown="fillFromSession(${JSON.stringify(s).replace(/"/g,'&quot;')})">
-        <div class="ns-av" style="background:linear-gradient(135deg,${scolor},${scolor}99)">
-          ${s.name[0].toUpperCase()}
+      <div class="name-suggest-row" onmousedown="fillFromSessionIdx(${idx})">
+        <div class="ns-av" style="background:linear-gradient(135deg,${esc(scolor)},${esc(scolor)}99)">
+          ${initial(s.name)}
         </div>
         <div class="ns-info">
-          <div class="ns-name">${s.name}</div>
-          <div class="ns-sub">${emoji} ${s.role} · ${s.church}</div>
+          <div class="ns-name">${esc(s.name)}</div>
+          <div class="ns-sub">${emoji} ${esc(s.role)} · ${esc(s.church)}</div>
         </div>
       </div>`;
   }).join('');
@@ -1772,7 +1833,7 @@ function showKnownBadge(title) {
     badge.style.cssText = 'display:flex;align-items:center;gap:6px;padding:7px 12px;background:var(--green-bg);border-radius:10px;margin-top:-8px;margin-bottom:10px;font-size:12px;font-weight:600;color:#1C7A35';
     document.getElementById('l-name').closest('.card').insertBefore(badge, document.getElementById('l-role').previousElementSibling);
   }
-  badge.innerHTML = `<span>✅</span> Recognized — <strong>${title}</strong>. Church & role auto-assigned.`;
+  badge.innerHTML = `<span>✅</span> Recognized — <strong>${esc(title)}</strong>. Church &amp; role auto-assigned.`;
   badge.style.display = 'flex';
 }
 
@@ -1791,6 +1852,11 @@ function hideSuggest() {
 function saveActionsToLocal() {
   try {
     localStorage.setItem(lsKey(APP.name, APP.church), JSON.stringify({
+      // name/church/role/sector are stored so the record is self-describing
+      name:    APP.name,
+      church:  APP.church,
+      role:    APP.role,
+      sector:  APP.sector,
       actions: APP.actions,
       points:  APP.points,
       stage:   APP.stage,
@@ -1798,9 +1864,21 @@ function saveActionsToLocal() {
     }));
   } catch(e) {}
 }
+
+// Pre-fix keys were case-sensitive (`flcc_actions_Jopet_Alim_FB`). Keep reading them
+// so nobody loses locally-saved actions, and migrate to the normalized key on read.
+function legacyLsKey(name, church) {
+  return `flcc_actions_${String(name || '').replace(/\s+/g,'_')}_${String(church || '').replace(/\s+/g,'_')}`;
+}
+
 function loadActionsFromLocal(name, church) {
   try {
-    const raw = localStorage.getItem(lsKey(name, church));
+    const key = lsKey(name, church);
+    let raw = localStorage.getItem(key);
+    if (!raw) {
+      const legacy = localStorage.getItem(legacyLsKey(name, church));
+      if (legacy) { localStorage.setItem(key, legacy); raw = legacy; }
+    }
     return raw ? JSON.parse(raw) : null;
   } catch(e) { return null; }
 }
@@ -1810,19 +1888,83 @@ function loadActionsFromLocal(name, church) {
 // 
 const LEADER_ROLES = ['Church Leader','Sector Leader','Pastor','Ministry Head','Ministry Leader'];
 const isLeader = () => LEADER_ROLES.includes(APP.role);
-const _stageNumHelper = s => STAGES.indexOf(s) + 1 || 1;
-const avColor   = i  => ['#FF2D55','#007AFF','#34C759','#FF9500','#5AC8FA','#AF52DE'][i % 6];
+const AV_COLORS = ['#FF2D55','#007AFF','#34C759','#FF9500','#5AC8FA','#AF52DE'];
+const avColor   = i  => AV_COLORS[Math.abs(Math.floor(i)) % AV_COLORS.length];
+// Stable per-name colour — avatars used to change colour on every re-render
+const avColorFor = name => {
+  const s = String(name || '');
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return AV_COLORS[Math.abs(h) % AV_COLORS.length];
+};
 const stageColor= s  => ({ Evangelism:'#5AC8FA', Discipleship:'#007AFF', 'Leadership Dev':'#FF9500', Multiplying:'#FF2D55' }[s] || '#8E8E93');
 const typeStyle = t  => ({ Leadership:'background:#FFF4E0;color:#A05A00', Discipleship:'background:#E8F8ED;color:#1C7A35', Evangelism:'background:#EBF8FE;color:#0071A4', Multiplying:'background:#FFECF0;color:#C0002A' }[t] || '');
 const typeIcon  = t  => ({ Leadership:'🏆', Discipleship:'📖', Evangelism:'🌱', Multiplying:'⛪' }[t] || '✝️');
 
+// A church's share of its sector target — sectors have different church counts
+// (Love has 5, Hope and Faith have 4), so a flat 90000/4 skewed Love's scores.
+function churchTarget(cId) {
+  const church = CHURCHES.find(c => c.id === cId);
+  const sector = SECTORS.find(s => s.id === (church?.sector || 'hope')) || SECTORS[0];
+  const n = Math.max(1, CHURCHES.filter(c => c.sector === sector.id).length);
+  return {
+    gospel:    Math.round(sector.target.gospel    / n),
+    disciples: Math.round(sector.target.disciples / n),
+    leaders:   Math.round(sector.target.leaders   / n),
+  };
+}
+
 // Dynamic score: 0 when no data
 const score = cId => {
   const d = LIVE.churches[cId];
-  const tgt = { gospel:22500, disciples:125, leaders:146 };
+  if (!d) return 0;
+  const tgt = churchTarget(cId);
   const raw = (d.gospel/tgt.gospel)*0.4 + (d.disciples/tgt.disciples)*0.4 + (d.leaders/tgt.leaders)*0.2;
   return Math.round(raw * 1000) / 10;
 };
+
+// Members belonging to a sector — the single filter every sector view must use,
+// so the hero card, the tiles and the report tables can never disagree.
+function membersInSector(sectorId) {
+  const sid = String(sectorId || '').toLowerCase().trim();
+  return LIVE.members.filter(m => {
+    const c = CHURCHES.find(ch =>
+      (ch.name || '').trim() === (m.church   || '').trim() ||
+      (ch.id   || '').trim() === (m.churchId || '').trim()
+    );
+    if (c) return c.sector === sid;
+    return (m.sector || '').toString().toLowerCase().trim() === sid;
+  });
+}
+
+// Sum gospel/disciples/leaders over a member list
+function sumMembers(members) {
+  return members.reduce((acc, m) => ({
+    gospel:    acc.gospel    + (Number(m.gospel)    || 0),
+    disciples: acc.disciples + (Number(m.disciples) || 0),
+    leaders:   acc.leaders   + (Number(m.leaders)   || 0),
+  }), { gospel:0, disciples:0, leaders:0 });
+}
+
+// Network targets derived from the sector targets — nothing hardcoded
+const NETWORK_TARGET = {
+  gospel:    SECTORS.reduce((n,s) => n + s.target.gospel,    0),
+  disciples: SECTORS.reduce((n,s) => n + s.target.disciples, 0),
+  leaders:   SECTORS.reduce((n,s) => n + s.target.leaders,   0),
+};
+
+// Network totals — one definition for every screen. Falls back to the server's
+// own totals only when no member rows have loaded yet.
+function networkTotals() {
+  if (!LIVE.members.length) {
+    return {
+      gospel:    Number(LIVE.totalGospel)  || 0,
+      disciples: Number(LIVE.totalDisc)    || 0,
+      leaders:   Number(LIVE.totalLeaders) || 0,
+    };
+  }
+  return sumMembers(LIVE.members);
+}
 
 // Status based on % of target  returns 'Starting' if zero
 const statusFor = pct => {
@@ -1832,17 +1974,22 @@ const statusFor = pct => {
   return                  { label:'Behind Target', cls:'p-red'    };
 };
 
+// Church count per sector — Love has 5, not 4, so the copy is generated not hardcoded
+const churchCount = sId => CHURCHES.filter(c => c.sector === sId).length;
+
 const insightText = (s, pct) => {
+  const n = churchCount(s.id);
   if (pct === 0) return `${s.name} sector is ready to begin — no gospel activities recorded yet. Encourage all church leaders to onboard their congregations.`;
-  if (pct >= 0.75) return `${s.name} is ahead of pace — momentum is strong. Consider accelerating church planting across all four churches.`;
+  if (pct >= 0.75) return `${s.name} is ahead of pace — momentum is strong. Consider accelerating church planting across all ${n} churches.`;
   if (pct >= 0.55) return `${s.name} is on track. Sustain outreach rhythm and maintain mentoring cadence for Discipleship-stage members.`;
   if (pct >= 0.35) return `${s.name} needs focused attention — increase gospel-sharing activities and assign additional mentors.`;
   return `${s.name} is behind target. Urgent mobilization required — convene sector leaders for a strategic review this month.`;
 };
 
 const weeklyAct = (s, pct) => {
-  if (pct === 0)   return `Launch ${s.name} sector — onboard all four church leaders and invite the full congregation to sign in and log their first action.`;
-  if (pct < 0.3)   return `Mobilize all ${s.name} pastors — deploy evangelism teams to all four churches this weekend.`;
+  const n = churchCount(s.id);
+  if (pct === 0)   return `Launch ${s.name} sector — onboard all ${n} church leaders and invite the full congregation to sign in and log their first action.`;
+  if (pct < 0.3)   return `Mobilize all ${s.name} pastors — deploy evangelism teams to all ${n} churches this weekend.`;
   if (pct < 0.55)  return `Intensify gospel outreach in ${s.name} — assign mentors to all Evangelism-stage members.`;
   return `${s.name} is healthy — identify church planting candidates and scout new satellite locations.`;
 };
@@ -1858,16 +2005,15 @@ function showLoading(msg = 'Connecting…') {
 }
 function hideLoading() { document.getElementById('loading').classList.remove('show'); }
 
+// Writes go out as no-cors POSTs, so the response is opaque: a resolved promise
+// means "the request left the browser", NOT "the Sheet accepted it". Returns true
+// when the request was dispatched and false when every transport failed, so callers
+// can stop claiming "Data saved" unconditionally.
 async function apiPost(data) {
-  if (!SHEETS_ON) return;
+  if (!SHEETS_ON) return false;
 
-  // Build GET URL for fallback
-  const params = new URLSearchParams();
-  Object.entries(data).forEach(([k,v]) => {
-    if (v !== null && v !== undefined) params.append(k, String(v).substring(0, 300));
-  });
-  params.append('_t', String(Date.now()));
-  const getUrl = SCRIPT_URL + '?' + params.toString();
+  // Large payloads (photo uploads) can't ride in a URL — POST only, no GET fallback
+  const isLarge = !!data.base64Data || JSON.stringify(data).length > 1500;
 
   // Try POST first
   try {
@@ -1876,13 +2022,27 @@ async function apiPost(data) {
       mode:   'no-cors',
       body:   JSON.stringify(data),
     });
-    return;
+    return true;
   } catch(e) {}
+
+  if (isLarge) {
+    console.warn('apiPost: POST failed and payload is too large for the GET fallback', data.action);
+    return false;
+  }
+
+  // Build GET URL for the fallbacks. NOTE: values are truncated to 300 chars here,
+  // so long reflections can arrive clipped if the POST path failed.
+  const params = new URLSearchParams();
+  Object.entries(data).forEach(([k,v]) => {
+    if (v !== null && v !== undefined) params.append(k, String(v).substring(0, 300));
+  });
+  params.append('_t', String(Date.now()));
+  const getUrl = SCRIPT_URL + '?' + params.toString();
 
   // Fallback 1: fetch GET (works on most mobile networks)
   try {
     await fetch(getUrl, { mode: 'no-cors', cache: 'no-store' });
-    return;
+    return true;
   } catch(e) {}
 
   // Fallback 2: Image ping (works on ALL networks, even restricted ones)
@@ -1890,77 +2050,10 @@ async function apiPost(data) {
   try {
     const img = new Image();
     img.src = getUrl;
+    return true;
   } catch(e) {}
-}
 
-// ── GOOGLE SHEETS DIRECT READ via gviz API (no CORS, no Apps Script needed) ──
-// This uses Google's own Visualization API which bypasses all CORS restrictions.
-// Works for any sheet that has been published to the web (File → Share → Publish to web).
-
-// Reads a Google Sheet tab via gviz JSONP — works on all devices, no CORS
-// Retries once if first attempt returns empty (handles mobile caching)
-function readSheet(sheetName, attempt) {
-  attempt = attempt || 1;
-  return new Promise(resolve => {
-    // Use both timestamp AND random number — defeats aggressive mobile caches
-    const bust    = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-    const cbName  = 'gviz_' + bust.replace('.','');
-    const script  = document.createElement('script');
-    const timer   = setTimeout(() => {
-      cleanup();
-      // Retry once on timeout (mobile networks are slow)
-      if (attempt < 2) {
-        readSheet(sheetName, 2).then(resolve);
-      } else {
-        resolve([]);
-      }
-    }, 15000);
-
-    function cleanup() {
-      clearTimeout(timer);
-      delete window[cbName];
-      try { document.head.removeChild(script); } catch(e) {}
-    }
-
-    window[cbName] = function(res) {
-      cleanup();
-      try {
-        if (!res || !res.table || !res.table.rows) {
-          // Empty response — retry once if first attempt
-          if (attempt < 2) {
-            setTimeout(() => readSheet(sheetName, 2).then(resolve), 1500);
-          } else {
-            resolve([]);
-          }
-          return;
-        }
-        const rows = res.table.rows.map(row =>
-          (row.c || []).map(cell => {
-            if (!cell || cell.v === null || cell.v === undefined) return '';
-            return cell.v;
-          })
-        );
-        resolve(rows);
-      } catch(e) { resolve([]); }
-    };
-
-    script.onerror = () => {
-      cleanup();
-      if (attempt < 2) {
-        setTimeout(() => readSheet(sheetName, 2).then(resolve), 1500);
-      } else {
-        resolve([]);
-      }
-    };
-
-    // Append script — mobile Safari needs unique URL every time
-    script.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq`
-      + `?sheet=${encodeURIComponent(sheetName)}`
-      + `&tqx=out:json`
-      + `&callback=${cbName}`
-      + `&nocache=${bust}`;
-    document.head.appendChild(script);
-  });
+  return false;
 }
 
 // Helper: church name → sector id
@@ -1972,7 +2065,10 @@ function getChurchSector(churchName) {
     const c2 = CHURCHES.find(x => x.name === CHURCH_ALIASES[churchName]);
     if (c2) return c2.sector;
   }
-  return 'love';
+  // Unknown church — return '' rather than quietly filing it under Love, which
+  // inflated one sector's numbers with data that didn't belong to it
+  if (churchName) console.warn('Unknown church, no sector assigned:', churchName);
+  return '';
 }
 
 function getChurchId(churchName) {
@@ -1994,26 +2090,6 @@ function parseDateLabel(isoStr) {
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     return months[d.getMonth()] + ' ' + d.getDate();
   } catch(e) { return String(isoStr).substring(0,10); }
-}
-
-// JSONP-based GET for Apps Script (kept for POST-only write operations)
-function apiGet(params) {
-  return new Promise(resolve => {
-    if (!SHEETS_ON) { resolve(null); return; }
-    const cbName  = 'gsCallback_' + Date.now() + '_' + Math.floor(Math.random()*10000);
-    const script  = document.createElement('script');
-    const timeout = setTimeout(() => { cleanup(); resolve(null); }, 12000);
-    function cleanup() {
-      clearTimeout(timeout);
-      delete window[cbName];
-      try { document.head.removeChild(script); } catch(e) {}
-    }
-    window[cbName] = function(data) { cleanup(); resolve(data); };
-    script.onerror = function() { cleanup(); resolve(null); };
-    const p = Object.assign({}, params, { callback: cbName });
-    script.src = SCRIPT_URL + '?' + new URLSearchParams(p);
-    document.head.appendChild(script);
-  });
 }
 
 // Load live data — reads LIVE_DATA tab via gviz (always fresh, rewritten on every action)
@@ -2229,89 +2305,6 @@ function applyLiveData(data, backup) {
   hydrateActionLogsFromLocal();
 }
 
-// JSONP fallback — wraps response in callback
-// Also handles raw JSON response if deployed version doesn't support callback
-function loadViaJSONP(backup) {
-  return new Promise((resolve, reject) => {
-    const cb    = 'flcc_' + Date.now() + '_' + Math.floor(Math.random()*99999);
-    const el    = document.createElement('script');
-    const timer = setTimeout(() => { cleanup(); reject(new Error('JSONP timeout')); }, 12000);
-
-    function cleanup() {
-      clearTimeout(timer); delete window[cb];
-      try { document.head.removeChild(el); } catch(e) {}
-    }
-
-    window[cb] = function(data) {
-      cleanup();
-      applyLiveData(data, backup);
-      resolve();
-    };
-
-    el.onerror = () => { cleanup(); reject(new Error('JSONP error')); };
-    el.src = SCRIPT_URL + '?action=getLiveData&callback=' + cb + '&t=' + Date.now();
-    document.head.appendChild(el);
-  });
-}
-
-
-function hydrateFromLocalStorage() {
-  // Build LIVE.members from ALL localStorage entries
-  // This ensures dashboards show data even when Google Sheets is unreachable
-  CHURCHES.forEach(c => {
-    LIVE.churches[c.id] = { gospel:0, disciples:0, leaders:0, members:0, monthly:new Array(8).fill(0) };
-  });
-  SECTORS.forEach(s => { LIVE.sectors[s.id] = { gospel:0, disciples:0, leaders:0 }; });
-  LIVE.members = [];
-  LIVE.totalGospel = 0; LIVE.totalDisc = 0; LIVE.totalLeaders = 0;
-
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (!key || !key.startsWith('flcc_actions_')) continue;
-    try {
-      const saved = JSON.parse(localStorage.getItem(key));
-      if (!saved || !saved.name) continue;
-
-      const church   = saved.church || '';
-      const sector   = (saved.sector || getChurchSector(church)).toLowerCase();
-      const churchId = getChurchId(church);
-      const actions  = saved.actions || [];
-      const gospel   = actions.filter(a => a.type === 'Evangelism').length;
-      const disc     = actions.filter(a => a.type === 'Discipleship').length;
-      const leaders  = actions.filter(a => a.type === 'Leadership' || a.type === 'Multiplying').length;
-      const pts      = actions.reduce((s,a) => s + (Number(a.pts)||0), 0);
-
-      LIVE.members.push({
-        name: saved.name, role: saved.role || 'Member', church, churchId, sector,
-        stage: saved.stage || 'Evangelism', points: pts,
-        actionsCount: actions.length, gospel, disciples: disc, leaders,
-        monthlyActions: new Array(8).fill(0), actions,
-      });
-
-      if (LIVE.churches[churchId]) {
-        LIVE.churches[churchId].members++;
-        LIVE.churches[churchId].gospel    += gospel;
-        LIVE.churches[churchId].disciples += disc;
-        LIVE.churches[churchId].leaders   += leaders;
-      }
-      if (LIVE.sectors[sector]) {
-        LIVE.sectors[sector].gospel    += gospel;
-        LIVE.sectors[sector].disciples += disc;
-        LIVE.sectors[sector].leaders   += leaders;
-      }
-      LIVE.totalGospel  += gospel;
-      LIVE.totalDisc    += disc;
-      LIVE.totalLeaders += leaders;
-    } catch(e) {}
-  }
-
-  const el = document.getElementById('conn-status');
-  if (el && LIVE.members.length > 0) {
-    el.innerHTML = '📱 Showing local data — tap ⟳ to sync';
-    el.style.color = 'var(--orange)';
-  }
-}
-
 function hydrateActionLogsFromLocal() {
   LIVE.members.forEach(m => {
     const key = lsKey(m.name, m.church || m.churchId || '');
@@ -2328,55 +2321,87 @@ function hydrateActionLogsFromLocal() {
   });
 }
 
-// Update LIVE data when an action is logged
-function applyActionToLive(actionType, churchId, sectorId, actionObj) {
+// Which of the 8 tracked months (May–Dec 2026) a date belongs to.
+// Returns -1 for dates outside the window instead of silently folding January
+// into May or dumping every 2027 action into the 2026 buckets.
+const TRACKING_YEAR = 2026;
+function monthIndexFor(date) {
+  const d = date instanceof Date ? date : new Date(date);
+  if (isNaN(d)) return -1;
+  if (d.getFullYear() !== TRACKING_YEAR) return -1;
+  const idx = d.getMonth() - 4; // 4 = May
+  return (idx >= 0 && idx < MONTHS.length) ? idx : -1;
+}
+
+// Update LIVE data when an action is logged.
+// `churchRef` may be a church id or a church name — it is normalised to an id here,
+// because passing the name used to make this function bail out silently and leave
+// every dashboard counter frozen until the next Sheets refresh.
+function applyActionToLive(actionType, churchRef, sectorId, actionObj) {
   const gospelTypes = ['Evangelism'];
   const discTypes   = ['Discipleship'];
   const leadTypes   = ['Leadership','Multiplying'];
 
-  const cData = LIVE.churches[churchId];
-  if (!cData) return;
+  const cId   = LIVE.churches[churchRef] ? churchRef : getChurchId(churchRef);
+  const cData = LIVE.churches[cId];
+  const sId   = String(sectorId || '').toLowerCase().trim();
+  const sData = LIVE.sectors[sId];
+  if (!cData) { console.warn('applyActionToLive: unknown church', churchRef); return; }
 
   if (gospelTypes.includes(actionType)) {
     cData.gospel++;
-    LIVE.sectors[sectorId].gospel++;
+    if (sData) sData.gospel++;
     LIVE.totalGospel++;
-    const mIdx = Math.max(0, Math.min(7, new Date().getMonth() - 4));
-    cData.monthly[mIdx]++;
+    const mIdx = monthIndexFor(new Date());
+    if (mIdx >= 0) cData.monthly[mIdx]++;
   }
   if (discTypes.includes(actionType)) {
     cData.disciples++;
-    LIVE.sectors[sectorId].disciples++;
+    if (sData) sData.disciples++;
     LIVE.totalDisc++;
   }
   if (leadTypes.includes(actionType)) {
     cData.leaders++;
-    LIVE.sectors[sectorId].leaders++;
+    if (sData) sData.leaders++;
     LIVE.totalLeaders++;
   }
 
-  // Add or update member record in LIVE store
-  let member = LIVE.members.find(m => m.name === APP.name && (m.churchId === APP.church || m.churchId === churchId));
+  // Add or update member record in LIVE store — match on name AND church, so two
+  // members who share a name in different churches keep separate records
+  let member = LIVE.members.find(m =>
+    m.name.trim().toLowerCase() === APP.name.trim().toLowerCase() &&
+    (m.churchId === cId || m.church === APP.church)
+  );
   if (!member) {
     member = {
       name:     APP.name,
       church:   APP.church,
-      churchId: APP.church,
-      sector:   APP.sector,
+      churchId: cId,
+      sector:   sId,
       stage:    APP.stage,
+      role:     APP.role,
       points:   0,
+      actionsCount: 0,
       gospel:   0, disciples: 0, leaders: 0,
+      monthlyActions: new Array(MONTHS.length).fill(0),
       actions:  [],
     };
     LIVE.members.push(member);
     cData.members++;
   }
 
+  // Keep the member's own per-type totals in step — the sector/command dashboards
+  // sum these fields, so they have to move when an action is logged
+  if (gospelTypes.includes(actionType)) member.gospel    = (member.gospel    || 0) + 1;
+  if (discTypes.includes(actionType))   member.disciples = (member.disciples || 0) + 1;
+  if (leadTypes.includes(actionType))   member.leaders   = (member.leaders   || 0) + 1;
+
   // Keep full action log on the member record (for leader/pastor viewing)
   if (actionObj) {
     member.actions = member.actions || [];
     member.actions.push(actionObj);
     member.points  = (member.points || 0) + (actionObj.pts || 0);
+    member.actionsCount = member.actions.length;
   }
   member.stage = APP.stage; // always sync latest stage
 }
@@ -2410,8 +2435,11 @@ function validateLogin() {
 }
 
 async function doLogin() {
-  const name      = document.getElementById('l-name').value.trim();
-  const known     = findKnownUser(name);
+  const typed     = document.getElementById('l-name').value.trim();
+  const known     = findKnownUser(typed);
+  // Always store the canonical spelling. Typing "jopet alim" used to create a
+  // second identity whose PIN lookup missed — which skipped the PIN entirely.
+  const name      = known ? canonicalName(typed) : typed;
   const role      = known ? known.role      : document.getElementById('l-role').value;
   const churchVal = known
     ? `${known.church}|${known.sector}`
@@ -2421,8 +2449,8 @@ async function doLogin() {
   // Load local actions early (fast, works offline)
   const local = loadActionsFromLocal(name, church);
 
-  // Known users with PIN — verify before proceeding
-  if (known && known.pin) {
+  // Known users have a PIN — verify before proceeding
+  if (known) {
     requirePin(name, () => completeLogin(name, role, church, sectorId, churchVal, known, local));
     return;
   }
@@ -2433,6 +2461,10 @@ async function completeLogin(name, role, church, sectorId, churchVal, known, loc
 
   // local is passed in from doLogin (already loaded from localStorage)
   if (!local) local = loadActionsFromLocal(name, church);
+
+  // Sheets can take several seconds — show the spinner so the button doesn't
+  // just sit there looking dead
+  showLoading('Signing in…');
 
   // Load ALL live data from Google Sheets via gviz (populates LIVE.members)
   await loadLiveData();
@@ -2466,11 +2498,16 @@ async function completeLogin(name, role, church, sectorId, churchVal, known, loc
   saveSession({ name, role, church, sector: sectorId, churchVal });
 
   // Register new user in Sheets if not found
-  if (!existing) {
-    await apiPost({ action:'register', name, role, church, sector:sectorId, stage:APP.stage, joinDate: new Date().toISOString() });
+  try {
+    if (!existing) {
+      await apiPost({ action:'register', name, role, church, sector:sectorId, stage:APP.stage, joinDate: new Date().toISOString() });
+    }
+  } catch(e) {
+    console.warn('register failed:', e);
+  } finally {
+    hideLoading(); // never leave the overlay stuck over the app
   }
 
-  hideLoading();
   startApp();
 }
 
@@ -2602,24 +2639,40 @@ function applyCurrentUserToLive() {
   const cId   = getChurchId(APP.church);
   const secId = APP.sector;
 
+  // Match on name AND church. Matching on name alone made two members who share
+  // a name in different churches overwrite each other's logs and points.
   const existing = LIVE.members.find(m =>
-    m.name.trim().toLowerCase() === APP.name.trim().toLowerCase()
+    m.name.trim().toLowerCase() === APP.name.trim().toLowerCase() &&
+    ((m.churchId && m.churchId === cId) ||
+     (m.church || '').trim() === (APP.church || '').trim())
   );
+
+  // Recount the current user's own totals from their action list
+  const gospel    = APP.actions.filter(a => a.type === 'Evangelism').length;
+  const disciples = APP.actions.filter(a => a.type === 'Discipleship').length;
+  const leaders   = APP.actions.filter(a => ['Leadership','Multiplying'].includes(a.type)).length;
+  const monthly   = new Array(MONTHS.length).fill(0);
+  APP.actions.forEach(a => {
+    if (a.type !== 'Evangelism') return;
+    const mi = (a.monthIndex !== undefined && a.monthIndex !== null)
+      ? a.monthIndex
+      : monthIndexFor(a.dateIso || a.date);
+    if (mi >= 0 && mi < monthly.length) monthly[mi]++;
+  });
 
   if (existing) {
     // Always use APP state — it reflects the latest local changes including deletions
     existing.actions = APP.actions;
     existing.points  = APP.points;
     existing.stage   = APP.stage;
+    // ...and the per-type counts the dashboards actually sum, otherwise a freshly
+    // logged action shows in the log but not in any total
+    existing.gospel       = gospel;
+    existing.disciples    = disciples;
+    existing.leaders      = leaders;
+    existing.actionsCount = APP.actions.length;
   } else {
     // Not yet in Sheets — add to LIVE temporarily so dashboard shows their data
-    const gospel    = APP.actions.filter(a => a.type === 'Evangelism').length;
-    const disciples = APP.actions.filter(a => a.type === 'Discipleship').length;
-    const leaders   = APP.actions.filter(a => ['Leadership','Multiplying'].includes(a.type)).length;
-    const monthly   = new Array(8).fill(0);
-    APP.actions.forEach(a => {
-      if (a.type === 'Evangelism') monthly[Math.min(a.monthIndex || 0, 7)]++;
-    });
     LIVE.members.push({
       name: APP.name, church: APP.church, churchId: cId,
       sector: secId, stage: APP.stage, role: APP.role,
@@ -2674,9 +2727,9 @@ function renderMemberHome() {
   }).join('');
 
   // Gospel progress  network total only (no per-church breakdown for members)
-  const tG   = LIVE.totalGospel;
-  const tPct = (tG / 270000 * 100).toFixed(1);
-  document.getElementById('mem-gospel-label').textContent = `${tG.toLocaleString()} / 270,000`;
+  const tG   = networkTotals().gospel;
+  const tPct = (tG / NETWORK_TARGET.gospel * 100).toFixed(1);
+  document.getElementById('mem-gospel-label').textContent = `${tG.toLocaleString()} / ${NETWORK_TARGET.gospel.toLocaleString()}`;
   document.getElementById('mem-gospel-bar').style.width   = tPct + '%';
   document.getElementById('mem-gospel-pct').textContent   = `${tPct}% of 2030 target`;
 
@@ -2780,8 +2833,8 @@ function renderPhotoPreview() {
   el.style.marginTop = attachments.photos.length ? '10px' : '0';
   el.innerHTML = attachments.photos.map(p => `
     <div class="attach-thumb">
-      <img src="${p.dataUrl}" alt="${p.name}" />
-      <div class="attach-thumb-del" onclick="removePhoto('${p.id}')">✕</div>
+      <img src="${esc(p.dataUrl)}" alt="${esc(p.name)}" />
+      <div class="attach-thumb-del" onclick="removePhoto('${esc(p.id)}')">✕</div>
     </div>
   `).join('');
 }
@@ -2815,10 +2868,10 @@ function renderFileList() {
     <div class="attach-file-row">
       <div class="attach-file-icon">${fileIcon(f.type)}</div>
       <div class="attach-file-info">
-        <div class="attach-file-name">${f.name}</div>
-        <div class="attach-file-size">${formatSize(f.size)}</div>
+        <div class="attach-file-name">${esc(f.name)}</div>
+        <div class="attach-file-size">${esc(formatSize(f.size))}</div>
       </div>
-      <div class="attach-file-del" onclick="removeFile('${f.id}')">✕</div>
+      <div class="attach-file-del" onclick="removeFile('${esc(f.id)}')">✕</div>
     </div>
   `).join('');
 }
@@ -2867,13 +2920,17 @@ function renderLogScreen() {
     </div>
     ${i < ACTIONS_LIB.length - 1 ? '<div class="adiv"></div>' : ''}
   `).join('');
+
+  // The default action (index 0) needs person details, so the form has to be
+  // visible on first render — not only after the user taps a row. Otherwise a
+  // straight-to-Submit user files a gospel contact with no name, place or status.
+  updateOutreachForms();
 }
 
-function selAct(i) {
-  selAction = i;
-  renderLogScreen();
-  // Show/hide outreach person details based on selected action
-  const a = ACTIONS_LIB[i];
+// Show the outreach sub-form that matches the selected action
+function updateOutreachForms() {
+  const a = ACTIONS_LIB[selAction];
+  if (!a) return;
   const personForm   = document.getElementById('outreach-form');
   const locationForm = document.getElementById('outreach-location-form');
   if (personForm)   personForm.style.display   = a.needsPerson    ? 'block' : 'none';
@@ -2884,6 +2941,17 @@ function selAct(i) {
   const d2 = document.getElementById('out-event-date');
   if (d1 && !d1.value) d1.value = today;
   if (d2 && !d2.value) d2.value = today;
+}
+
+function selAct(i) {
+  selAction = i;
+  renderLogScreen(); // re-render also refreshes the outreach forms
+}
+
+// Stable id for an action so edits and deletes can be matched in the Sheet.
+// Without one, edit/delete requests had nothing to target and were dropped.
+function newActionId() {
+  return 'act_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
 }
 
 async function submitAction() {
@@ -2904,6 +2972,14 @@ async function submitAction() {
       contactDate:  document.getElementById('out-contact-date')?.value || date,
       status:       document.getElementById('out-status')?.value || '',
     };
+    // These actions are the source of the whole outreach report — an empty name
+    // makes the row useless, so ask for it rather than filing a blank contact
+    if (!outreachData.personName) {
+      showToast('⚠️ Please enter the name of the person reached');
+      updateOutreachForms();
+      document.getElementById('out-person-name')?.focus();
+      return;
+    }
   } else if (a.needsLocation) {
     outreachData = {
       personName:   '',
@@ -2911,10 +2987,20 @@ async function submitAction() {
       contactDate:  document.getElementById('out-event-date')?.value || date,
       status:       '',
     };
+    if (!outreachData.location) {
+      showToast('⚠️ Please enter the outreach event location');
+      updateOutreachForms();
+      document.getElementById('out-event-location')?.focus();
+      return;
+    }
   }
 
   const actionWithDate = {
-    ...a, date,
+    ...a,
+    id:          newActionId(),
+    date,
+    dateIso:     now.toISOString(),
+    monthIndex:  monthIndexFor(now),
     reflection:  document.getElementById('log-refl')?.value || '',
     evidence:    fullEvidence,
     photoCount:  attachments.photos.length,
@@ -2926,6 +3012,10 @@ async function submitAction() {
     contactDate: outreachData?.contactDate || date,
     outStatus:   outreachData?.status      || '',
   };
+
+  // Photos are uploaded before the action row is written, so the summary can
+  // record where they went. Snapshot them first — clearAttachments() runs below.
+  const photosToUpload = attachments.photos.slice();
 
   // Update app state
   APP.actions.push(actionWithDate);
@@ -2939,8 +3029,9 @@ async function submitAction() {
 
   // Save to Google Sheets
   showLoading('Saving action…');
-  await apiPost({
+  const saved = await apiPost({
     action:      'logAction',
+    actionId:    actionWithDate.id,
     name:        APP.name,
     role:        APP.role,
     church:      APP.church,
@@ -2959,6 +3050,16 @@ async function submitAction() {
     contactDate: actionWithDate.contactDate,
     outStatus:   actionWithDate.outStatus,
   });
+
+  // Upload any attached photos to Drive via the Apps Script proxy
+  let photosUploaded = 0;
+  if (photosToUpload.length) {
+    showLoading(`Uploading ${photosToUpload.length} photo${photosToUpload.length > 1 ? 's' : ''}…`);
+    for (const p of photosToUpload) {
+      const ok = await uploadPhotoDataUrl(p.dataUrl, p.name, APP.name, a.label, actionWithDate.id);
+      if (ok) photosUploaded++;
+    }
+  }
   hideLoading();
 
   // Clear form + attachments + outreach fields
@@ -2967,10 +3068,18 @@ async function submitAction() {
   clearAttachments();
   const outFields = ['out-person-name','out-location','out-contact-date','out-status','out-event-location','out-event-date'];
   outFields.forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
-  document.getElementById('outreach-form').style.display = 'none';
-  document.getElementById('outreach-location-form').style.display = 'none';
+  updateOutreachForms();
 
-  showToast(`✓ Logged! +${a.pts} pts · Data saved`);
+  // Don't claim "saved" when the request never made it out. Note that a no-cors
+  // POST can't confirm the Sheet accepted it either — this only rules out a
+  // transport failure.
+  if (!saved) {
+    showToast(`✓ Logged locally (+${a.pts} pts) — sync failed, tap ⟳ later`);
+  } else if (photosToUpload.length && photosUploaded < photosToUpload.length) {
+    showToast(`✓ Logged! +${a.pts} pts · ${photosUploaded}/${photosToUpload.length} photos uploaded`);
+  } else {
+    showToast(`✓ Logged! +${a.pts} pts · Data sent`);
+  }
 
   // Return to the right screen based on role
   if (isLeader()) {
@@ -3007,7 +3116,7 @@ function renderMemberProfile() {
 
   // Show Change PIN button only for users who have a PIN assigned
   const pinCard = document.getElementById('pp-pin-card');
-  if (pinCard) pinCard.style.display = getUserPin(APP.name) ? 'block' : 'none';
+  if (pinCard) pinCard.style.display = getUserPinHash(APP.name) ? 'block' : 'none';
 
   // Action type breakdown counts
   const ct = { Evangelism:0, Discipleship:0, Leadership:0, Multiplying:0 };
@@ -3052,24 +3161,24 @@ function renderActionLogHTML(actions) {
         <div class="alr">
           <div class="al-dot" style="${typeStyle(a.type)}">${typeIcon(a.type)}</div>
           <div class="al-body">
-            <div class="al-title">${a.label}</div>
-            <div class="al-meta">${a.type} · ${a.date}</div>
-            ${a.reflection ? `<div class="al-refl" id="al-refl-${realIdx}">"${a.reflection}"</div>` : `<div class="al-refl" id="al-refl-${realIdx}" style="display:none"></div>`}
-            ${a.evidence   ? `<div class="al-evid" id="al-evid-${realIdx}" style="font-size:11px;color:var(--ter);margin-top:3px">📋 ${a.evidence}</div>` : `<div class="al-evid" id="al-evid-${realIdx}" style="display:none"></div>`}
+            <div class="al-title">${esc(a.label)}</div>
+            <div class="al-meta">${esc(a.type)} · ${esc(a.date)}</div>
+            ${a.reflection ? `<div class="al-refl" id="al-refl-${realIdx}">"${esc(a.reflection)}"</div>` : `<div class="al-refl" id="al-refl-${realIdx}" style="display:none"></div>`}
+            ${a.evidence   ? `<div class="al-evid" id="al-evid-${realIdx}" style="font-size:11px;color:var(--ter);margin-top:3px">📋 ${esc(a.evidence)}</div>` : `<div class="al-evid" id="al-evid-${realIdx}" style="display:none"></div>`}
             ${attachLine.length ? `<div style="font-size:11px;color:var(--blue);margin-top:3px">${attachLine.join(' · ')}</div>` : ''}
             <div class="al-actions">
               <button class="al-edit-btn" onclick="editAction(${realIdx})">✏️ Edit</button>
               <button class="al-del-btn"  onclick="showDeleteConfirm(${realIdx})">🗑️ Delete</button>
             </div>
           </div>
-          <div class="al-pts">+${a.pts}</div>
+          <div class="al-pts">+${esc(a.pts)}</div>
         </div>
         <!-- Inline edit form (hidden by default) -->
         <div class="al-edit-form" id="al-edit-${realIdx}" style="display:none">
           <label class="al-edit-label">Reflection</label>
-          <textarea class="al-edit-ta" id="al-edit-refl-${realIdx}" rows="3">${a.reflection || ''}</textarea>
+          <textarea class="al-edit-ta" id="al-edit-refl-${realIdx}" rows="3">${esc(a.reflection || '')}</textarea>
           <label class="al-edit-label">Evidence / Notes</label>
-          <input  class="al-edit-inp" id="al-edit-evid-${realIdx}" type="text" value="${(a.evidence || '').replace(/"/g,'&quot;')}" placeholder="e.g. Name of person, scripture studied…" />
+          <input  class="al-edit-inp" id="al-edit-evid-${realIdx}" type="text" value="${esc(a.evidence || '')}" placeholder="e.g. Name of person, scripture studied…" />
           <div class="al-edit-row">
             <button class="al-save-btn"   onclick="saveEditAction(${realIdx})">Save Changes</button>
             <button class="al-cancel-btn" onclick="cancelEditAction(${realIdx})">Cancel</button>
@@ -3106,15 +3215,22 @@ function saveEditAction(realIdx) {
   // Persist immediately
   saveActionsToLocal();
 
-  // Sync edit to Sheets if connected
-  if (SHEETS_ON && APP.actions[realIdx].id) {
+  // Sync edit to Sheets. Actions logged in this app now always carry an id;
+  // rows that predate ids are matched on name + church + label + date instead,
+  // so the edit is no longer silently dropped.
+  const edited = APP.actions[realIdx];
+  if (SHEETS_ON) {
     apiPost({
-      action:     'editAction',
-      name:       APP.name,
-      church:     APP.church,
-      actionId:   APP.actions[realIdx].id,
-      reflection: newRefl,
-      evidence:   newEvid,
+      action:      'editAction',
+      name:        APP.name,
+      church:      APP.church,
+      actionId:    edited.id || '',
+      actionLabel: edited.label,
+      actionType:  edited.type,
+      dateIso:     edited.dateIso || '',
+      date:        edited.date || '',
+      reflection:  newRefl,
+      evidence:    newEvid,
     });
   }
 
@@ -3150,20 +3266,34 @@ function deleteAction(realIdx) {
 
   saveActionsToLocal();
 
-  // Sync delete to Sheets
-  if (SHEETS_ON && removed.id) {
-    apiPost({ action:'deleteAction', name:APP.name, church:APP.church, actionId:removed.id });
+  // Sync delete to Sheets. This used to require `removed.id`, which locally
+  // logged actions never had — so deletes stayed local and the row lived on in
+  // the Sheet for every leader to see. Send identifying fields as a fallback.
+  if (SHEETS_ON) {
+    apiPost({
+      action:      'deleteAction',
+      name:        APP.name,
+      church:      APP.church,
+      actionId:    removed.id || '',
+      actionLabel: removed.label,
+      actionType:  removed.type,
+      dateIso:     removed.dateIso || '',
+      date:        removed.date || '',
+    });
   }
 
   showToast('Deleted — refreshing…');
 
-  // Gemini Step 2: full re-fetch forces dashboard to recount from live Sheet
+  // Full re-fetch forces the dashboard to recount from the live Sheet
   showLoading('Updating dashboard…');
   loadLiveData().then(function() {
-    hideLoading();
     if (APP.loggedIn && APP.name) applyCurrentUserToLive();
     calculateAndRenderAll();
     showToast('✓ Dashboard updated');
+  }).catch(function(e) {
+    console.warn('refresh after delete failed:', e);
+  }).finally(function() {
+    hideLoading(); // don't strand the overlay if the refresh fails
   });
 }
 
@@ -3176,22 +3306,7 @@ function stageNum(stage) {
   return idx >= 0 ? idx + 1 : 1;
 }
 
-function parseDateLabel(isoStr) {
-  if (!isoStr) return '';
-  try {
-    const d = new Date(isoStr);
-    const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    return m[d.getMonth()] + ' ' + d.getDate();
-  } catch(e) { return String(isoStr).substring(0, 10); }
-}
-
-function attachmentSummary() {
-  const parts = [];
-  if (attachments.photos.length) parts.push(`${attachments.photos.length} photo${attachments.photos.length > 1 ? 's' : ''}`);
-  if (attachments.files.length)  parts.push(attachments.files.map(f => f.name).join(', '));
-  if (attachments.note.trim())   parts.push(`Note: ${attachments.note.trim()}`);
-  return parts.join(' · ');
-}
+// parseDateLabel() and attachmentSummary() are defined once, further up.
 
 function getAllOutreachContacts(filterSector) {
   const contacts = [];
@@ -3212,7 +3327,15 @@ function getAllOutreachContacts(filterSector) {
       }
     });
   });
-  return contacts.sort((a,b) => b.contactDate > a.contactDate ? 1 : -1);
+  // Newest first. Dates arrive as either "2026-08-05" (date input) or "Aug 5"
+  // (generated label), so normalise before comparing — and return 0 for ties,
+  // which the old comparator never did.
+  const ts = v => {
+    if (!v) return 0;
+    const d = new Date(/^\d{4}-\d{2}-\d{2}/.test(v) ? v : `${v} ${TRACKING_YEAR}`);
+    return isNaN(d) ? 0 : d.getTime();
+  };
+  return contacts.sort((a,b) => ts(b.contactDate) - ts(a.contactDate));
 }
 
 let outreachFilter = 'all';
@@ -3248,7 +3371,7 @@ function renderOutreachReport() {
     locEl.innerHTML = topLocs.length
       ? '<div class="location-list">'+topLocs.map(([loc,cnt])=>`
           <div class="location-row">
-            <div class="location-name">📍 ${loc}</div>
+            <div class="location-name">📍 ${esc(loc)}</div>
             <div class="location-bar-wrap"><div class="location-bar-fill" style="width:${(cnt/maxLoc*100).toFixed(0)}%"></div></div>
             <div class="location-count">${cnt}</div>
           </div>`).join('')+'</div>'
@@ -3263,7 +3386,7 @@ function renderOutreachReport() {
     if (!s) return '<span class="status-chip status-notyet">—</span>';
     const cls = {Accepted:'accepted',Interested:'interested','Follow-up':'followup','Not Yet':'notyet'}[s]||'notyet';
     const ico = {Accepted:'✅',Interested:'🙏','Follow-up':'📌','Not Yet':'⏳'}[s]||'';
-    return `<span class="status-chip status-${cls}">${ico} ${s}</span>`;
+    return `<span class="status-chip status-${cls}">${ico} ${esc(s)}</span>`;
   };
 
   tableEl.innerHTML = `
@@ -3274,12 +3397,12 @@ function renderOutreachReport() {
       </tr></thead>
       <tbody>${filtered.map(c=>`
         <tr>
-          <td style="font-weight:700">${c.personName}</td>
-          <td style="font-size:12px;color:var(--sec)">${c.memberName}</td>
-          <td style="font-size:11.5px;color:var(--sec)">${c.church}</td>
-          <td style="font-size:11.5px">${c.actionLabel}</td>
-          <td>${c.location?'📍 '+c.location:'<span style="color:var(--ter)">—</span>'}</td>
-          <td style="font-size:12px;white-space:nowrap">${c.contactDate}</td>
+          <td style="font-weight:700">${esc(c.personName)}</td>
+          <td style="font-size:12px;color:var(--sec)">${esc(c.memberName)}</td>
+          <td style="font-size:11.5px;color:var(--sec)">${esc(c.church)}</td>
+          <td style="font-size:11.5px">${esc(c.actionLabel)}</td>
+          <td>${c.location?'📍 '+esc(c.location):'<span style="color:var(--ter)">—</span>'}</td>
+          <td style="font-size:12px;white-space:nowrap">${esc(c.contactDate)}</td>
           <td>${chip(c.outStatus)}</td>
         </tr>`).join('')}
       </tbody>
@@ -3290,15 +3413,20 @@ function renderOutreachReport() {
     </div>`;
 }
 
+// Re-render every screen the current user can actually see. Members don't have
+// church/sector/command screens, and rendering them threw on missing elements.
 function calculateAndRenderAll() {
-  const isLeaderProfile = !!document.getElementById('lp-action-log');
-  if (isLeaderProfile) renderLeaderProfile();
-  else                 renderMemberProfile();
+  const safe = (label, fn) => { try { fn(); } catch(e) { console.error(label + ':', e); } };
 
-  renderMemberHome();
-  renderChurchScreen();
-  renderSectorScreen();
-  renderCommandScreen();
+  if (isLeader()) {
+    safe('leaderProfile', renderLeaderProfile);
+    safe('church',        renderChurchScreen);
+    safe('sector',        renderSectorScreen);
+    if (hasCommandAccess()) safe('command', renderCommandScreen);
+  } else {
+    safe('memberProfile', renderMemberProfile);
+    safe('home',          renderMemberHome);
+  }
 }
 
 function cancelDelete(realIdx) {
@@ -3351,12 +3479,19 @@ function updateStage() {
 // LEADER: MY CHURCH  all data from LIVE store
 // 
 function renderChurchScreen() {
-  const cId   = CHURCHES.find(c => c.name === APP.church)?.id || 'abundance';
-  const cDef  = CHURCHES.find(c => c.id === cId);
-  const cLive = LIVE.churches[cId] || { gospel:0, disciples:0, leaders:0, members:0, monthly:new Array(8).fill(0) };
+  // An unrecognised church used to silently fall back to Abundance, showing a
+  // leader another church's numbers as if they were their own.
+  const cDef  = CHURCHES.find(c => c.name === APP.church) ||
+                CHURCHES.find(c => c.id   === getChurchId(APP.church)) || null;
+  const cId   = cDef?.id || null;
+  const cLive = (cId && LIVE.churches[cId]) || { gospel:0, disciples:0, leaders:0, members:0, monthly:new Array(MONTHS.length).fill(0) };
   const sect  = SECTORS.find(s => s.id === (cDef?.sector || APP.sector)) || SECTORS[0];
+  const tgt   = cId ? churchTarget(cId) : { gospel:1, disciples:1, leaders:1 };
 
-  const gospelPct = cLive.gospel / 22500;
+  const unknownBanner = document.getElementById('ch-unknown');
+  if (unknownBanner) unknownBanner.style.display = cDef ? 'none' : 'block';
+
+  const gospelPct = cLive.gospel / tgt.gospel;
   const st        = statusFor(gospelPct);
 
   // Header
@@ -3367,13 +3502,13 @@ function renderChurchScreen() {
   document.getElementById('ch-status-pill').textContent    = st.label;
   document.getElementById('ch-members-count').textContent  = cLive.members;
   document.getElementById('ch-gospel').textContent         = cLive.gospel.toLocaleString();
-  document.getElementById('ch-score').textContent          = score(cId).toFixed(1);
+  document.getElementById('ch-score').textContent          = (cId ? score(cId) : 0).toFixed(1);
 
-  // Progress rows
+  // Progress rows — targets are this church's share of its sector target
   const rows = [
-    { label:'Gospel Shared', actual:cLive.gospel,    target:22500, color:sect.color },
-    { label:'Disciples',     actual:cLive.disciples, target:125,   color:'#007AFF'  },
-    { label:'Leaders',       actual:cLive.leaders,   target:146,   color:'#FF9500'  },
+    { label:'Gospel Shared', actual:cLive.gospel,    target:tgt.gospel,    color:sect.color },
+    { label:'Disciples',     actual:cLive.disciples, target:tgt.disciples, color:'#007AFF'  },
+    { label:'Leaders',       actual:cLive.leaders,   target:tgt.leaders,   color:'#FF9500'  },
   ];
   document.getElementById('ch-prog').innerHTML = rows.map((p, i, a) => {
     const pp = Math.min(p.actual / p.target * 100, 100);
@@ -3391,7 +3526,12 @@ function renderChurchScreen() {
 
   // Members list  name + stage + points only. No action log detail.
   // Church Leaders see aggregate view only. Logs are private.
-  const churchMembers = LIVE.members.filter(m => m.churchId === APP.church || m.churchId === cId);
+  // Match on church id OR name — m.churchId holds an id, APP.church holds a name,
+  // so comparing them directly never matched anyone
+  const churchMembers = LIVE.members.filter(m =>
+    (cId && (m.churchId === cId || getChurchId(m.church) === cId)) ||
+    (m.church || '').trim() === (APP.church || '').trim()
+  );
   const memberEl = document.getElementById('ch-member-list');
   if (!churchMembers.length) {
     memberEl.innerHTML = `<div class="empty-state">
@@ -3402,15 +3542,15 @@ function renderChurchScreen() {
   } else {
     memberEl.innerHTML = churchMembers.map((m, i) => `
       <div class="lr">
-        <div class="av" style="background:${avColor(i)}">${m.name[0].toUpperCase()}</div>
+        <div class="av" style="background:${avColorFor(m.name)}">${initial(m.name)}</div>
         <div class="rm">
-          <div class="rt">${m.name}</div>
+          <div class="rt">${esc(m.name)}</div>
           <div style="display:flex;align-items:center;gap:5px;margin-top:2px">
             <div style="width:6px;height:6px;border-radius:3px;background:${stageColor(m.stage)}"></div>
-            <span style="font-size:12px;color:#8E8E93">${m.stage || 'Evangelism'}</span>
+            <span style="font-size:12px;color:#8E8E93">${esc(m.stage || 'Evangelism')}</span>
           </div>
         </div>
-        <div style="font-size:13px;font-weight:700;color:#FF9500">${(m.points || 0)} pts</div>
+        <div style="font-size:13px;font-weight:700;color:#FF9500">${Number(m.points) || 0} pts</div>
       </div>
       ${i < churchMembers.length - 1 ? '<div class="ldi"></div>' : ''}
     `).join('') + `<div style="padding:10px 16px;border-top:.5px solid var(--fill4)">
@@ -3446,21 +3586,11 @@ function renderChurchScreen() {
 function renderSectorScreen() {
   const s = SECTORS.find(x => x.id === activeSector);
 
-  // SSOT: Filter LIVE.members directly by sector — same source as Reports tab
-  // This is the only reliable way: both use the raw array, not pre-aggregated totals
-  const sectorMembers = LIVE.members.filter(function(m) {
-    return (m.sector || '').toString().toLowerCase().trim() === activeSector;
-  });
-
-  // Explicit summation with Number() — REQ 1
-  const sLv = {
-    gospel:    sectorMembers.reduce(function(sum,m){ return sum + (Number(m.gospel)    || 0); }, 0),
-    disciples: sectorMembers.reduce(function(sum,m){ return sum + (Number(m.disciples) || 0); }, 0),
-    leaders:   sectorMembers.reduce(function(sum,m){ return sum + (Number(m.leaders)   || 0); }, 0),
-  };
-
-  // Debug log — confirms what Faith/Love sectors are reading
-  console.log('Sector', activeSector, 'members:', sectorMembers.length, '→', sLv);
+  // Single source of truth: membersInSector() is the ONE filter used by the hero
+  // card, the tiles and the report tables. They used to use two different filters
+  // and then overwrite each other, so the same screen could show two totals.
+  const sectorMembers = membersInSector(activeSector);
+  const sLv = sumMembers(sectorMembers);
 
   const pct = sLv.gospel / s.target.gospel;
   const st  = statusFor(pct);
@@ -3582,11 +3712,9 @@ function setSector(id) { activeSector = id; renderSectorScreen(); }
 // LEADER: COMMAND CENTER
 // 
 function renderCommandScreen() {
-  // SSOT: Calculate ALL totals by filtering LIVE.members directly
-  // Never trust pre-aggregated LIVE.sectors — always recalculate from the raw array
-  const tG = LIVE.members.reduce(function(sum,m){ return sum + (Number(m.gospel)    || 0); }, 0);
-  const tD = LIVE.members.reduce(function(sum,m){ return sum + (Number(m.disciples) || 0); }, 0);
-  const tL = LIVE.members.reduce(function(sum,m){ return sum + (Number(m.leaders)   || 0); }, 0);
+  // SSOT: all totals come from networkTotals(), the same helper the member Home
+  // screen uses, so the network figure is identical on every screen
+  const { gospel: tG, disciples: tD, leaders: tL } = networkTotals();
 
   // Church Health Cards
   const healthEl = document.getElementById('cmd-health-cards');
@@ -3597,7 +3725,10 @@ function renderCommandScreen() {
   // Outreach Contacts Report
   renderOutreachReport();
 
-  const mPct = tG / 270000 * 0.5 + tD / 1500 * 0.3 + tL / 1750 * 0.2;
+  // Weighted mission progress against the summed network targets
+  const mPct = tG / NETWORK_TARGET.gospel    * 0.5
+             + tD / NETWORK_TARGET.disciples * 0.3
+             + tL / NETWORK_TARGET.leaders   * 0.2;
 
   document.getElementById('cmd-pct').textContent    = (mPct * 100).toFixed(1) + '%';
   document.getElementById('cmd-pct-bar').style.width = Math.min(mPct * 100, 100).toFixed(1) + '%';
@@ -3669,7 +3800,7 @@ function renderCommandScreen() {
     data: {
       labels: SECTORS.map(s => s.name),
       datasets: [
-        { label:'Gospel Shared', data: SECTORS.map(s => LIVE.sectors[s.id].gospel),   backgroundColor: SECTORS.map(s => s.color + 'CC'), borderColor: SECTORS.map(s => s.color), borderWidth: 2, borderRadius: 8 },
+        { label:'Gospel Shared', data: SECTORS.map(s => sumMembers(membersInSector(s.id)).gospel),   backgroundColor: SECTORS.map(s => s.color + 'CC'), borderColor: SECTORS.map(s => s.color), borderWidth: 2, borderRadius: 8 },
         { label:'2030 Target',   data: SECTORS.map(s => s.target.gospel), backgroundColor: 'rgba(0,0,0,0.05)', borderColor: 'rgba(0,0,0,0.15)', borderWidth: 1.5, borderRadius: 8 },
       ],
     },
@@ -3701,7 +3832,7 @@ function renderCommandScreen() {
 
   // Weekly actions
   document.getElementById('cmd-actions').innerHTML = SECTORS.map((s, i) => {
-    const pct = LIVE.sectors[s.id].gospel / s.target.gospel;
+    const pct = sumMembers(membersInSector(s.id)).gospel / s.target.gospel;
     return `<div>
       <div class="lr" style="align-items:flex-start">
         <div style="width:8px;height:8px;border-radius:4px;background:${s.color};margin-top:6px;flex-shrink:0"></div>
@@ -3736,7 +3867,7 @@ function renderCommandScreen() {
     : `<div class="empty-state">
         <div class="empty-icon">🏆</div>
         <div class="empty-title">Leaderboard starts at zero</div>
-        <div class="empty-sub">Rankings will update as members across all 12 churches log their gospel activities.</div>
+        <div class="empty-sub">Rankings will update as members across all 13 churches log their gospel activities.</div>
       </div>`;
 
   // All member logs  Pastor only (Jopet Alim has full network view)
@@ -3751,19 +3882,21 @@ function renderCommandScreen() {
 // 
 
 // Build one expandable log card per member
-function buildMemberLogCard(m) {
+function buildMemberLogCard(m, cardIdx) {
   const logs = m.actions || [];
   const hasLogs = logs.length > 0;
-  const uid = m.name.replace(/\s+/g,'_');
+  // Index-based uid — two members with the same name used to collide and expand
+  // each other's cards, and a name with a quote broke the handler entirely
+  const uid = 'mlc' + (cardIdx === undefined ? 0 : cardIdx);
   const ct = { Evangelism:0, Discipleship:0, Leadership:0, Multiplying:0 };
   logs.forEach(a => { if (ct[a.type] !== undefined) ct[a.type]++; });
 
   return `<div class="mlc">
     <div class="mlc-hdr" onclick="toggleMemberLog('${uid}')">
-      <div class="av" style="background:${avColor(Math.floor(Math.random()*6))};width:36px;height:36px;border-radius:18px;flex-shrink:0;font-size:13px;font-weight:700;color:#fff;display:flex;align-items:center;justify-content:center">${m.name[0].toUpperCase()}</div>
+      <div class="av" style="background:${avColorFor(m.name)};width:36px;height:36px;border-radius:18px;flex-shrink:0;font-size:13px;font-weight:700;color:#fff;display:flex;align-items:center;justify-content:center">${initial(m.name)}</div>
       <div class="rm">
-        <div class="rt" style="font-weight:600">${m.name}</div>
-        <div class="rs">${m.church} · ${m.stage || 'Evangelism'} · ${logs.length} action${logs.length !== 1 ? 's' : ''}</div>
+        <div class="rt" style="font-weight:600">${esc(m.name)}</div>
+        <div class="rs">${esc(m.church)} · ${esc(m.stage || 'Evangelism')} · ${logs.length} action${logs.length !== 1 ? 's' : ''}</div>
       </div>
       <div style="text-align:right;margin-right:8px">
         <div style="font-size:14px;font-weight:800;color:var(--orange)">${m.points || 0} pts</div>
@@ -3788,13 +3921,13 @@ function buildMemberLogCard(m) {
             <div class="alr" style="padding:11px 16px">
               <div class="al-dot" style="${typeStyle(a.type)};width:34px;height:34px">${typeIcon(a.type)}</div>
               <div class="al-body">
-                <div class="al-title" style="font-size:13.5px">${a.label}</div>
-                <div class="al-meta">${a.type} · ${a.date}</div>
-                ${a.reflection ? `<div class="al-refl">"${a.reflection}"</div>` : ''}
-                ${a.evidence   ? `<div style="font-size:11px;color:var(--ter);margin-top:2px">📋 ${a.evidence}</div>` : ''}
+                <div class="al-title" style="font-size:13.5px">${esc(a.label)}</div>
+                <div class="al-meta">${esc(a.type)} · ${esc(a.date)}</div>
+                ${a.reflection ? `<div class="al-refl">"${esc(a.reflection)}"</div>` : ''}
+                ${a.evidence   ? `<div style="font-size:11px;color:var(--ter);margin-top:2px">📋 ${esc(a.evidence)}</div>` : ''}
                 ${al.length    ? `<div style="font-size:11px;color:var(--blue);margin-top:2px">${al.join(' · ')}</div>` : ''}
               </div>
-              <div class="al-pts" style="font-size:13px">+${a.pts}</div>
+              <div class="al-pts" style="font-size:13px">+${esc(a.pts)}</div>
             </div>
             ${i < arr.length - 1 ? '<div class="ldi"></div>' : ''}
           `}).join('')}`
@@ -3813,28 +3946,27 @@ function toggleMemberLog(uid) {
 
 // Render member logs for a specific sector (Sector Leader)
 function renderMemberLogsForSector(sectorId) {
-  const sectorMembers = LIVE.members.filter(m => {
-    const c = CHURCHES.find(ch => ch.name === m.church || ch.id === m.churchId);
-    return c && c.sector === sectorId;
-  });
   const el = document.getElementById('sec-member-logs');
   if (!el) return;
+  if (!canViewLogs()) { el.innerHTML = ''; return; }
+  const sectorMembers = membersInSector(sectorId);
   if (!sectorMembers.length) {
     el.innerHTML = `<div class="mlc"><div class="mlc-empty">No members in this sector yet.</div></div>`;
     return;
   }
-  el.innerHTML = sectorMembers.map(buildMemberLogCard).join('');
+  el.innerHTML = sectorMembers.map((m, i) => buildMemberLogCard(m, 's' + i)).join('');
 }
 
 // Render all member logs for command center (Pastor)
 function renderAllMemberLogs() {
   const el = document.getElementById('cmd-member-logs');
   if (!el) return;
+  if (!canViewLogs()) { el.innerHTML = ''; return; }
   if (!LIVE.members.length) {
     el.innerHTML = `<div style="padding:24px;text-align:center;color:var(--ter);font-size:13px">No members have logged actions yet.</div>`;
     return;
   }
-  el.innerHTML = LIVE.members.map(buildMemberLogCard).join('');
+  el.innerHTML = LIVE.members.map((m, i) => buildMemberLogCard(m, 'c' + i)).join('');
 }
 
 // ══════════════════════════════════════════════════════════
@@ -3903,10 +4035,10 @@ function renderDiscReport(tableId, pctId, ofId, barId, members, sectorTarget) {
         <tbody>
           ${rows.map(r => `
             <tr>
-              <td style="font-weight:600;min-width:100px">${r.name}</td>
-              <td class="center" style="font-size:11.5px;color:var(--sec)">${r.church}</td>
+              <td style="font-weight:600;min-width:100px">${esc(r.name)}</td>
+              <td class="center" style="font-size:11.5px;color:var(--sec)">${esc(r.church)}</td>
               <td class="center">
-                <span style="font-size:10px;padding:2px 7px;border-radius:20px;font-weight:700;background:${r.sect.light};color:${r.sect.dark}">${r.sect.name}</span>
+                <span style="font-size:10px;padding:2px 7px;border-radius:20px;font-weight:700;background:${r.sect.light};color:${r.sect.dark}">${esc(r.sect.name)}</span>
               </td>
               <td class="center">${dotCell(r.ct.Evangelism)}</td>
               <td class="center">${dotCell(r.ct.Discipleship)}</td>
@@ -3949,10 +4081,10 @@ function renderLeadReport(tableId, pctId, ofId, barId, members, sectorTarget) {
         <tbody>
           ${rows.map(r => `
             <tr>
-              <td style="font-weight:600;min-width:100px">${r.name}</td>
-              <td class="center" style="font-size:11.5px;color:var(--sec)">${r.church}</td>
+              <td style="font-weight:600;min-width:100px">${esc(r.name)}</td>
+              <td class="center" style="font-size:11.5px;color:var(--sec)">${esc(r.church)}</td>
               <td class="center">
-                <span style="font-size:10px;padding:2px 7px;border-radius:20px;font-weight:700;background:${r.sect.light};color:${r.sect.dark}">${r.sect.name}</span>
+                <span style="font-size:10px;padding:2px 7px;border-radius:20px;font-weight:700;background:${r.sect.light};color:${r.sect.dark}">${esc(r.sect.name)}</span>
               </td>
               <td class="center">${dotCell(r.ct.Discipleship)}</td>
               <td class="center">${dotCell(r.ct.Leadership)}</td>
@@ -3971,99 +4103,29 @@ function renderLeadReport(tableId, pctId, ofId, barId, members, sectorTarget) {
 
 // ── SECTOR SCREEN helpers ─────────────────────────────────────────
 function renderSectorReports(sectorId) {
-  // Use church lookup with full trim — fixes hidden spaces in sheet data (Gemini step 3)
-  const sectorMembers = LIVE.members.filter(m => {
-    // Method 1: look up church in CHURCHES array
-    const c = CHURCHES.find(ch =>
-      (ch.name || '').trim() === (m.church || '').trim() ||
-      (ch.id   || '').trim() === (m.churchId || '').trim()
-    );
-    if (c) return c.sector.trim() === sectorId.trim();
-    // Method 2: fallback — use stored sector with full normalization
-    return (m.sector || '').toString().toLowerCase().trim() === sectorId.trim();
-  });
-  renderDiscReport('sec-disc-table','sec-disc-pct','sec-disc-of','sec-disc-bar', sectorMembers, 500);
-  renderLeadReport('sec-lead-table','sec-lead-pct','sec-lead-of','sec-lead-bar', sectorMembers, 580);
-
-  // Bridge: sync the hero dashboard with the same sectorMembers the report just used
-  syncDashboardWithReports(sectorId, sectorMembers);
+  // Same filter the hero card uses — see membersInSector()
+  const sectorMembers = membersInSector(sectorId);
+  const s = SECTORS.find(x => x.id === sectorId) || SECTORS[0];
+  // Targets come from SECTORS, not hardcoded. The leaders target was 580 here
+  // while the actual sector targets are 583/583/584.
+  renderDiscReport('sec-disc-table','sec-disc-pct','sec-disc-of','sec-disc-bar', sectorMembers, s.target.disciples);
+  renderLeadReport('sec-lead-table','sec-lead-pct','sec-lead-of','sec-lead-bar', sectorMembers, s.target.leaders);
 }
 
 // ── COMMAND SCREEN helpers ────────────────────────────────────────
 function renderCommandReports() {
-  renderDiscReport('cmd-disc-table','cmd-disc-pct','cmd-disc-of','cmd-disc-bar', LIVE.members, 1500);
-  renderLeadReport('cmd-lead-table','cmd-lead-pct','cmd-lead-of','cmd-lead-bar', LIVE.members, 1750);
-
-  // Bridge: sync command totals with same LIVE.members the report used
-  syncCommandDashboard();
+  // Network targets = sum of the sector targets, so the two can't drift apart
+  const discTarget = SECTORS.reduce((n,s) => n + s.target.disciples, 0);
+  const leadTarget = SECTORS.reduce((n,s) => n + s.target.leaders,   0);
+  renderDiscReport('cmd-disc-table','cmd-disc-pct','cmd-disc-of','cmd-disc-bar', LIVE.members, discTarget);
+  renderLeadReport('cmd-lead-table','cmd-lead-pct','cmd-lead-of','cmd-lead-bar', LIVE.members, leadTarget);
 }
 
-// ── REPORT-TO-DASHBOARD BRIDGE ────────────────────────────────────
-// Takes the SAME member array the reports use and forces it into the dashboard UI
-// This is the Single Source of Truth — reports and dashboard always match
-function syncDashboardWithReports(sectorId, sectorMembers) {
-  // REQ 2+3: Manual sum with Number() force — prevents string/null zero issues
-  let gospelSum = 0;
-  let discSum   = 0;
-  let leaderSum = 0;
-
-  sectorMembers.forEach(function(m) {
-    gospelSum += Number(m.gospel)    || 0;
-    discSum   += Number(m.disciples) || 0;
-    leaderSum += Number(m.leaders)   || 0;
-  });
-
-  console.log('syncDashboardWithReports:', sectorId, '→ gospel:', gospelSum, 'disc:', discSum, 'members:', sectorMembers.length);
-
-  const s   = SECTORS.find(x => x.id === sectorId);
-  if (!s) return;
-  const pct = gospelSum / s.target.gospel;
-  const st  = statusFor(pct);
-
-  // REQ 5: Direct ID injection into the hero card elements
-  const hero = document.getElementById('sec-hero');
-  if (hero) {
-    hero.innerHTML = `
-      <div style="border-radius:18px;padding:20px;margin:4px 0;background:linear-gradient(135deg,${s.light} 0%,${s.color}10 100%);border:1px solid ${s.color}30">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
-          <div>
-            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:${s.dark};margin-bottom:4px">${s.name} Sector</div>
-            <div style="font-size:30px;font-weight:800;letter-spacing:-.6px;color:#000;line-height:1">${gospelSum.toLocaleString()}</div>
-            <div style="font-size:13px;color:#8E8E93;margin-top:3px">gospel shared of ${s.target.gospel.toLocaleString()}</div>
-          </div>
-          <span class="pill ${st.cls}">${st.label}</span>
-        </div>
-        <div class="pb" style="height:8px"><div class="pf" style="width:${Math.min(pct*100,100).toFixed(1)}%;height:8px;background:${s.color}"></div></div>
-        <div style="font-size:12px;color:#8E8E93;margin-top:4px">${(pct*100).toFixed(1)}% of 2030 target</div>
-      </div>`;
-  }
-
-  // Force disc and leader tiles too
-  const discEl = document.getElementById('sec-disc');
-  const leadEl = document.getElementById('sec-lead');
-  if (discEl) discEl.textContent = discSum;
-  if (leadEl) leadEl.textContent = leaderSum;
-}
-
-// Sync the Command screen totals using LIVE.members directly
-function syncCommandDashboard() {
-  let tG = 0, tD = 0, tL = 0;
-
-  LIVE.members.forEach(function(m) {
-    tG += Number(m.gospel)    || 0;
-    tD += Number(m.disciples) || 0;
-    tL += Number(m.leaders)   || 0;
-  });
-
-  console.log('syncCommandDashboard → gospel:', tG, 'disc:', tD, 'leaders:', tL, 'members:', LIVE.members.length);
-
-  const gospelEl = document.getElementById('cmd-gospel');
-  const discEl   = document.getElementById('cmd-disc');
-  const leadEl   = document.getElementById('cmd-leads');
-  if (gospelEl) gospelEl.textContent = tG.toLocaleString();
-  if (discEl)   discEl.textContent   = tD;
-  if (leadEl)   leadEl.textContent   = tL;
-}
+// NOTE: syncDashboardWithReports() and syncCommandDashboard() used to re-render
+// the hero card and totals a second time, from a differently-filtered member set,
+// after renderSectorScreen()/renderCommandScreen() had already drawn them —
+// whichever ran last won. Both screens now compute once from membersInSector()
+// / LIVE.members, so the bridge functions are gone.
 
 
 function renderLeaderProfile() {
@@ -4079,7 +4141,7 @@ function renderLeaderProfile() {
   document.getElementById('lp-detail').textContent = `${APP.church} · ${sect.name} Sector · FLCC BOTR`;
 
   // 5-year milestone rows
-  const tG = LIVE.totalGospel;
+  const tG = networkTotals().gospel;
   document.getElementById('lp-year-rows').innerHTML = YEAR_TARGETS.map((y, i) => {
     const actual = i === 0 ? tG : 0;
     const pct    = Math.min(actual / y.target * 100, 100);
@@ -4108,7 +4170,7 @@ function renderLeaderProfile() {
 
   // Sector health overview
   document.getElementById('lp-sec-overview').innerHTML = SECTORS.map((s, i) => {
-    const pct = LIVE.sectors[s.id].gospel / s.target.gospel;
+    const pct = sumMembers(membersInSector(s.id)).gospel / s.target.gospel;
     const st  = statusFor(pct);
     return `<div>
       <div class="srow">
@@ -4133,6 +4195,9 @@ function signOut() {
   Object.assign(APP, { loggedIn:false, role:null, name:'', church:'', sector:'', stage:'Evangelism', points:0, actions:[] });
   currentTab = 'home'; activeSector = 'love'; selAction = 0;
   Object.keys(charts).forEach(destroyChart);
+  // Drop any half-filled log form so it can't follow the next person into their session
+  clearAttachments();
+  pinBuffer = ''; pinCallback = null; pinForName = ''; pinChangeStep = ''; pinChangeNew = '';
   document.getElementById('tabbar').style.display       = 'none';
   document.getElementById('nav-role-row').style.display = 'none';
   document.getElementById('nav-title').textContent      = 'FLCC BOTR';
@@ -4175,56 +4240,101 @@ function showToast(msg) { const el = document.getElementById('toast'); el.textCo
 // PIN PROTECTION
 // ══════════════════════════════════════════════════════════
 
-// Get current PIN for a user — checks localStorage first, falls back to default
-function getUserPin(name) {
-  try {
-    const saved = localStorage.getItem('flcc_pin_' + name.replace(/\s+/g,'_'));
-    if (saved) return saved;
-  } catch(e) {}
-  const known = KNOWN_USERS[name];
-  return known ? known.pin : null;
+// SHA-256 of PIN_SALT + ':' + pin, lowercase hex
+async function hashPin(pin) {
+  const bytes = new TextEncoder().encode(PIN_SALT + ':' + String(pin));
+  const buf   = await crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
-// Save updated PIN to localStorage
-function saveUserPin(name, newPin) {
+// localStorage key for a user's changed PIN — canonical + lowercased so casing
+// can never produce a second, PIN-less identity
+function pinKey(name) {
+  return 'flcc_pin_' + canonicalName(name).toLowerCase().replace(/\s+/g,'_');
+}
+
+// The hash a user's entry must match: their own changed PIN if they set one,
+// otherwise the default from KNOWN_USERS. Returns null only for non-leaders.
+function getUserPinHash(name) {
   try {
-    localStorage.setItem('flcc_pin_' + name.replace(/\s+/g,'_'), newPin);
+    const saved = localStorage.getItem(pinKey(name));
+    if (saved) return saved;
+    // Migrate a pre-fix plaintext PIN stored under the old key
+    const legacy = localStorage.getItem('flcc_pin_' + String(name || '').replace(/\s+/g,'_'));
+    if (legacy) return { legacyPlaintext: legacy };
+  } catch(e) {}
+  const known = findKnownUser(name);
+  return known ? known.pinHash : null;
+}
+
+// Does `pin` unlock `name`? Handles both hashed and migrated-plaintext records.
+async function verifyPin(name, pin) {
+  const expected = getUserPinHash(name);
+  if (!expected) return false;
+  if (typeof expected === 'object' && expected.legacyPlaintext) {
+    if (pin !== expected.legacyPlaintext) return false;
+    // Upgrade the stored value to a hash now that we know it is correct
+    try { localStorage.setItem(pinKey(name), await hashPin(pin)); } catch(e) {}
+    try { localStorage.removeItem('flcc_pin_' + String(name || '').replace(/\s+/g,'_')); } catch(e) {}
+    return true;
+  }
+  return (await hashPin(pin)) === expected;
+}
+
+// Save a new PIN (hashed) to localStorage
+async function saveUserPin(name, newPin) {
+  try {
+    localStorage.setItem(pinKey(name), await hashPin(newPin));
     return true;
   } catch(e) { return false; }
 }
 
 let pinBuffer    = '';
 let pinCallback  = null;
+let pinForName   = '';   // who the prompt is for — never re-read from the DOM
+let pinChecking  = false;
 
 function requirePin(name, onSuccess) {
-  const pin = getUserPin(name);
-  if (!pin) { onSuccess(); return; }
+  // Every KNOWN_USERS leader has a PIN. If the lookup ever comes back empty the
+  // safe move is to refuse, not to wave the sign-in through.
+  if (!findKnownUser(name)) { onSuccess(); return; }
+  if (!getUserPinHash(name)) {
+    showToast('⚠️ No PIN configured for this leader — contact the administrator.');
+    return;
+  }
   pinBuffer   = '';
+  pinForName  = canonicalName(name);
   pinCallback = onSuccess;
   pinChangeStep = '';
-  document.getElementById('pin-name').textContent = '🔐 ' + name;
+  document.getElementById('pin-name').textContent = '🔐 ' + pinForName;
   document.getElementById('pin-error').textContent = '';
   updatePinDots();
   document.getElementById('pin-overlay').style.display = 'flex';
 }
 
 function pinPress(digit) {
+  if (pinChecking) return;
   if (pinBuffer.length >= 4) return;
   pinBuffer += digit;
   updatePinDots();
   if (pinBuffer.length === 4) setTimeout(checkPin, 150);
 }
 
-function checkPin() {
+async function checkPin() {
   if (pinChangeStep) { checkPinChange(); return; }
-  const displayName = document.getElementById('pin-name').textContent.replace('🔐 ','');
-  const correctPin  = getUserPin(displayName);
-  if (pinBuffer === correctPin) {
-    document.getElementById('pin-overlay').style.display = 'none';
-    pinBuffer = '';
-    if (pinCallback) { pinCallback(); pinCallback = null; }
-  } else {
-    showPinError('❌ Wrong PIN — try again');
+  if (pinChecking) return;
+  pinChecking = true;
+  try {
+    const ok = await verifyPin(pinForName, pinBuffer);
+    if (ok) {
+      document.getElementById('pin-overlay').style.display = 'none';
+      pinBuffer = '';
+      if (pinCallback) { const cb = pinCallback; pinCallback = null; cb(); }
+    } else {
+      showPinError('❌ Wrong PIN — try again');
+    }
+  } finally {
+    pinChecking = false;
   }
 }
 
@@ -4243,6 +4353,7 @@ function pinDelete() {
 function pinCancel() {
   pinBuffer = '';
   pinCallback = null;
+  pinForName  = '';
   pinChangeStep = '';
   pinChangeNew  = '';
   document.getElementById('pin-overlay').style.display = 'none';
@@ -4276,9 +4387,9 @@ function startPinChange() {
   document.getElementById('pin-overlay').style.display = 'flex';
 }
 
-function checkPinChange() {
+async function checkPinChange() {
   if (pinChangeStep === 'current') {
-    if (pinBuffer === getUserPin(APP.name)) {
+    if (await verifyPin(APP.name, pinBuffer)) {
       pinBuffer = '';
       pinChangeStep = 'new';
       document.getElementById('pin-name').textContent  = '🆕 Enter New 4-Digit PIN';
@@ -4296,7 +4407,7 @@ function checkPinChange() {
     updatePinDots();
   } else if (pinChangeStep === 'confirm') {
     if (pinBuffer === pinChangeNew) {
-      saveUserPin(APP.name, pinChangeNew);
+      await saveUserPin(APP.name, pinChangeNew);
       pinChangeStep = '';
       pinChangeNew  = '';
       pinBuffer     = '';
@@ -4320,37 +4431,42 @@ function checkPinChange() {
 // ══════════════════════════════════════════════════════════
 // PHOTO UPLOAD TO GOOGLE DRIVE
 // ══════════════════════════════════════════════════════════
-const DRIVE_FOLDER  = '1gGZwP15Nx_hbKtYMgXpqUakSmOzkJl1D';
-const UPLOAD_URL    = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
+const DRIVE_FOLDER  = DRIVE_FOLDER_ID;
+// Photos are >8MB as base64 fairly easily; Apps Script rejects very large posts
+const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
 
-async function uploadPhotoToDrive(file, memberName, actionLabel) {
+// Uploads one already-read photo (data URL from the attachment picker) to Drive
+// through the Apps Script proxy. Called from submitAction — the previous version
+// took a File object and was never wired up, so attached photos went nowhere.
+//
+// REQUIRES an Apps Script doPost branch for action === 'uploadPhoto' that does
+// DriveApp.getFolderById(folderId).createFile(Utilities.newBlob(
+//   Utilities.base64Decode(base64Data), mimeType, fileName));
+async function uploadPhotoDataUrl(dataUrl, originalName, memberName, actionLabel, actionId) {
   try {
-    // Use Apps Script as proxy to upload to Drive (avoids OAuth in browser)
-    const reader = new FileReader();
-    return new Promise((resolve) => {
-      reader.onload = async function(e) {
-        const base64 = e.target.result.split(',')[1];
-        const ext    = file.name.split('.').pop() || 'jpg';
-        const fname  = `${memberName}_${actionLabel}_${Date.now()}.${ext}`.replace(/\s+/g,'_');
+    if (!dataUrl || dataUrl.indexOf(',') < 0) return false;
+    const base64 = dataUrl.split(',')[1];
+    // base64 is ~4/3 of the byte size
+    if (base64.length * 0.75 > MAX_PHOTO_BYTES) {
+      console.warn('Photo too large to upload:', originalName);
+      showToast('⚠️ A photo was too large to upload (max 8MB)');
+      return false;
+    }
+    const ext   = (String(originalName || '').split('.').pop() || 'jpg').slice(0, 5);
+    const fname = `${memberName}_${actionLabel}_${Date.now()}.${ext}`.replace(/[^\w.\-]+/g,'_');
 
-        // Send to Apps Script which uploads to Drive
-        await apiPost({
-          action:     'uploadPhoto',
-          folderId:   DRIVE_FOLDER,
-          fileName:   fname,
-          mimeType:   file.type || 'image/jpeg',
-          base64Data: base64,
-        });
-
-        // Return the Drive folder link (direct file link needs Apps Script to return it)
-        const link = `https://drive.google.com/drive/folders/${DRIVE_FOLDER}`;
-        resolve(link);
-      };
-      reader.readAsDataURL(file);
+    return await apiPost({
+      action:     'uploadPhoto',
+      actionId:   actionId || '',
+      memberName: memberName,
+      folderId:   DRIVE_FOLDER,
+      fileName:   fname,
+      mimeType:   dataUrl.slice(5, dataUrl.indexOf(';')) || 'image/jpeg',
+      base64Data: base64,
     });
   } catch(e) {
     console.warn('Photo upload failed:', e);
-    return '';
+    return false;
   }
 }
 
@@ -4429,9 +4545,19 @@ function renderHealthCard(churchId, churchName) {
     </div>`;
 }
 
-window.addEventListener('DOMContentLoaded', () => {
+// Status-bar clock — was set once at load and then froze
+function tickClock() {
+  const el = document.getElementById('sb-time');
+  if (!el) return;
   const now = new Date();
-  document.getElementById('sb-time').textContent = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+  el.textContent = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  tickClock();
+  setInterval(tickClock, 30000);
+  const countEl = document.getElementById('hero-church-count');
+  if (countEl) countEl.textContent = CHURCHES.length;
   renderRecentSessions();
   checkConnection();
 });
@@ -4439,7 +4565,8 @@ window.addEventListener('DOMContentLoaded', () => {
 // Silent background sync when phone returns from background
 // Refreshes all data screens silently without loading spinner
 document.addEventListener('visibilitychange', async () => {
-  if (document.visibilityState === 'visible' && APP.loggedIn) {
+  if (document.visibilityState !== 'visible' || !APP.loggedIn) return;
+  try {
     // Silent refresh — no loading overlay, just pull fresh data
     await loadLiveData();
     if (APP.loggedIn && APP.name) applyCurrentUserToLive();
@@ -4448,6 +4575,8 @@ document.addEventListener('visibilitychange', async () => {
     if (currentTab === 'church')  renderChurchScreen();
     if (currentTab === 'sector')  renderSectorScreen();
     if (currentTab === 'command') renderCommandScreen();
+  } catch(e) {
+    console.warn('background refresh failed:', e); // never let this break the view
   }
 });
 
