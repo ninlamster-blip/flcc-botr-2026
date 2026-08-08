@@ -1625,7 +1625,7 @@ button:disabled, .submit-btn:disabled, .log-btn:disabled { transform: none !impo
 //  GOOGLE SHEETS CONFIGURATION
 // Replace with your deployed Google Apps Script Web App URL
 // 
-const APP_BUILD = '2026-08-08.12';   // shown on the sign-in screen — check this matches when reporting a problem
+const APP_BUILD = '2026-08-08.13';   // shown on the sign-in screen — check this matches when reporting a problem
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwvKuqB85PnY3S3Cn6o9JwqesCMpeKxvZ2Q1lWTJT0mrWAez8eMFY-hWE4os30f0JEx/exec';
 const SHEETS_ON  = SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE';
 
@@ -2013,7 +2013,7 @@ function saveActionsToLocal() {
       church:  APP.church,
       role:    APP.role,
       sector:  APP.sector,
-      actions: APP.actions,
+      actions: APP.actions.slice(),
       points:  APP.points,
       stage:   APP.stage,
       savedAt: Date.now(),
@@ -2656,8 +2656,11 @@ function applyActionToLive(actionType, churchRef, sectorId, actionObj) {
   // Keep full action log on the member record (for leader/pastor viewing)
   if (actionObj) {
     member.actions = member.actions || [];
-    member.actions.push(actionObj);
-    member.points  = (member.points || 0) + (actionObj.pts || 0);
+    const already = actionObj.id && member.actions.some(x => x.id === actionObj.id);
+    if (!already) {
+      member.actions.push(actionObj);
+      member.points  = (member.points || 0) + (actionObj.pts || 0);
+    }
     member.actionsCount = member.actions.length;
   }
   member.stage = APP.stage; // always sync latest stage
@@ -2790,7 +2793,7 @@ async function completeLogin(name, role, church, sectorId, churchVal, known, loc
     sector:   sectorId.toLowerCase().trim(),
     stage:    existing?.stage || local?.stage || 'Evangelism',
     points:   useSheets ? (Number(existing.points) || 0) : (local?.points || 0),
-    actions:  chosenActions.slice(),   // own copy — must not alias LIVE.members[i].actions
+    actions:  dedupeActions(chosenActions),   // own copy, and never the same array as LIVE
   });
 
   // Keep the local copy in step with what the Sheet says, so a stale local record
@@ -2963,7 +2966,10 @@ function applyCurrentUserToLive() {
 
   if (existing) {
     // Always use APP state — it reflects the latest local changes including deletions
-    existing.actions = APP.actions;
+    // .slice() is essential: assigning the array itself made LIVE.members[i].actions
+    // and APP.actions one and the same object, so logging pushed the action in twice
+    // (once here, once via applyActionToLive) and deleting removed only one copy.
+    existing.actions = APP.actions.slice();
     existing.points  = APP.points;
     existing.stage   = APP.stage;
     // ...and the per-type counts the dashboards actually sum, otherwise a freshly
@@ -2979,7 +2985,7 @@ function applyCurrentUserToLive() {
       sector: secId, stage: APP.stage, role: APP.role,
       points: APP.points, actionsCount: APP.actions.length,
       gospel, disciples, leaders, monthlyActions: monthly,
-      actions: APP.actions,
+      actions: APP.actions.slice(),
     });
     if (LIVE.churches[cId]) {
       LIVE.churches[cId].members++;
@@ -3249,6 +3255,20 @@ function selAct(i) {
   renderLogScreen(); // re-render also refreshes the outreach forms
 }
 
+// Drop repeated actions from a list. Phones that logged before this fix have
+// duplicated entries saved locally; this removes them on sign-in and after every
+// sync, so nobody has to clear their browser data.
+function dedupeActions(list) {
+  const seen = new Set();
+  return (list || []).filter(a => {
+    if (!a) return false;
+    const key = a.id || [a.label, a.type, a.dateIso || a.date, a.personName || ''].join('|');
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 // Stable id for an action so edits and deletes can be matched in the Sheet.
 // Without one, edit/delete requests had nothing to target and were dropped.
 function newActionId() {
@@ -3446,7 +3466,7 @@ async function submitActionInner() {
         await loadLiveData();
         const me = findMyLiveRecord();
         if (me && (me.actions || []).length >= APP.actions.length) {
-          APP.actions = (me.actions || []).slice();
+          APP.actions = dedupeActions(me.actions);
           APP.points  = Number(me.points) || APP.points;
           saveActionsToLocal();
         }
@@ -3703,7 +3723,7 @@ function deleteAction(realIdx) {
         // Re-sync APP from the Sheet so a failed delete shows the truth
         const me = findMyLiveRecord();
         if (me) {
-          APP.actions = (me.actions || []).slice();
+          APP.actions = dedupeActions(me.actions);
           APP.points  = Number(me.points) || 0;
           saveActionsToLocal();
         }
