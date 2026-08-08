@@ -91,6 +91,43 @@ button:disabled, .submit-btn:disabled, .log-btn:disabled { transform: none !impo
   .srow:active, .lr:active, .arow:active, .log-btn:active, .submit-btn:active { transform: none; }
 }
 
+
+/* ── DRILL-DOWN SHEET ────────────────────────────────────────────
+   Tapping a sector or church opens this over the dashboard. */
+.drill-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:120;
+  display:none;align-items:flex-end;justify-content:center;
+  -webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
+.drill-overlay.show{display:flex}
+.drill-sheet{background:var(--bg);width:100%;max-width:430px;max-height:88vh;
+  border-radius:20px 20px 0 0;display:flex;flex-direction:column;overflow:hidden;
+  animation:drillUp .22s cubic-bezier(.2,.8,.3,1)}
+@keyframes drillUp{from{transform:translateY(100%)}to{transform:none}}
+.drill-head{padding:14px 16px 12px;background:var(--surface);border-bottom:.5px solid var(--sep);
+  display:flex;align-items:center;gap:10px;flex-shrink:0}
+.drill-grip{position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  width:36px;height:4px;border-radius:2px;background:var(--fill4)}
+.drill-title{font-size:19px;font-weight:800;letter-spacing:-.4px;flex:1;min-width:0}
+.drill-sub{font-size:12px;color:var(--sec);margin-top:2px}
+.drill-close{border:none;background:var(--fill4);color:var(--sec);width:32px;height:32px;
+  border-radius:16px;font-size:17px;font-weight:700;cursor:pointer;flex-shrink:0;font-family:inherit}
+.drill-back{border:none;background:var(--blue-bg);color:var(--blue);padding:6px 11px;
+  border-radius:16px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;font-family:inherit}
+.drill-body{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 16px 28px}
+.drill-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.drill-tile{background:var(--surface);border-radius:12px;padding:12px 8px;text-align:center}
+.drill-tile-v{font-size:20px;font-weight:800;letter-spacing:-.4px}
+.drill-tile-l{font-size:10px;color:var(--sec);margin-top:3px;font-weight:600}
+.drill-row{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--surface);
+  border-radius:12px;margin-bottom:7px;cursor:pointer}
+.drill-row-flat{cursor:default}
+.drill-mini{height:6px;border-radius:3px;background:var(--fill4);overflow:hidden;margin-top:5px}
+.drill-mini-f{height:6px;border-radius:3px}
+.drill-empty{padding:26px 16px;text-align:center;color:var(--ter);font-size:13px}
+.drill-month{display:flex;align-items:flex-end;gap:4px;height:56px;margin-top:6px}
+.drill-month-bar{flex:1;background:var(--blue);border-radius:3px 3px 0 0;min-height:2px;opacity:.85}
+.drill-month-lbl{display:flex;gap:4px;margin-top:4px}
+.drill-month-lbl span{flex:1;text-align:center;font-size:9px;color:var(--ter)}
+
 /* CONTENT */
 .content{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:0 16px 110px}
 .screen{display:none}
@@ -579,6 +616,22 @@ button:disabled, .submit-btn:disabled, .log-btn:disabled { transform: none !impo
 <div id="app">
 
   <!-- STATUS BAR -->
+  <!-- Drill-down sheet (tap a sector or church on any dashboard) -->
+  <div id="drill-overlay" class="drill-overlay" onclick="if(event.target===this)closeDrill()">
+    <div class="drill-sheet" style="position:relative">
+      <div class="drill-grip"></div>
+      <div class="drill-head">
+        <button class="drill-back" id="drill-back" style="display:none" onclick="drillBack()">‹ Back</button>
+        <div style="flex:1;min-width:0">
+          <div class="drill-title" id="drill-title">—</div>
+          <div class="drill-sub" id="drill-sub"></div>
+        </div>
+        <button class="drill-close" onclick="closeDrill()">✕</button>
+      </div>
+      <div class="drill-body" id="drill-body"></div>
+    </div>
+  </div>
+
   <!-- PIN Entry Overlay -->
   <div id="pin-overlay" style="display:none" class="pin-overlay">
     <div class="pin-card">
@@ -1572,7 +1625,7 @@ button:disabled, .submit-btn:disabled, .log-btn:disabled { transform: none !impo
 //  GOOGLE SHEETS CONFIGURATION
 // Replace with your deployed Google Apps Script Web App URL
 // 
-const APP_BUILD = '2026-08-08.11';   // shown on the sign-in screen — check this matches when reporting a problem
+const APP_BUILD = '2026-08-08.12';   // shown on the sign-in screen — check this matches when reporting a problem
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwvKuqB85PnY3S3Cn6o9JwqesCMpeKxvZ2Q1lWTJT0mrWAez8eMFY-hWE4os30f0JEx/exec';
 const SHEETS_ON  = SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE';
 
@@ -2825,6 +2878,7 @@ function buildTabs(tabs) {
 }
 
 function showTab(id) {
+  closeDrill();          // never leave the drill sheet open over a different screen
   currentTab = id;
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const scr = document.getElementById(`screen-${id}`);
@@ -4058,7 +4112,7 @@ function renderSectorScreen() {
   document.getElementById('sec-rankings').innerHTML = hasAny
     ? chs.map((ch, i) => {
         const cLv = LIVE.churches[ch.id];
-        return `<div class="lr">
+        return `<div class="lr" style="cursor:pointer" onclick="openChurchDrill('${ch.id}')">
           <div style="width:28px;text-align:center;font-size:${i < 3 ? 18 : 13}px;color:${i >= 3 ? '#8E8E93' : 'inherit'};flex-shrink:0">${medals[i]}</div>
           <div class="rm">
             <div class="rt" style="font-weight:600">${ch.name}</div>
@@ -4129,11 +4183,12 @@ function renderCommandScreen() {
     console.log('Sector card', s.id, '→', sLv);
     const pct = sLv.gospel / s.target.gospel;
     const st  = statusFor(pct);
-    return `<div class="card" style="padding:16px">
+    return `<div class="card" style="padding:16px;cursor:pointer" onclick="openSectorDrill('${s.id}')">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
         <div style="display:flex;align-items:center;gap:7px">
           <div style="width:10px;height:10px;border-radius:5px;background:${s.color}"></div>
           <span style="font-size:17px;font-weight:800">${s.name}</span>
+          <span style="font-size:12px;color:var(--ter);font-weight:600">tap ›</span>
         </div>
         <span class="pill ${st.cls}">${st.label}</span>
       </div>
@@ -4232,7 +4287,7 @@ function renderCommandScreen() {
     ? ranked.map((c, i) => {
         const s   = SECTORS.find(x => x.id === c.sector);
         const cLv = LIVE.churches[c.id];
-        return `<div class="lr">
+        return `<div class="lr" style="cursor:pointer" onclick="openChurchDrill('${c.id}')">
           <div class="rnum" style="${i < 3 ? `background:${s.color};color:#fff` : 'background:#E5E5EA;color:#8E8E93'}">${i + 1}</div>
           <div class="rm">
             <div class="rt" style="font-weight:600">${c.name}</div>
@@ -4257,9 +4312,153 @@ function renderCommandScreen() {
   renderCommandReports();
 }
 
-// 
+// ══════════════════════════════════════════════════════════
+// DRILL-DOWN
+// Tapping a sector or a church opens a sheet showing what makes up that
+// number. Sector → its churches → that church's members.
+// Individual action logs stay behind canViewLogs(); this only ever shows the
+// same name / stage / points a leader already sees on the My Church list.
+// ══════════════════════════════════════════════════════════
+let drillStack = [];   // so Back can walk sector → church → back to sector
+
+function closeDrill() {
+  drillStack = [];
+  document.getElementById('drill-overlay').classList.remove('show');
+}
+
+function drillBack() {
+  drillStack.pop();                       // drop current
+  const prev = drillStack.pop();          // re-open the one beneath
+  if (!prev) { closeDrill(); return; }
+  prev.type === 'sector' ? openSectorDrill(prev.id) : openChurchDrill(prev.id);
+}
+
+function renderDrillShell(title, sub) {
+  document.getElementById('drill-title').textContent = title;
+  document.getElementById('drill-sub').textContent   = sub || '';
+  document.getElementById('drill-back').style.display = drillStack.length > 1 ? 'block' : 'none';
+  document.getElementById('drill-overlay').classList.add('show');
+}
+
+// Progress bar row used inside the sheet
+function drillBar(label, actual, target, color) {
+  const pct = target > 0 ? Math.min(actual / target * 100, 100) : 0;
+  return `<div style="margin-bottom:12px">
+    <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+      <span style="font-size:13px;font-weight:600">${esc(label)}</span>
+      <span style="font-size:12px;color:var(--sec)">${actual.toLocaleString()} / ${target.toLocaleString()}
+        <span style="color:var(--ter);margin-left:4px">${pct.toFixed(1)}%</span></span>
+    </div>
+    <div class="drill-mini"><div class="drill-mini-f" style="width:${pct}%;background:${color}"></div></div>
+  </div>`;
+}
+
+function openChurchDrill(churchId) {
+  const c = CHURCHES.find(x => x.id === churchId);
+  if (!c) return;
+  drillStack.push({ type:'church', id:churchId });
+
+  const d    = LIVE.churches[churchId] || { gospel:0, disciples:0, leaders:0, members:0, monthly:[] };
+  const sect = SECTORS.find(x => x.id === c.sector) || SECTORS[0];
+  const tgt  = churchTarget(churchId);
+  const st   = statusFor(tgt.gospel > 0 ? d.gospel / tgt.gospel : 0);
+
+  const members = LIVE.members
+    .filter(m => m.churchId === churchId || getChurchId(m.church) === churchId)
+    .sort((a,b) => (b.points||0) - (a.points||0));
+
+  const maxMonth = Math.max(1, ...(d.monthly || []));
+
+  renderDrillShell(c.name, `${sect.name} Sector · ${members.length} member${members.length===1?'':'s'}`);
+  document.getElementById('drill-body').innerHTML = `
+    <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+      <span class="pill ${st.cls}">${st.label}</span>
+    </div>
+    <div class="drill-tiles">
+      <div class="drill-tile"><div class="drill-tile-v" style="color:${sect.color}">${d.gospel.toLocaleString()}</div><div class="drill-tile-l">Gospel</div></div>
+      <div class="drill-tile"><div class="drill-tile-v" style="color:var(--blue)">${d.disciples}</div><div class="drill-tile-l">Disciples</div></div>
+      <div class="drill-tile"><div class="drill-tile-v" style="color:var(--orange)">${d.leaders}</div><div class="drill-tile-l">Leaders</div></div>
+    </div>
+
+    <div class="slabel" style="padding:4px 0 8px">Against this church's share of target</div>
+    ${drillBar('Gospel Shared', d.gospel,    tgt.gospel,    sect.color)}
+    ${drillBar('Disciples',     d.disciples, tgt.disciples, '#007AFF')}
+    ${drillBar('Leaders',       d.leaders,   tgt.leaders,   '#FF9500')}
+
+    ${(d.monthly || []).some(v => v > 0) ? `
+      <div class="slabel" style="padding:12px 0 4px">Gospel shared by month</div>
+      <div class="drill-month">
+        ${(d.monthly||[]).map(v => `<div class="drill-month-bar" style="height:${Math.max(2,(v/maxMonth)*56)}px" title="${v}"></div>`).join('')}
+      </div>
+      <div class="drill-month-lbl">${MONTHS.map(m => `<span>${m[0]}</span>`).join('')}</div>` : ''}
+
+    <div class="slabel" style="padding:14px 0 8px">Members (${members.length})</div>
+    ${members.length ? members.map(m => `
+      <div class="drill-row drill-row-flat">
+        <div class="av" style="background:${avColorFor(m.name)};width:34px;height:34px;border-radius:17px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px">${initial(m.name)}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:600">${esc(m.name)}</div>
+          <div style="font-size:11.5px;color:var(--sec);margin-top:1px">
+            ${esc(m.stage || 'Evangelism')} · ${m.actionsCount || 0} action${(m.actionsCount||0)===1?'':'s'}
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:14px;font-weight:800;color:var(--orange)">${m.points || 0}</div>
+          <div style="font-size:10px;color:var(--ter)">pts</div>
+        </div>
+      </div>`).join('')
+      : `<div class="drill-empty">No members have signed in for this church yet.</div>`}
+  `;
+}
+
+function openSectorDrill(sectorId) {
+  const s = SECTORS.find(x => x.id === sectorId);
+  if (!s) return;
+  drillStack.push({ type:'sector', id:sectorId });
+
+  const members = membersInSector(sectorId);
+  const tot     = sumMembers(members);
+  const st      = statusFor(tot.gospel / s.target.gospel);
+  const churches = CHURCHES.filter(c => c.sector === sectorId)
+    .map(c => ({ ...c, d: LIVE.churches[c.id] || { gospel:0, disciples:0, leaders:0, members:0 } }))
+    .sort((a,b) => b.d.gospel - a.d.gospel);
+  const maxG = Math.max(1, ...churches.map(c => c.d.gospel));
+
+  renderDrillShell(`${s.name} Sector`, `${churches.length} churches · ${members.length} member${members.length===1?'':'s'}`);
+  document.getElementById('drill-body').innerHTML = `
+    <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+      <span class="pill ${st.cls}">${st.label}</span>
+    </div>
+    <div class="drill-tiles">
+      <div class="drill-tile"><div class="drill-tile-v" style="color:${s.color}">${tot.gospel.toLocaleString()}</div><div class="drill-tile-l">Gospel</div></div>
+      <div class="drill-tile"><div class="drill-tile-v" style="color:var(--blue)">${tot.disciples}</div><div class="drill-tile-l">Disciples</div></div>
+      <div class="drill-tile"><div class="drill-tile-v" style="color:var(--orange)">${tot.leaders}</div><div class="drill-tile-l">Leaders</div></div>
+    </div>
+
+    ${drillBar('Gospel Shared', tot.gospel,    s.target.gospel,    s.color)}
+    ${drillBar('Disciples',     tot.disciples, s.target.disciples, '#007AFF')}
+    ${drillBar('Leaders',       tot.leaders,   s.target.leaders,   '#FF9500')}
+
+    <div class="slabel" style="padding:14px 0 8px">Churches — tap for detail</div>
+    ${churches.map(c => `
+      <div class="drill-row" onclick="openChurchDrill('${c.id}')">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:700">${esc(c.name)}</div>
+          <div style="font-size:11.5px;color:var(--sec);margin-top:1px">${c.d.members} member${c.d.members===1?'':'s'} · ${c.d.disciples} disciples · ${c.d.leaders} leaders</div>
+          <div class="drill-mini"><div class="drill-mini-f" style="width:${(c.d.gospel/maxG*100).toFixed(0)}%;background:${s.color}"></div></div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;margin-left:4px">
+          <div style="font-size:16px;font-weight:800;color:${s.color}">${c.d.gospel.toLocaleString()}</div>
+          <div style="font-size:10px;color:var(--ter)">gospel</div>
+        </div>
+        <span style="font-size:17px;color:var(--ter);flex-shrink:0">›</span>
+      </div>`).join('')}
+  `;
+}
+
+//
 // MEMBER LOG RENDERERS  privacy-gated
-// 
+//
 
 // Build one expandable log card per member
 function buildMemberLogCard(m, cardIdx) {
@@ -5172,7 +5371,7 @@ function renderHealthCard(churchId, churchName) {
   const sColor = sector?.color || '#007AFF';
 
   return `
-    <div class="card" style="padding:16px;margin-bottom:10px">
+    <div class="card" style="padding:16px;margin-bottom:10px;cursor:pointer" onclick="openChurchDrill('${churchId}')">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
         <div style="display:flex;align-items:center;gap:8px">
           <div style="width:8px;height:8px;border-radius:4px;background:${sColor}"></div>
