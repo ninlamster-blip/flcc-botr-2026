@@ -543,7 +543,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
   <div id="pin-overlay" style="display:none" class="pin-overlay">
     <div class="pin-card">
       <div class="pin-title" id="pin-name">Enter PIN</div>
-      <div class="pin-sub">This account is PIN protected</div>
+      <div class="pin-sub" id="pin-sub">This account is PIN protected</div>
       <div class="pin-dots">
         <div class="pin-dot" id="pd0"></div>
         <div class="pin-dot" id="pd1"></div>
@@ -1507,7 +1507,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 //  GOOGLE SHEETS CONFIGURATION
 // Replace with your deployed Google Apps Script Web App URL
 // 
-const APP_BUILD = '2026-08-08.6';   // shown on the sign-in screen — check this matches when reporting a problem
+const APP_BUILD = '2026-08-08.7';   // shown on the sign-in screen — check this matches when reporting a problem
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwvKuqB85PnY3S3Cn6o9JwqesCMpeKxvZ2Q1lWTJT0mrWAez8eMFY-hWE4os30f0JEx/exec';
 const SHEETS_ON  = SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE';
 
@@ -2603,11 +2603,12 @@ async function doLogin() {
   // Load local actions early (fast, works offline)
   const local = loadActionsFromLocal(name, church);
 
-  // Known users have a PIN — verify before proceeding
-  if (known) {
+  // Any leadership role needs a PIN — the nine registered leaders already have
+  // one, everyone else creates theirs the first time. Members sign in freely.
+  if (known || isLeaderRole(role)) {
     // Release the button while the PIN pad is up, and again after sign-in
     releaseLogin();
-    requirePin(name, async () => {
+    authenticateLeader(name, role, async () => {
       if (loginInFlight) return;
       loginInFlight = true;
       try { await completeLogin(name, role, church, sectorId, churchVal, known, local); }
@@ -4586,8 +4587,8 @@ function removePasskey(name) {
 
 // Enrol this device. Returns true when the phone created a credential.
 async function enrollPasskey(name) {
+  if (!getUserPinHash(name)) { showToast('Face ID is for leader accounts'); return false; }
   const known = findKnownUser(name);
-  if (!known) { showToast('Face ID is for registered network leaders'); return false; }
   if (!(await passkeySupported())) {
     showToast('This device does not offer Face ID or fingerprint unlock');
     return false;
@@ -4602,7 +4603,7 @@ async function enrollPasskey(name) {
         challenge,
         // rp.id is left unset so the browser uses this exact domain
         rp:   { name: 'FLCC BOTR' },
-        user: { id: userId, name: canonical, displayName: canonical + ' — ' + known.title },
+        user: { id: userId, name: canonical, displayName: canonical + (known ? ' — ' + known.title : '') },
         pubKeyCredParams: [ { type:'public-key', alg:-7 }, { type:'public-key', alg:-257 } ],
         authenticatorSelection: {
           authenticatorAttachment: 'platform',   // the phone itself, not a USB key
@@ -4706,8 +4707,7 @@ let pinChecking  = false;
 // ── FACE ID UI ────────────────────────────────────────────────────
 // Turn Face ID on (enrol this device) or off (forget it)
 async function toggleFaceId() {
-  const known = findKnownUser(APP.name);
-  if (!known) { showToast('Face ID is for registered network leaders'); return; }
+  if (!getUserPinHash(APP.name)) { showToast('Face ID is for leader accounts'); return; }
 
   if (hasPasskey(APP.name)) {
     removePasskey(APP.name);
@@ -4730,9 +4730,9 @@ async function toggleFaceId() {
 
 // Reflect the current state in whichever profile screen is on show
 async function refreshFaceIdRow() {
-  const known     = findKnownUser(APP.name);
-  const supported = known ? await passkeySupported() : false;
-  const on        = known ? hasPasskey(APP.name) : false;
+  const isLeaderAcct = !!getUserPinHash(APP.name);
+  const supported    = isLeaderAcct ? await passkeySupported() : false;
+  const on           = isLeaderAcct ? hasPasskey(APP.name) : false;
 
   [['pp-faceid-row','pp-faceid-state','pp-faceid-div'],
    ['lp-faceid-row','lp-faceid-state','lp-faceid-div']].forEach(([rowId, stateId, divId]) => {
@@ -4741,7 +4741,7 @@ async function refreshFaceIdRow() {
     const dv  = document.getElementById(divId);
     if (!row) return;
     // Only shown to registered leaders on a device that actually supports it
-    const show = known && supported;
+    const show = isLeaderAcct && supported;
     row.style.display = show ? 'flex' : 'none';
     if (dv) dv.style.display = show ? 'block' : 'none';
     if (st) {
@@ -4763,12 +4763,28 @@ async function retryFaceId() {
   if (pinCallback) { const cb = pinCallback; pinCallback = null; cb(); }
 }
 
+// Any of these roles can see other people's data, so all of them need a PIN.
+// Members log their own actions and see only their own, so they sign in freely.
+const isLeaderRole = r => LEADER_ROLES.includes(r);
+
+// ── LEADER SIGN-IN / SIGN-UP ──────────────────────────────────────
+// First time on this device: create a 4-digit PIN. Every time after: enter it,
+// or use Face ID once enrolled. Identical for the nine registered leaders and
+// for anyone who selects a leadership role.
+async function authenticateLeader(name, role, onSuccess) {
+  if (getUserPinHash(name)) { await requirePin(name, onSuccess); return; }
+  startPinSetup(name, role, onSuccess);
+}
+
 async function requirePin(name, onSuccess) {
-  // Every KNOWN_USERS leader has a PIN. If the lookup ever comes back empty the
-  // safe move is to refuse, not to wave the sign-in through.
-  if (!findKnownUser(name)) { onSuccess(); return; }
+  // Never wave a leader through. A missing PIN for a registered leader means
+  // something is wrong — refuse rather than guess.
   if (!getUserPinHash(name)) {
-    showToast('⚠️ No PIN configured for this leader — contact the administrator.');
+    if (findKnownUser(name)) {
+      showToast('⚠️ No PIN configured for this leader — contact the administrator.');
+      return;
+    }
+    onSuccess();   // not a leader at all
     return;
   }
 
@@ -4802,6 +4818,7 @@ function pinPress(digit) {
 }
 
 async function checkPin() {
+  if (pinSetupStep)  { checkPinSetup();  return; }
   if (pinChangeStep) { checkPinChange(); return; }
   if (pinChecking) return;
   pinChecking = true;
@@ -4837,6 +4854,11 @@ function pinCancel() {
   pinForName  = '';
   pinChangeStep = '';
   pinChangeNew  = '';
+  pinSetupStep  = '';
+  pinSetupNew   = '';
+  pinSetupDone  = null;
+  const sub = document.getElementById('pin-sub');
+  if (sub) sub.textContent = 'This account is PIN protected';
   document.getElementById('pin-overlay').style.display = 'none';
 }
 
@@ -4851,13 +4873,75 @@ function showPinError(msg) {
   }, 800);
 }
 
+// ── FIRST-TIME PIN SET-UP (leader sign-up) ────────────────
+let pinSetupStep = '';   // '' | 'new' | 'confirm'
+let pinSetupNew  = '';
+let pinSetupName = '';
+let pinSetupRole = '';
+let pinSetupDone = null;
+
+function startPinSetup(name, role, onSuccess) {
+  pinBuffer     = '';
+  pinSetupStep  = 'new';
+  pinSetupNew   = '';
+  pinSetupName  = canonicalName(name);
+  pinSetupRole  = role || '';
+  pinSetupDone  = onSuccess;
+  pinChangeStep = '';
+  pinCallback   = null;
+  pinForName    = pinSetupName;
+
+  document.getElementById('pin-name').textContent = '🆕 Create your 4-digit PIN';
+  const sub = document.getElementById('pin-sub');
+  if (sub) sub.textContent = `${pinSetupRole || 'Leader'} — you'll use this each time you sign in`;
+  const fb = document.getElementById('pin-faceid-btn');
+  if (fb) fb.style.display = 'none';        // nothing to unlock with yet
+  document.getElementById('pin-error').textContent = '';
+  updatePinDots();
+  document.getElementById('pin-overlay').style.display = 'flex';
+}
+
+async function checkPinSetup() {
+  if (pinSetupStep === 'new') {
+    pinSetupNew  = pinBuffer;
+    pinBuffer    = '';
+    pinSetupStep = 'confirm';
+    document.getElementById('pin-name').textContent  = '✅ Enter it again to confirm';
+    document.getElementById('pin-error').textContent = '';
+    updatePinDots();
+    return;
+  }
+
+  if (pinBuffer !== pinSetupNew) {
+    pinBuffer    = '';
+    pinSetupStep = 'new';
+    pinSetupNew  = '';
+    updatePinDots();
+    setTimeout(() => {
+      const t = document.getElementById('pin-name');
+      if (t) t.textContent = '🆕 Create your 4-digit PIN';
+      document.getElementById('pin-error').textContent = '';
+    }, 900);
+    showPinError("❌ PINs don't match — start again");
+    return;
+  }
+
+  await saveUserPin(pinSetupName, pinSetupNew);
+  const done   = pinSetupDone;
+  pinSetupStep = ''; pinSetupNew = ''; pinSetupDone = null; pinBuffer = '';
+  document.getElementById('pin-overlay').style.display = 'none';
+  const sub = document.getElementById('pin-sub');
+  if (sub) sub.textContent = 'This account is PIN protected';
+  showToast('✓ PIN created — you can switch to Face ID from your Profile');
+  if (done) done();
+}
+
 // ── PIN CHANGE FLOW ───────────────────────────────────────
 let pinChangeStep = '';
 let pinChangeNew  = '';
 
 function startPinChange() {
-  const known = findKnownUser(APP.name);
-  if (!known) { showToast('PIN change only available for registered leaders'); return; }
+  if (!getUserPinHash(APP.name)) { showToast('PIN change is for leader accounts'); return; }
   pinBuffer     = '';
   pinChangeStep = 'current';
   pinChangeNew  = '';
