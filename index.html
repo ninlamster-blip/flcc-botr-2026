@@ -1646,6 +1646,7 @@ const APP = {
   loggedIn: false,
   role:    null,
   name:    '',
+  userId:  '',        // the Sheet's USR- id, so duplicate name rows can't confuse us
   church:  '',
   sector:  '',
   stage:   'Evangelism',
@@ -2302,7 +2303,11 @@ function applyLiveData(data, backup) {
     el.innerHTML = '✅ Live — ' + LIVE.members.length + ' members · Gospel: ' + LIVE.totalGospel;
     el.style.color = '#1C7A35';
   }
-  hydrateActionLogsFromLocal();
+  // NOTE: hydrateActionLogsFromLocal() is deliberately NOT called here.
+  // It used to run on the success path and overwrite the freshly-loaded Sheet
+  // data with whatever this browser had in localStorage — so a deleted action
+  // came straight back and the dashboard never reflected reality.
+  // The Sheet is the source of truth; local storage is an offline fallback only.
 }
 
 function hydrateActionLogsFromLocal() {
@@ -2469,30 +2474,37 @@ async function completeLogin(name, role, church, sectorId, churchVal, known, loc
   // Load ALL live data from Google Sheets via gviz (populates LIVE.members)
   await loadLiveData();
 
-  // Find user from the already-loaded LIVE.members (no extra API call needed)
-  const existing = LIVE.members.find(m =>
+  // Find user from the already-loaded LIVE.members (no extra API call needed).
+  // Prefer the record that actually has actions — the Sheet can contain more than
+  // one row for the same person (older rows created before name matching was
+  // made case-insensitive), and picking the empty one hid that person's history.
+  const candidates = LIVE.members.filter(m =>
     m.name.trim().toLowerCase() === name.trim().toLowerCase() &&
-    m.church === church
-  ) || null;
+    (m.church || '').trim().toLowerCase() === (church || '').trim().toLowerCase()
+  );
+  candidates.sort((a,b) => (b.actions?.length || 0) - (a.actions?.length || 0));
+  const existing = candidates[0] || null;
 
-  // Merge: Sheets has authoritative stage/points, localStorage has full action logs
+  // The Sheet is authoritative. Its actions carry the real row ids (ACT-…) that
+  // edit and delete need in order to match anything server-side. localStorage is
+  // only used when the Sheet has nothing for this person (e.g. offline sign-in).
   const sheetsActions = existing?.actions || [];
   const localActions  = local?.actions    || [];
-  // Prefer local if saved within the last 24h — covers deletions not yet synced to Sheets.
-  // Otherwise prefer whichever has more actions (Sheets may have data from other devices).
-  const localIsFresh  = local?.savedAt && (Date.now() - local.savedAt < 24 * 60 * 60 * 1000);
-  const mergedActions = (localIsFresh || localActions.length >= sheetsActions.length)
-    ? localActions
-    : sheetsActions;
-  const mergedPoints  = Math.max(local?.points || 0, existing?.points || 0);
+  const useSheets     = !!existing;
+  const chosenActions = useSheets ? sheetsActions : localActions;
 
   Object.assign(APP, {
     loggedIn: true, role, name, church,
+    userId:   existing?.userId || '',   // pins us to one row despite duplicates
     sector:   sectorId.toLowerCase().trim(),
     stage:    existing?.stage || local?.stage || 'Evangelism',
-    points:   mergedPoints,
-    actions:  mergedActions,
+    points:   useSheets ? (Number(existing.points) || 0) : (local?.points || 0),
+    actions:  chosenActions,
   });
+
+  // Keep the local copy in step with what the Sheet says, so a stale local record
+  // can't resurrect deleted actions the next time this device signs in.
+  if (useSheets) saveActionsToLocal();
 
   // Save this profile for quick recall on next sign-in
   saveSession({ name, role, church, sector: sectorId, churchVal });
@@ -2639,13 +2651,10 @@ function applyCurrentUserToLive() {
   const cId   = getChurchId(APP.church);
   const secId = APP.sector;
 
-  // Match on name AND church. Matching on name alone made two members who share
-  // a name in different churches overwrite each other's logs and points.
-  const existing = LIVE.members.find(m =>
-    m.name.trim().toLowerCase() === APP.name.trim().toLowerCase() &&
-    ((m.churchId && m.churchId === cId) ||
-     (m.church || '').trim() === (APP.church || '').trim())
-  );
+  // Pinned by userId where possible — matching on name alone made two members
+  // who share a name (or one person split across duplicate Sheet rows)
+  // overwrite each other's logs and points.
+  const existing = findMyLiveRecord();
 
   // Recount the current user's own totals from their action list
   const gospel    = APP.actions.filter(a => a.type === 'Evangelism').length;
@@ -2954,6 +2963,50 @@ function newActionId() {
   return 'act_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
 }
 
+// ── RESOLVING THE SHEET'S OWN ROW ID ──────────────────────────────
+// The Apps Script assigns every action its own id (ACT-…) when it writes the
+// row, and editAction/deleteAction can ONLY match on that id. An id generated
+// in this browser means nothing to the Sheet, which is why deletes silently
+// did nothing. These helpers find the real ACT- id from the loaded Sheet data.
+
+// The current user's record in LIVE.members, pinned by userId when we have one
+// (the Sheet can hold more than one row for the same name)
+function findMyLiveRecord() {
+  if (!APP.name) return null;
+  if (APP.userId) {
+    const byId = LIVE.members.find(m => m.userId === APP.userId);
+    if (byId) return byId;
+  }
+  const matches = LIVE.members.filter(m =>
+    (m.name || '').trim().toLowerCase() === APP.name.trim().toLowerCase() &&
+    (m.church || '').trim().toLowerCase() === (APP.church || '').trim().toLowerCase()
+  );
+  matches.sort((a,b) => (b.actions?.length || 0) - (a.actions?.length || 0));
+  return matches[0] || null;
+}
+
+// True when this id came from the Sheet (ACT-…) rather than from this browser
+const isServerActionId = id => /^ACT[-_]/i.test(String(id || ''));
+
+// Return the Sheet's row id for one of the current user's actions. Falls back to
+// matching on label + type + date + person for local copies that have no id.
+function resolveServerActionId(action) {
+  if (!action) return '';
+  if (isServerActionId(action.id))       return action.id;
+  if (isServerActionId(action.serverId)) return action.serverId;
+
+  const me   = findMyLiveRecord();
+  const pool = (me && me.actions) || [];
+  const hit  = pool.find(a =>
+    isServerActionId(a.id) &&
+    (a.label      || '') === (action.label      || '') &&
+    (a.type       || '') === (action.type       || '') &&
+    (a.date       || '') === (action.date       || '') &&
+    (a.personName || '') === (action.personName || '')
+  );
+  return hit ? hit.id : '';
+}
+
 async function submitAction() {
   const a    = ACTIONS_LIB[selAction];
   const now  = new Date();
@@ -3069,6 +3122,24 @@ async function submitAction() {
   const outFields = ['out-person-name','out-location','out-contact-date','out-status','out-event-location','out-event-date'];
   outFields.forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
   updateOutreachForms();
+
+  // Re-read the Sheet so this action picks up the row id the Apps Script gave
+  // it. Without this the action can't be edited or deleted until the next
+  // refresh, because only the Sheet's own id works for those.
+  if (saved) {
+    showLoading('Syncing…');
+    await new Promise(r => setTimeout(r, 1200));   // let Apps Script finish writing
+    try {
+      await loadLiveData();
+      const me = findMyLiveRecord();
+      if (me && (me.actions || []).length >= APP.actions.length) {
+        APP.actions = me.actions;
+        APP.points  = Number(me.points) || APP.points;
+        saveActionsToLocal();
+      }
+    } catch(e) { console.warn('post-log sync failed:', e); }
+    hideLoading();
+  }
 
   // Don't claim "saved" when the request never made it out. Note that a no-cors
   // POST can't confirm the Sheet accepted it either — this only rules out a
@@ -3218,13 +3289,15 @@ function saveEditAction(realIdx) {
   // Sync edit to Sheets. Actions logged in this app now always carry an id;
   // rows that predate ids are matched on name + church + label + date instead,
   // so the edit is no longer silently dropped.
-  const edited = APP.actions[realIdx];
-  if (SHEETS_ON) {
+  // Same rule as delete: the Sheet only matches on its own ACT- row id
+  const edited   = APP.actions[realIdx];
+  const serverId = resolveServerActionId(edited);
+  if (SHEETS_ON && serverId) {
     apiPost({
       action:      'editAction',
       name:        APP.name,
       church:      APP.church,
-      actionId:    edited.id || '',
+      actionId:    serverId,
       actionLabel: edited.label,
       actionType:  edited.type,
       dateIso:     edited.dateIso || '',
@@ -3232,6 +3305,9 @@ function saveEditAction(realIdx) {
       reflection:  newRefl,
       evidence:    newEvid,
     });
+  } else if (SHEETS_ON) {
+    console.warn('saveEditAction: no Sheet row id yet for', edited.label);
+    showToast('Saved on this device — tap ⟳ Refresh to sync');
   }
 
   // Re-render the log to show updated content
@@ -3266,35 +3342,75 @@ function deleteAction(realIdx) {
 
   saveActionsToLocal();
 
-  // Sync delete to Sheets. This used to require `removed.id`, which locally
-  // logged actions never had — so deletes stayed local and the row lived on in
-  // the Sheet for every leader to see. Send identifying fields as a fallback.
-  if (SHEETS_ON) {
+  // Sync delete to Sheets using the Sheet's OWN row id (ACT-…). The Apps Script
+  // matches on that id and nothing else, so sending a browser-generated id made
+  // the delete a no-op: gone from this screen, still in the Sheet for everyone.
+  const serverId = resolveServerActionId(removed);
+
+  if (!SHEETS_ON) {
+    finishDelete(true);
+  } else if (!serverId) {
+    // Not yet written to the Sheet (or written under a different identity).
+    // Say so rather than pretending it was removed everywhere.
+    console.warn('deleteAction: no Sheet row id found for', removed.label, removed.date);
+    APP.actions.splice(realIdx, 0, removed);   // put it back — nothing was deleted
+    APP.points = APP.actions.reduce((s,a) => s + (Number(a.pts) || 0), 0);
+    saveActionsToLocal();
+    renderCurrentActionLog();
+    refreshActionCounts();
+    showToast('⚠️ Could not delete yet — tap ⟳ Refresh, then try again');
+    return;
+  } else {
+    showLoading('Deleting…');
     apiPost({
       action:      'deleteAction',
       name:        APP.name,
       church:      APP.church,
-      actionId:    removed.id || '',
+      actionId:    serverId,
       actionLabel: removed.label,
       actionType:  removed.type,
       dateIso:     removed.dateIso || '',
       date:        removed.date || '',
+    }).then(function(sent) {
+      finishDelete(sent);
     });
   }
 
-  showToast('Deleted — refreshing…');
+  function finishDelete(sent) {
+    showLoading('Updating dashboard…');
+    // Give Apps Script a moment to write, then re-read the Sheet so the
+    // dashboard shows what is actually stored — not what this phone remembers
+    setTimeout(function() {
+      loadLiveData().then(function() {
+        // Re-sync APP from the Sheet so a failed delete shows the truth
+        const me = findMyLiveRecord();
+        if (me) {
+          APP.actions = me.actions || [];
+          APP.points  = Number(me.points) || 0;
+          saveActionsToLocal();
+        }
+        calculateAndRenderAll();
+        renderCurrentActionLog();
+        refreshActionCounts();
+        showToast(sent ? '✓ Deleted and dashboard updated' : '⚠️ Delete may not have saved — tap ⟳');
+      }).catch(function(e) {
+        console.warn('refresh after delete failed:', e);
+        showToast('Deleted locally — tap ⟳ to confirm');
+      }).finally(function() {
+        hideLoading();
+      });
+    }, 1200);
+  }
+}
 
-  // Full re-fetch forces the dashboard to recount from the live Sheet
-  showLoading('Updating dashboard…');
-  loadLiveData().then(function() {
-    if (APP.loggedIn && APP.name) applyCurrentUserToLive();
-    calculateAndRenderAll();
-    showToast('✓ Dashboard updated');
-  }).catch(function(e) {
-    console.warn('refresh after delete failed:', e);
-  }).finally(function() {
-    hideLoading(); // don't strand the overlay if the refresh fails
-  });
+// Re-draw whichever action log is on screen (member or leader profile)
+function renderCurrentActionLog() {
+  const logEl = document.getElementById('pp-action-log') || document.getElementById('lp-action-log');
+  if (logEl) {
+    logEl.innerHTML = APP.actions.length
+      ? renderActionLogHTML(APP.actions)
+      : `<div class="mlc-empty">No actions logged yet.</div>`;
+  }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -4192,7 +4308,7 @@ function signOut() {
   // Save current session data to localStorage before clearing
   if (APP.loggedIn && APP.name) saveActionsToLocal();
 
-  Object.assign(APP, { loggedIn:false, role:null, name:'', church:'', sector:'', stage:'Evangelism', points:0, actions:[] });
+  Object.assign(APP, { loggedIn:false, role:null, name:'', userId:'', church:'', sector:'', stage:'Evangelism', points:0, actions:[] });
   currentTab = 'home'; activeSector = 'love'; selAction = 0;
   Object.keys(charts).forEach(destroyChart);
   // Drop any half-filled log form so it can't follow the next person into their session
