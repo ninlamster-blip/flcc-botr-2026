@@ -565,6 +565,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
         <button class="pin-btn del" onclick="pinDelete()">⌫</button>
       </div>
       <div class="pin-error" id="pin-error"></div>
+      <button id="pin-faceid-btn" onclick="retryFaceId()"
+        style="display:none;margin:10px auto 0;background:var(--green-bg);border:none;border-radius:20px;padding:8px 18px;font-size:13px;font-weight:700;color:#1C7A35;cursor:pointer;font-family:inherit">
+        🙂 Use Face ID instead
+      </button>
     </div>
   </div>
   <div class="nav">
@@ -1048,6 +1052,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
         </div>
       </div>
       <div class="card" id="pp-pin-card" style="display:none">
+        <div class="srow" id="pp-faceid-row" style="cursor:pointer;display:none" onclick="toggleFaceId()">
+          <div class="sleft"><div class="sicon" style="background:#E8F8ED">🙂</div><div class="slabel2">Face ID / Fingerprint</div></div>
+          <span class="sval" id="pp-faceid-state">Not set up</span>
+        </div>
+        <div class="ld" id="pp-faceid-div" style="display:none"></div>
         <div class="srow" style="cursor:pointer" onclick="startPinChange()">
           <div class="sleft"><div class="sicon" style="background:#EEF3FF">🔐</div><div class="slabel2">Change PIN</div></div>
           <span style="font-size:18px;color:var(--ter)">›</span>
@@ -1459,6 +1468,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
           <div class="sval">N.E.C.K. Kuwait</div>
         </div>
         <div class="ld"></div>
+        <div class="srow" id="lp-faceid-row" style="cursor:pointer;display:none" onclick="toggleFaceId()">
+          <div class="sleft"><div class="sicon" style="background:#E8F8ED">🙂</div><div class="slabel2">Face ID / Fingerprint</div></div>
+          <span class="sval" id="lp-faceid-state">Not set up</span>
+        </div>
+        <div class="ld" id="lp-faceid-div" style="display:none"></div>
         <div class="srow" style="cursor:pointer" onclick="startPinChange()">
           <div class="sleft"><div class="sicon" style="background:#EEF3FF">🔐</div><div class="slabel2">Change PIN</div></div>
           <span style="font-size:18px;color:var(--ter)">›</span>
@@ -1493,7 +1507,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 //  GOOGLE SHEETS CONFIGURATION
 // Replace with your deployed Google Apps Script Web App URL
 // 
-const APP_BUILD = '2026-08-08.4';   // shown on the sign-in screen — check this matches when reporting a problem
+const APP_BUILD = '2026-08-08.5';   // shown on the sign-in screen — check this matches when reporting a problem
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwvKuqB85PnY3S3Cn6o9JwqesCMpeKxvZ2Q1lWTJT0mrWAez8eMFY-hWE4os30f0JEx/exec';
 const SHEETS_ON  = SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE';
 
@@ -3327,6 +3341,7 @@ function renderMemberProfile() {
   // Show Change PIN button only for users who have a PIN assigned
   const pinCard = document.getElementById('pp-pin-card');
   if (pinCard) pinCard.style.display = getUserPinHash(APP.name) ? 'block' : 'none';
+  refreshFaceIdRow();
 
   // Action type breakdown counts
   const ct = { Evangelism:0, Discipleship:0, Leadership:0, Multiplying:0 };
@@ -4394,6 +4409,7 @@ function renderLeaderProfile() {
   document.getElementById('lp-name').textContent   = APP.name;
   document.getElementById('lp-chip').textContent   = roleLabel;
   document.getElementById('lp-detail').textContent = `${APP.church} · ${sect.name} Sector · FLCC BOTR`;
+  refreshFaceIdRow();
 
   // 5-year milestone rows
   const tG = networkTotals().gospel;
@@ -4495,6 +4511,125 @@ function showToast(msg) { const el = document.getElementById('toast'); el.textCo
 // PIN PROTECTION
 // ══════════════════════════════════════════════════════════
 
+// ══════════════════════════════════════════════════════════
+// FACE ID / FINGERPRINT (passkeys)
+//
+// Uses the phone's own biometric unlock via WebAuthn, so leaders don't have to
+// share or remember a PIN. The PIN stays as the fallback.
+//
+// ⚠️ SAME CAVEAT AS THE PIN: this app is entirely client-side, so there is no
+// server to verify the signed assertion against. A successful check proves the
+// phone's owner passed Face ID / fingerprint on THIS device — it is a much
+// friendlier lock of the same strength, not a stronger one. Real access control
+// still belongs in the Apps Script.
+//
+// The credential is device-bound: enrolling on a phone does not enrol a laptop.
+// ══════════════════════════════════════════════════════════
+
+const PASSKEY_PREFIX = 'flcc_passkey_';
+
+function passkeyKey(name) {
+  return PASSKEY_PREFIX + canonicalName(name).toLowerCase().replace(/\s+/g,'_');
+}
+
+// base64url <-> bytes (localStorage can only hold text)
+function bufToB64url(buf) {
+  return btoa(String.fromCharCode(...new Uint8Array(buf)))
+    .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function b64urlToBuf(s) {
+  const b64 = String(s).replace(/-/g,'+').replace(/_/g,'/');
+  const pad = b64 + '='.repeat((4 - b64.length % 4) % 4);
+  return Uint8Array.from(atob(pad), c => c.charCodeAt(0));
+}
+
+// Does this device offer a built-in biometric authenticator?
+async function passkeySupported() {
+  try {
+    if (!window.PublicKeyCredential ||
+        !window.isSecureContext ||
+        !navigator.credentials) return false;
+    return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+  } catch(e) { return false; }
+}
+
+function getPasskey(name) {
+  try {
+    const raw = localStorage.getItem(passkeyKey(name));
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) { return null; }
+}
+const hasPasskey = name => !!getPasskey(name);
+
+function removePasskey(name) {
+  try { localStorage.removeItem(passkeyKey(name)); } catch(e) {}
+}
+
+// Enrol this device. Returns true when the phone created a credential.
+async function enrollPasskey(name) {
+  const known = findKnownUser(name);
+  if (!known) { showToast('Face ID is for registered network leaders'); return false; }
+  if (!(await passkeySupported())) {
+    showToast('This device does not offer Face ID or fingerprint unlock');
+    return false;
+  }
+  try {
+    const canonical = canonicalName(name);
+    const userId    = crypto.getRandomValues(new Uint8Array(16));
+    const challenge = crypto.getRandomValues(new Uint8Array(32));
+
+    const cred = await navigator.credentials.create({
+      publicKey: {
+        challenge,
+        // rp.id is left unset so the browser uses this exact domain
+        rp:   { name: 'FLCC BOTR' },
+        user: { id: userId, name: canonical, displayName: canonical + ' — ' + known.title },
+        pubKeyCredParams: [ { type:'public-key', alg:-7 }, { type:'public-key', alg:-257 } ],
+        authenticatorSelection: {
+          authenticatorAttachment: 'platform',   // the phone itself, not a USB key
+          userVerification:        'required',   // must actually pass Face ID
+          residentKey:             'preferred',
+        },
+        timeout: 60000,
+        attestation: 'none',
+      }
+    });
+    if (!cred) return false;
+
+    localStorage.setItem(passkeyKey(canonical), JSON.stringify({
+      credentialId: bufToB64url(cred.rawId),
+      userHandle:   bufToB64url(userId),
+      name:         canonical,
+      enrolledAt:   Date.now(),
+    }));
+    return true;
+  } catch(e) {
+    console.warn('passkey enrol failed:', e && e.name, e && e.message);
+    return false;
+  }
+}
+
+// Ask the phone to verify the person. Returns true only on a successful unlock.
+async function verifyPasskey(name) {
+  const rec = getPasskey(name);
+  if (!rec) return false;
+  try {
+    const challenge = crypto.getRandomValues(new Uint8Array(32));
+    const assertion = await navigator.credentials.get({
+      publicKey: {
+        challenge,
+        allowCredentials: [{ type:'public-key', id: b64urlToBuf(rec.credentialId) }],
+        userVerification: 'required',
+        timeout: 60000,
+      }
+    });
+    return !!assertion;
+  } catch(e) {
+    console.warn('passkey verify failed:', e && e.name);
+    return false;   // cancelled, timed out, or no match — fall back to the PIN
+  }
+}
+
 // SHA-256 of PIN_SALT + ':' + pin, lowercase hex
 async function hashPin(pin) {
   const bytes = new TextEncoder().encode(PIN_SALT + ':' + String(pin));
@@ -4549,7 +4684,67 @@ let pinCallback  = null;
 let pinForName   = '';   // who the prompt is for — never re-read from the DOM
 let pinChecking  = false;
 
-function requirePin(name, onSuccess) {
+// ── FACE ID UI ────────────────────────────────────────────────────
+// Turn Face ID on (enrol this device) or off (forget it)
+async function toggleFaceId() {
+  const known = findKnownUser(APP.name);
+  if (!known) { showToast('Face ID is for registered network leaders'); return; }
+
+  if (hasPasskey(APP.name)) {
+    removePasskey(APP.name);
+    showToast('Face ID removed from this device — PIN will be used');
+    refreshFaceIdRow();
+    return;
+  }
+
+  if (!(await passkeySupported())) {
+    showToast('This device has no Face ID or fingerprint unlock available');
+    return;
+  }
+  showToast('Confirm with Face ID to set it up…');
+  const ok = await enrollPasskey(APP.name);
+  showToast(ok
+    ? '✓ Face ID set up — use it to sign in on this device'
+    : 'Face ID setup cancelled');
+  refreshFaceIdRow();
+}
+
+// Reflect the current state in whichever profile screen is on show
+async function refreshFaceIdRow() {
+  const known     = findKnownUser(APP.name);
+  const supported = known ? await passkeySupported() : false;
+  const on        = known ? hasPasskey(APP.name) : false;
+
+  [['pp-faceid-row','pp-faceid-state','pp-faceid-div'],
+   ['lp-faceid-row','lp-faceid-state','lp-faceid-div']].forEach(([rowId, stateId, divId]) => {
+    const row = document.getElementById(rowId);
+    const st  = document.getElementById(stateId);
+    const dv  = document.getElementById(divId);
+    if (!row) return;
+    // Only shown to registered leaders on a device that actually supports it
+    const show = known && supported;
+    row.style.display = show ? 'flex' : 'none';
+    if (dv) dv.style.display = show ? 'block' : 'none';
+    if (st) {
+      st.textContent = on ? '✓ On — tap to remove' : 'Tap to set up';
+      st.style.color = on ? '#1C7A35' : 'var(--ter)';
+    }
+  });
+}
+
+// "Use Face ID instead" from the PIN pad
+async function retryFaceId() {
+  if (!pinForName || !hasPasskey(pinForName)) return;
+  showLoading('Waiting for Face ID…');
+  let ok = false;
+  try { ok = await verifyPasskey(pinForName); } finally { hideLoading(); }
+  if (!ok) { showPinError('Face ID not completed'); return; }
+  document.getElementById('pin-overlay').style.display = 'none';
+  pinBuffer = '';
+  if (pinCallback) { const cb = pinCallback; pinCallback = null; cb(); }
+}
+
+async function requirePin(name, onSuccess) {
   // Every KNOWN_USERS leader has a PIN. If the lookup ever comes back empty the
   // safe move is to refuse, not to wave the sign-in through.
   if (!findKnownUser(name)) { onSuccess(); return; }
@@ -4557,12 +4752,24 @@ function requirePin(name, onSuccess) {
     showToast('⚠️ No PIN configured for this leader — contact the administrator.');
     return;
   }
+
+  // Face ID first when this leader has enrolled on this device
+  if (hasPasskey(name) && await passkeySupported()) {
+    showLoading('Waiting for Face ID…');
+    let ok = false;
+    try { ok = await verifyPasskey(name); } finally { hideLoading(); }
+    if (ok) { onSuccess(); return; }
+    showToast('Face ID not completed — enter your PIN');
+  }
+
   pinBuffer   = '';
   pinForName  = canonicalName(name);
   pinCallback = onSuccess;
   pinChangeStep = '';
   document.getElementById('pin-name').textContent = '🔐 ' + pinForName;
   document.getElementById('pin-error').textContent = '';
+  const fb = document.getElementById('pin-faceid-btn');
+  if (fb) fb.style.display = hasPasskey(pinForName) ? 'block' : 'none';
   updatePinDots();
   document.getElementById('pin-overlay').style.display = 'flex';
 }
@@ -4638,6 +4845,8 @@ function startPinChange() {
   pinCallback   = null;
   document.getElementById('pin-name').textContent  = '🔐 Verify Current PIN';
   document.getElementById('pin-error').textContent = '';
+  const fbc = document.getElementById('pin-faceid-btn');
+  if (fbc) fbc.style.display = 'none';
   updatePinDots();
   document.getElementById('pin-overlay').style.display = 'flex';
 }
