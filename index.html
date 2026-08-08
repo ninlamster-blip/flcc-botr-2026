@@ -10,6 +10,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 :root {
+  --ui-scale: 1;
   --bg:#F2F2F7; --surface:#FFFFFF; --label:#000;
   --sec:#8E8E93; --ter:#AEAEB2; --fill4:#E5E5EA;
   --sep:rgba(60,60,67,0.29);
@@ -25,7 +26,17 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;background:#1C1C1E}
 body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',sans-serif;-webkit-font-smoothing:antialiased;display:flex;justify-content:center;min-height:100vh}
-#app{width:100%;max-width:430px;min-height:100vh;background:var(--bg);display:flex;flex-direction:column;position:relative;overflow:hidden}
+/* --ui-scale drives the Text Size setting. zoom scales text, padding and tap
+   targets together; the shell divides by the same factor so the app still
+   fills the phone instead of overflowing sideways. */
+#app{width:100%;max-width:430px;min-height:calc(100vh / var(--ui-scale));zoom:var(--ui-scale);background:var(--bg);display:flex;flex-direction:column;position:relative;overflow:hidden}
+
+/* TEXT SIZE PICKER */
+.tsize-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.tsize-btn{flex:1 1 60px;min-width:0;padding:9px 4px;border-radius:10px;border:1.5px solid var(--fill4);background:var(--surface);
+  font-family:inherit;font-weight:700;color:var(--sec);cursor:pointer;line-height:1.1}
+.tsize-btn.active{border-color:var(--blue);background:var(--blue-bg);color:var(--blue)}
+.tsize-btn small{display:block;font-size:9px;font-weight:600;opacity:.75;margin-top:2px}
 
 /* STATUS BAR */
 .sb{background:var(--surface);padding:12px 20px 0;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
@@ -769,6 +780,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
           </div>
         </div>
 
+<div class="card cp" style="margin-top:0">
+          <label class="flabel">Text Size</label>
+          <div class="tsize-row" id="tsize-login">
+            <button class="tsize-btn" style="font-size:14px" onclick="setUiScale(1)">A<small>Normal</small></button>
+            <button class="tsize-btn" style="font-size:19px" onclick="setUiScale(1.25)">A<small>Large</small></button>
+            <button class="tsize-btn" style="font-size:24px" onclick="setUiScale(1.5)">A<small>Largest</small></button>
+          </div>
+        </div>
+        <div style="height:14px"></div>
         <button class="submit-btn" id="l-submit" disabled onclick="doLogin()">Sign In →</button>
         <div style="text-align:center;margin-top:12px;font-size:11px;color:var(--ter)">Data saved to Google Sheets · Started May 2026</div>
         <div id="conn-status" style="text-align:center;margin-top:8px;font-size:11.5px;font-weight:600"></div>
@@ -1061,6 +1081,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
           <div class="sleft"><div class="sicon" style="background:#EEF3FF">🔐</div><div class="slabel2">Change PIN</div></div>
           <span style="font-size:18px;color:var(--ter)">›</span>
         </div>
+      </div>
+      <div class="card cp">
+        <label class="flabel">Text Size</label>
+        <div class="tsize-row" id="tsize-mem">
+          <button class="tsize-btn" style="font-size:14px" onclick="setUiScale(1)">A<small>Normal</small></button>
+            <button class="tsize-btn" style="font-size:19px" onclick="setUiScale(1.25)">A<small>Large</small></button>
+            <button class="tsize-btn" style="font-size:24px" onclick="setUiScale(1.5)">A<small>Largest</small></button>
+          </div>
       </div>
       <div class="card">
         <div class="srow" style="cursor:pointer" onclick="signOut()">
@@ -1483,6 +1511,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
           <span style="font-size:18px;color:var(--ter)">›</span>
         </div>
       </div>
+      <div class="card cp">
+        <label class="flabel">Text Size</label>
+        <div class="tsize-row" id="tsize-leader">
+          <button class="tsize-btn" style="font-size:14px" onclick="setUiScale(1)">A<small>Normal</small></button>
+            <button class="tsize-btn" style="font-size:19px" onclick="setUiScale(1.25)">A<small>Large</small></button>
+            <button class="tsize-btn" style="font-size:24px" onclick="setUiScale(1.5)">A<small>Largest</small></button>
+          </div>
+      </div>
       <div style="height:8px"></div>
     </div>
 
@@ -1507,7 +1543,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 //  GOOGLE SHEETS CONFIGURATION
 // Replace with your deployed Google Apps Script Web App URL
 // 
-const APP_BUILD = '2026-08-08.7';   // shown on the sign-in screen — check this matches when reporting a problem
+const APP_BUILD = '2026-08-08.9';   // shown on the sign-in screen — check this matches when reporting a problem
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwvKuqB85PnY3S3Cn6o9JwqesCMpeKxvZ2Q1lWTJT0mrWAez8eMFY-hWE4os30f0JEx/exec';
 const SHEETS_ON  = SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE';
 
@@ -3362,6 +3398,7 @@ function renderMemberProfile() {
   const pinCard = document.getElementById('pp-pin-card');
   if (pinCard) pinCard.style.display = getUserPinHash(APP.name) ? 'block' : 'none';
   refreshFaceIdRow();
+  applyUiScale(getUiScale());
 
   // Action type breakdown counts
   const ct = { Evangelism:0, Discipleship:0, Leadership:0, Multiplying:0 };
@@ -4430,6 +4467,7 @@ function renderLeaderProfile() {
   document.getElementById('lp-chip').textContent   = roleLabel;
   document.getElementById('lp-detail').textContent = `${APP.church} · ${sect.name} Sector · FLCC BOTR`;
   refreshFaceIdRow();
+  applyUiScale(getUiScale());
 
   // 5-year milestone rows
   const tG = networkTotals().gospel;
@@ -5112,6 +5150,43 @@ function renderHealthCard(churchId, churchName) {
     </div>`;
 }
 
+// ══════════════════════════════════════════════════════════
+// TEXT SIZE
+// Scales the whole interface, not just font-size: the app uses fixed pixel
+// sizes throughout, so growing text alone would leave it colliding with
+// unchanged padding. zoom grows text, spacing and tap targets together.
+// ══════════════════════════════════════════════════════════
+const UI_SCALE_KEY  = 'flcc_ui_scale';
+const UI_SCALES     = [1, 1.25, 1.5];
+
+function getUiScale() {
+  try {
+    const v = parseFloat(localStorage.getItem(UI_SCALE_KEY));
+    if (UI_SCALES.includes(v)) return v;
+  } catch(e) {}
+  return 1;
+}
+
+function applyUiScale(scale) {
+  document.documentElement.style.setProperty('--ui-scale', String(scale));
+  // Reflect the choice in every picker on the page
+  ['tsize-login','tsize-mem','tsize-leader'].forEach(id => {
+    const row = document.getElementById(id);
+    if (!row) return;
+    [...row.querySelectorAll('.tsize-btn')].forEach((btn, i) => {
+      btn.classList.toggle('active', UI_SCALES[i] === scale);
+    });
+  });
+}
+
+function setUiScale(scale) {
+  if (!UI_SCALES.includes(scale)) scale = 1;
+  try { localStorage.setItem(UI_SCALE_KEY, String(scale)); } catch(e) {}
+  applyUiScale(scale);
+  const label = { 1:'Normal', 1.25:'Large', 1.5:'Largest' }[scale];
+  showToast(`Text size: ${label}`);
+}
+
 // Status-bar clock — was set once at load and then froze
 function tickClock() {
   const el = document.getElementById('sb-time');
@@ -5121,6 +5196,7 @@ function tickClock() {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
+  applyUiScale(getUiScale());
   tickClock();
   setInterval(tickClock, 30000);
   console.log('FLCC BOTR build', APP_BUILD);
