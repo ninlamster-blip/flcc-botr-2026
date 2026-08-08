@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval'; connect-src *;">
 <title>FLCC BOTR Strategic Direction 2026</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -766,6 +768,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
         <button class="submit-btn" id="l-submit" disabled onclick="doLogin()">Sign In →</button>
         <div style="text-align:center;margin-top:12px;font-size:11px;color:var(--ter)">Data saved to Google Sheets · Started May 2026</div>
         <div id="conn-status" style="text-align:center;margin-top:8px;font-size:11.5px;font-weight:600"></div>
+        <div id="build-stamp" style="text-align:center;margin-top:4px;font-size:10px;color:var(--ter)"></div>
       </div>
     </div>
 
@@ -1490,6 +1493,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 //  GOOGLE SHEETS CONFIGURATION
 // Replace with your deployed Google Apps Script Web App URL
 // 
+const APP_BUILD = '2026-08-08.3';   // shown on the sign-in screen — check this matches when reporting a problem
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwvKuqB85PnY3S3Cn6o9JwqesCMpeKxvZ2Q1lWTJT0mrWAez8eMFY-hWE4os30f0JEx/exec';
 const SHEETS_ON  = SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE';
 
@@ -2196,6 +2200,101 @@ const CHURCH_ALIASES = {
   'MTCC':          'MTCC',
 };
 
+// ── DUPLICATE PEOPLE ──────────────────────────────────────────────
+// The Sheet can hold several rows for one person: name matching used to be
+// case-sensitive ("allen santos" vs "Allen Santos"), and simultaneous sign-ins
+// could each create a row before any of them had been written. Those rows are
+// real data we must not lose, so we merge them here for display: one person,
+// all of their actions, counted once.
+function mergeDuplicateMembers(members) {
+  const map = new Map();
+
+  members.forEach(m => {
+    const key = (m.name || '').trim().toLowerCase() + '|' + (m.church || '').trim().toLowerCase();
+    let rec = map.get(key);
+    if (!rec) {
+      rec = Object.assign({}, m, { actions: [], duplicateIds: [], _best: -1 });
+      map.set(key, rec);
+    }
+    rec.duplicateIds.push(m.userId);
+
+    // Keep the identity of whichever row owns the most actions — that is the
+    // row the Sheet will accept edits and deletes against.
+    const n = (m.actions || []).length;
+    if (n > rec._best) {
+      rec._best    = n;
+      rec.userId   = m.userId;
+      rec.name     = m.name;
+      rec.role     = m.role;
+      rec.stage    = m.stage;
+      rec.sector   = m.sector;
+      rec.church   = m.church;
+      rec.churchId = m.churchId;
+    }
+
+    // Union of actions, de-duplicated on the Sheet's row id
+    const seen = new Set(rec.actions.map(a => a.id).filter(Boolean));
+    (m.actions || []).forEach(a => {
+      if (a.id && seen.has(a.id)) return;
+      if (a.id) seen.add(a.id);
+      rec.actions.push(a);
+    });
+  });
+
+  return [...map.values()].map(rec => {
+    delete rec._best;
+    const acts = rec.actions;
+    rec.gospel       = acts.filter(a => a.type === 'Evangelism').length;
+    rec.disciples    = acts.filter(a => a.type === 'Discipleship').length;
+    rec.leaders      = acts.filter(a => a.type === 'Leadership' || a.type === 'Multiplying').length;
+    rec.points       = acts.reduce((s, a) => s + (Number(a.pts) || 0), 0);
+    rec.actionsCount = acts.length;
+    const monthly = new Array(MONTHS.length).fill(0);
+    acts.forEach(a => {
+      if (a.type !== 'Evangelism') return;
+      const i = Number(a.monthIndex);
+      if (i >= 0 && i < monthly.length) monthly[i]++;
+    });
+    rec.monthlyActions = monthly;
+    return rec;
+  });
+}
+
+// Recount every church, sector and network total from the merged member list.
+// The server's own aggregates count duplicate rows as separate people, so the
+// member counts on every dashboard read high until this replaces them.
+function rebuildAggregatesFromMembers() {
+  CHURCHES.forEach(c => {
+    LIVE.churches[c.id] = { gospel:0, disciples:0, leaders:0, members:0, monthly:new Array(MONTHS.length).fill(0) };
+  });
+  SECTORS.forEach(s => { LIVE.sectors[s.id] = { gospel:0, disciples:0, leaders:0 }; });
+
+  LIVE.members.forEach(m => {
+    const cDef = CHURCHES.find(c => c.id === m.churchId) ||
+                 CHURCHES.find(c => c.name === m.church) ||
+                 CHURCHES.find(c => c.id === getChurchId(m.church || ''));
+    if (cDef) {
+      const c = LIVE.churches[cDef.id];
+      c.members++;
+      c.gospel    += m.gospel;
+      c.disciples += m.disciples;
+      c.leaders   += m.leaders;
+      (m.monthlyActions || []).forEach((v, i) => { if (i < c.monthly.length) c.monthly[i] += v; });
+    }
+    const sId = cDef ? cDef.sector : (m.sector || '').toLowerCase().trim();
+    const s   = LIVE.sectors[sId];
+    if (s) {
+      s.gospel    += m.gospel;
+      s.disciples += m.disciples;
+      s.leaders   += m.leaders;
+    }
+  });
+
+  LIVE.totalGospel  = LIVE.members.reduce((n, m) => n + m.gospel,    0);
+  LIVE.totalDisc    = LIVE.members.reduce((n, m) => n + m.disciples, 0);
+  LIVE.totalLeaders = LIVE.members.reduce((n, m) => n + m.leaders,   0);
+}
+
 // Apply fetched data to LIVE store
 function applyLiveData(data, backup) {
   if (!data || data.error || !data.members) {
@@ -2278,9 +2377,11 @@ function applyLiveData(data, backup) {
     })),
   }));
 
-  LIVE.totalGospel  = Number(data.totalGospel)  || 0;
-  LIVE.totalDisc    = Number(data.totalDisc)     || 0;
-  LIVE.totalLeaders = Number(data.totalLeaders)  || 0;
+  // Collapse duplicate Sheet rows for the same person, then recount EVERYTHING
+  // from the surviving action rows. Until this ran, one person could appear
+  // twice in every member list and the network member count read high.
+  LIVE.members = mergeDuplicateMembers(LIVE.members);
+  rebuildAggregatesFromMembers();
 
   // DEFINITIVE DEBUG — shows exact sector and gospel for every member
   console.table(LIVE.members.map(m => ({
@@ -2499,7 +2600,7 @@ async function completeLogin(name, role, church, sectorId, churchVal, known, loc
     sector:   sectorId.toLowerCase().trim(),
     stage:    existing?.stage || local?.stage || 'Evangelism',
     points:   useSheets ? (Number(existing.points) || 0) : (local?.points || 0),
-    actions:  chosenActions,
+    actions:  chosenActions.slice(),   // own copy — must not alias LIVE.members[i].actions
   });
 
   // Keep the local copy in step with what the Sheet says, so a stale local record
@@ -3133,7 +3234,7 @@ async function submitAction() {
       await loadLiveData();
       const me = findMyLiveRecord();
       if (me && (me.actions || []).length >= APP.actions.length) {
-        APP.actions = me.actions;
+        APP.actions = (me.actions || []).slice();
         APP.points  = Number(me.points) || APP.points;
         saveActionsToLocal();
       }
@@ -3385,7 +3486,7 @@ function deleteAction(realIdx) {
         // Re-sync APP from the Sheet so a failed delete shows the truth
         const me = findMyLiveRecord();
         if (me) {
-          APP.actions = me.actions || [];
+          APP.actions = (me.actions || []).slice();
           APP.points  = Number(me.points) || 0;
           saveActionsToLocal();
         }
@@ -4672,6 +4773,9 @@ function tickClock() {
 window.addEventListener('DOMContentLoaded', () => {
   tickClock();
   setInterval(tickClock, 30000);
+  console.log('FLCC BOTR build', APP_BUILD);
+  const b = document.getElementById('build-stamp');
+  if (b) b.textContent = 'Build ' + APP_BUILD;
   const countEl = document.getElementById('hero-church-count');
   if (countEl) countEl.textContent = CHURCHES.length;
   renderRecentSessions();
