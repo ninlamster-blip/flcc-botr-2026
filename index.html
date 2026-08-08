@@ -1493,7 +1493,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 //  GOOGLE SHEETS CONFIGURATION
 // Replace with your deployed Google Apps Script Web App URL
 // 
-const APP_BUILD = '2026-08-08.3';   // shown on the sign-in screen — check this matches when reporting a problem
+const APP_BUILD = '2026-08-08.4';   // shown on the sign-in screen — check this matches when reporting a problem
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwvKuqB85PnY3S3Cn6o9JwqesCMpeKxvZ2Q1lWTJT0mrWAez8eMFY-hWE4os30f0JEx/exec';
 const SHEETS_ON  = SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE';
 
@@ -2540,7 +2540,22 @@ function validateLogin() {
   document.getElementById('l-submit').disabled = !ok;
 }
 
+let loginInFlight = false;
+
 async function doLogin() {
+  // Tapping "Sign In" twice used to fire two registrations at once. Both asked
+  // the Sheet "does this person exist?" before either had written, both got
+  // "no", and both created a row — that is why "Pastor Froi" exists 3 times,
+  // milliseconds apart. One sign-in at a time.
+  if (loginInFlight) return;
+  loginInFlight = true;
+  const submitBtn = document.getElementById('l-submit');
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Signing in…'; }
+  const releaseLogin = () => {
+    loginInFlight = false;
+    if (submitBtn) { submitBtn.textContent = 'Sign In →'; validateLogin(); }
+  };
+
   const typed     = document.getElementById('l-name').value.trim();
   const known     = findKnownUser(typed);
   // Always store the canonical spelling. Typing "jopet alim" used to create a
@@ -2557,10 +2572,22 @@ async function doLogin() {
 
   // Known users have a PIN — verify before proceeding
   if (known) {
-    requirePin(name, () => completeLogin(name, role, church, sectorId, churchVal, known, local));
+    // Release the button while the PIN pad is up, and again after sign-in
+    releaseLogin();
+    requirePin(name, async () => {
+      if (loginInFlight) return;
+      loginInFlight = true;
+      try { await completeLogin(name, role, church, sectorId, churchVal, known, local); }
+      finally { releaseLogin(); }
+    });
     return;
   }
-  await completeLogin(name, role, church, sectorId, churchVal, known, local);
+
+  try {
+    await completeLogin(name, role, church, sectorId, churchVal, known, local);
+  } finally {
+    releaseLogin();
+  }
 }
 
 async function completeLogin(name, role, church, sectorId, churchVal, known, local) {
@@ -2585,6 +2612,17 @@ async function completeLogin(name, role, church, sectorId, churchVal, known, loc
   );
   candidates.sort((a,b) => (b.actions?.length || 0) - (a.actions?.length || 0));
   const existing = candidates[0] || null;
+
+  // ── ADOPT THE SHEET'S OWN SPELLING OF THE NAME ──────────────────
+  // The Apps Script matches names EXACTLY (logAction -> findUserRow). If we keep
+  // sending "allen santos" while the Sheet says "Allen Santos", it decides this
+  // is a new person and creates a duplicate row the moment an action is logged.
+  // Using the stored spelling from here on makes every later write match the
+  // existing row, so no new duplicates can appear.
+  if (existing && existing.name && existing.name !== name) {
+    console.log('Adopting Sheet spelling:', JSON.stringify(name), '->', JSON.stringify(existing.name));
+    name = existing.name;
+  }
 
   // The Sheet is authoritative. Its actions carry the real row ids (ACT-…) that
   // edit and delete need in order to match anything server-side. localStorage is
