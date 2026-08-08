@@ -710,6 +710,10 @@ button:disabled, .submit-btn:disabled, .log-btn:disabled { transform: none !impo
               <div style="font-size:9.5px;color:var(--ter);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-top:2px">Vision Year</div>
             </div>
           </div>
+          <div style="display:flex;justify-content:center;margin-top:18px">
+            <img src="logo.png" alt="National Evangelical Church in Kuwait — Filipino Language Christian Congregation"
+                 width="86" height="86" style="width:86px;height:86px;display:block" />
+          </div>
         </div>
 
         <!-- Network Leadership — DISPLAY ONLY, not clickable -->
@@ -1186,7 +1190,7 @@ button:disabled, .submit-btn:disabled, .log-btn:disabled { transform: none !impo
     <div class="screen" id="screen-church">
       <div style="padding:16px 0 4px">
         <div style="display:flex;align-items:center;gap:12px">
-          <div class="ibox" style="font-size:24px" id="ch-icon-box">⛪</div>
+          <div class="ibox" id="ch-icon-box" style="display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="logo-small.png" alt="" width="34" height="34" style="width:34px;height:34px;display:block" /></div>
           <div style="flex:1">
             <div style="font-size:26px;font-weight:800;letter-spacing:-.5px" id="ch-name">—</div>
             <div style="font-size:13px;color:var(--sec)" id="ch-sector-label">—</div>
@@ -1625,7 +1629,7 @@ button:disabled, .submit-btn:disabled, .log-btn:disabled { transform: none !impo
 //  GOOGLE SHEETS CONFIGURATION
 // Replace with your deployed Google Apps Script Web App URL
 // 
-const APP_BUILD = '2026-08-08.13';   // shown on the sign-in screen — check this matches when reporting a problem
+const APP_BUILD = '2026-08-08.14';   // shown on the sign-in screen — check this matches when reporting a problem
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwvKuqB85PnY3S3Cn6o9JwqesCMpeKxvZ2Q1lWTJT0mrWAez8eMFY-hWE4os30f0JEx/exec';
 const SHEETS_ON  = SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE';
 
@@ -4391,7 +4395,8 @@ function openChurchDrill(churchId) {
 
   renderDrillShell(c.name, `${sect.name} Sector · ${members.length} member${members.length===1?'':'s'}`);
   document.getElementById('drill-body').innerHTML = `
-    <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <img src="logo-small.png" alt="" width="44" height="44" style="width:44px;height:44px;display:block" />
       <span class="pill ${st.cls}">${st.label}</span>
     </div>
     <div class="drill-tiles">
@@ -4462,6 +4467,7 @@ function openSectorDrill(sectorId) {
     <div class="slabel" style="padding:14px 0 8px">Churches — tap for detail</div>
     ${churches.map(c => `
       <div class="drill-row" onclick="openChurchDrill('${c.id}')">
+        <img src="logo-small.png" alt="" width="30" height="30" style="width:30px;height:30px;display:block;flex-shrink:0" />
         <div style="flex:1;min-width:0">
           <div style="font-size:14px;font-weight:700">${esc(c.name)}</div>
           <div style="font-size:11.5px;color:var(--sec);margin-top:1px">${c.d.members} member${c.d.members===1?'':'s'} · ${c.d.disciples} disciples · ${c.d.leaders} leaders</div>
@@ -5394,8 +5400,8 @@ function renderHealthCard(churchId, churchName) {
     <div class="card" style="padding:16px;margin-bottom:10px;cursor:pointer" onclick="openChurchDrill('${churchId}')">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
         <div style="display:flex;align-items:center;gap:8px">
-          <div style="width:8px;height:8px;border-radius:4px;background:${sColor}"></div>
-          <span style="font-size:15px;font-weight:800">${churchName}</span>
+          <img src="logo-small.png" alt="" width="22" height="22" style="width:22px;height:22px;display:block;flex-shrink:0" />
+          <span style="font-size:15px;font-weight:800">${esc(churchName)}</span>
         </div>
         <span style="font-size:13px;font-weight:700;color:${h.color}">${h.icon} ${h.status}</span>
       </div>
