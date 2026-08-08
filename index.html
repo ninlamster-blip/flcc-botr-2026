@@ -1507,7 +1507,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 //  GOOGLE SHEETS CONFIGURATION
 // Replace with your deployed Google Apps Script Web App URL
 // 
-const APP_BUILD = '2026-08-08.5';   // shown on the sign-in screen — check this matches when reporting a problem
+const APP_BUILD = '2026-08-08.6';   // shown on the sign-in screen — check this matches when reporting a problem
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwvKuqB85PnY3S3Cn6o9JwqesCMpeKxvZ2Q1lWTJT0mrWAez8eMFY-hWE4os30f0JEx/exec';
 const SHEETS_ON  = SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE';
 
@@ -1541,22 +1541,41 @@ const KNOWN_USERS = {
   'Elena Aboy':         { role:'Ministry Leader',church:'Virtual Church',sector:'love',  title:'Evangelism Love Sector Coordinator',  commandAccess:true,  pinHash:'86f92c8a3b982a595419db7bb81e0f22c3577e7fbab279f883bee72f2fa02f37' },
 };
 
-// Returns KNOWN_USERS entry if name matches (case-insensitive trim)
+// ── ALTERNATE SPELLINGS ───────────────────────────────────────────
+// Names people actually typed, or that already exist in the Sheet, mapped to
+// the KNOWN_USERS spelling. Without these, signing in as "Virgilio Monastrial"
+// would not find the Sheet row filed under "Virgilio" and would create a second
+// person — and signing in as "Virgilio" would not be recognised as a leader at
+// all. Both directions resolve to the same identity.
+// Keys must be lowercase.
+const NAME_ALIASES = {
+  'virgilio':        'Virgilio Monastrial',
+  'elena guan aboy': 'Elena Aboy',
+};
+
+// Returns KNOWN_USERS entry if name matches (case-insensitive, alias-aware)
 function findKnownUser(name) {
   if (!name) return null;
-  const trimmed = String(name).trim();
-  return KNOWN_USERS[trimmed] ||
-    Object.entries(KNOWN_USERS).find(([k]) => k.toLowerCase() === trimmed.toLowerCase())?.[1] || null;
+  const c = canonicalName(name);
+  return KNOWN_USERS[c] ||
+    Object.entries(KNOWN_USERS).find(([k]) => k.toLowerCase() === c.toLowerCase())?.[1] || null;
 }
 
-// The canonical KNOWN_USERS spelling for a typed name ("jopet alim" → "Jopet Alim").
-// Every PIN / storage lookup must go through this so casing can never split identities.
+// The canonical KNOWN_USERS spelling for a typed name ("jopet alim" → "Jopet Alim",
+// "Elena Guan Aboy" → "Elena Aboy"). Every PIN, passkey, storage and member
+// lookup goes through this, so spelling can never split one person into two.
 function canonicalName(name) {
   if (!name) return '';
   const trimmed = String(name).trim();
+  const alias   = NAME_ALIASES[trimmed.toLowerCase()];
+  if (alias) return alias;
   const hit = Object.keys(KNOWN_USERS).find(k => k.toLowerCase() === trimmed.toLowerCase());
   return hit || trimmed;
 }
+
+// Same-person test used for matching Sheet rows to the signed-in user
+const sameIdentity = (a, b) =>
+  canonicalName(a).toLowerCase() === canonicalName(b).toLowerCase();
 
 // Escape untrusted text before it goes anywhere near innerHTML.
 // Member names, reflections, evidence and outreach details all come from the shared
@@ -2224,7 +2243,7 @@ function mergeDuplicateMembers(members) {
   const map = new Map();
 
   members.forEach(m => {
-    const key = (m.name || '').trim().toLowerCase() + '|' + (m.church || '').trim().toLowerCase();
+    const key = canonicalName(m.name).toLowerCase() + '|' + (m.church || '').trim().toLowerCase();
     let rec = map.get(key);
     if (!rec) {
       rec = Object.assign({}, m, { actions: [], duplicateIds: [], _best: -1 });
@@ -2621,7 +2640,7 @@ async function completeLogin(name, role, church, sectorId, churchVal, known, loc
   // one row for the same person (older rows created before name matching was
   // made case-insensitive), and picking the empty one hid that person's history.
   const candidates = LIVE.members.filter(m =>
-    m.name.trim().toLowerCase() === name.trim().toLowerCase() &&
+    sameIdentity(m.name, name) &&
     (m.church || '').trim().toLowerCase() === (church || '').trim().toLowerCase()
   );
   candidates.sort((a,b) => (b.actions?.length || 0) - (a.actions?.length || 0));
@@ -3131,7 +3150,7 @@ function findMyLiveRecord() {
     if (byId) return byId;
   }
   const matches = LIVE.members.filter(m =>
-    (m.name || '').trim().toLowerCase() === APP.name.trim().toLowerCase() &&
+    sameIdentity(m.name, APP.name) &&
     (m.church || '').trim().toLowerCase() === (APP.church || '').trim().toLowerCase()
   );
   matches.sort((a,b) => (b.actions?.length || 0) - (a.actions?.length || 0));
