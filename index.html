@@ -1543,7 +1543,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 //  GOOGLE SHEETS CONFIGURATION
 // Replace with your deployed Google Apps Script Web App URL
 // 
-const APP_BUILD = '2026-08-08.9';   // shown on the sign-in screen — check this matches when reporting a problem
+const APP_BUILD = '2026-08-08.10';   // shown on the sign-in screen — check this matches when reporting a problem
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwvKuqB85PnY3S3Cn6o9JwqesCMpeKxvZ2Q1lWTJT0mrWAez8eMFY-hWE4os30f0JEx/exec';
 const SHEETS_ON  = SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE';
 
@@ -3216,7 +3216,28 @@ function resolveServerActionId(action) {
   return hit ? hit.id : '';
 }
 
+let submitInFlight = false;
+
 async function submitAction() {
+  // Saving takes a few seconds. Without a guard the button stayed live, so a
+  // second tap on a slow connection logged the SAME action twice.
+  if (submitInFlight) return;
+  const btn = document.querySelector('#screen-log .log-btn');
+  const releaseSubmit = () => {
+    submitInFlight = false;
+    if (btn) { btn.disabled = false; btn.textContent = 'Submit Action'; btn.style.opacity = '1'; }
+  };
+  submitInFlight = true;
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; btn.style.opacity = '.6'; }
+
+  try {
+    return await submitActionInner();
+  } finally {
+    releaseSubmit();
+  }
+}
+
+async function submitActionInner() {
   const a    = ACTIONS_LIB[selAction];
   const now  = new Date();
   const date = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][now.getMonth()] + ' ' + now.getDate();
@@ -3332,22 +3353,25 @@ async function submitAction() {
   outFields.forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
   updateOutreachForms();
 
-  // Re-read the Sheet so this action picks up the row id the Apps Script gave
-  // it. Without this the action can't be edited or deleted until the next
-  // refresh, because only the Sheet's own id works for those.
+  // Re-read the Sheet in the BACKGROUND so this action picks up the row id the
+  // Apps Script gave it (only that id works for edit/delete). Blocking on it
+  // left the user watching a spinner for several seconds after a save that had
+  // already succeeded — which read as the app hanging.
   if (saved) {
-    showLoading('Syncing…');
-    await new Promise(r => setTimeout(r, 1200));   // let Apps Script finish writing
-    try {
-      await loadLiveData();
-      const me = findMyLiveRecord();
-      if (me && (me.actions || []).length >= APP.actions.length) {
-        APP.actions = (me.actions || []).slice();
-        APP.points  = Number(me.points) || APP.points;
-        saveActionsToLocal();
-      }
-    } catch(e) { console.warn('post-log sync failed:', e); }
-    hideLoading();
+    setTimeout(async () => {
+      try {
+        await loadLiveData();
+        const me = findMyLiveRecord();
+        if (me && (me.actions || []).length >= APP.actions.length) {
+          APP.actions = (me.actions || []).slice();
+          APP.points  = Number(me.points) || APP.points;
+          saveActionsToLocal();
+        }
+        // refresh whatever screen the user landed on
+        if (currentTab === 'home')    { try { renderMemberHome();   } catch(e) {} }
+        if (currentTab === 'church')  { try { renderChurchScreen(); } catch(e) {} }
+      } catch(e) { console.warn('post-log sync failed:', e); }
+    }, 1500);
   }
 
   // Don't claim "saved" when the request never made it out. Note that a no-cors
